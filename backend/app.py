@@ -30,6 +30,7 @@ def get_records():
     cursor.close()
     conn.close()
     return jsonify(data)
+
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
