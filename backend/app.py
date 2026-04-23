@@ -49,6 +49,25 @@ def login():
         return jsonify({'message': 'Login successful', 'role': user['role']}), 200
     else:
         return jsonify({'message': 'Invalid username or password'}), 401
+@app.route('/api/municipalities')
+def get_municipalities():
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("select * FROM municipalities")
+    data = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(data)
+
+@app.route("/api/assistance_types")
+def get_assistance_types():
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM assistance_types")
+    data = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(data)
 
 if __name__ == '__main__':
     app.run(debug=True)
