@@ -69,5 +69,76 @@ def get_assistance_types():
     conn.close()
     return jsonify(data)
 
+@app.route("/api/dashboard/kpi")
+def get_kpi():
+    year = request.args.get('year', 'ALL')
+    municipality = request.args.get('municipality', 'ALL')
+    type_ = request.args.get('type', 'ALL')
+
+    filters = []
+    params = []
+
+    if year != 'ALL':
+        filters.append("r.year = %s")
+        params.append(year)
+
+    if municipality != "ALL":
+        filters.append("m.municipality_name = %s")
+        params.append(municipality)
+
+    if type_ != "ALL":
+        filters.append("a.type_name = %s")
+        params.append(type_)
+
+    where_clause = "WHERE " + " AND".join(filters) if filters else ""
+
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+
+   # Total requests
+    cursor.execute(f"""
+        SELECT SUM(r.request_count) AS total 
+        FROM assistance_records r
+        JOIN assistance_types a ON r.assistance_type_id = a.type_id
+        JOIN municipalities m ON r.municipality_id = m.municipality_id
+        {where_clause}
+    """, params)
+    sum_req = cursor.fetchone()
+
+    # Top type
+    cursor.execute(f"""
+        SELECT a.type_name, SUM(r.request_count) AS total
+        FROM assistance_records r
+        JOIN assistance_types a ON r.assistance_type_id = a.type_id
+        JOIN municipalities m ON r.municipality_id = m.municipality_id
+        {where_clause}
+        GROUP BY r.assistance_type_id
+        ORDER BY total DESC
+        LIMIT 1
+    """,params)
+    highest_type = cursor.fetchone()
+
+    # Top municipality
+    cursor.execute(f"""
+        SELECT m.municipality_name, SUM(r.request_count) AS total
+        FROM assistance_records r
+        JOIN assistance_types a ON r.assistance_type_id = a.type_id
+        JOIN municipalities m ON r.municipality_id = m.municipality_id
+        {where_clause}
+        GROUP BY r.municipality_id
+        ORDER BY total DESC
+        LIMIT 1
+    """,params)
+    highest_municipality = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({
+        "total_requests": sum_req["total"] or 0,
+        "top_type": highest_type,
+        "top_municipality": highest_municipality
+    })
+
 if __name__ == '__main__':
     app.run(debug=True)
