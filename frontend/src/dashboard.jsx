@@ -13,7 +13,7 @@ function Dashboard() {
     const [selectedMunicipality, setSelectedMunicipality] = useState('ALL')
     const [selectedType, setSelectedType] = useState('ALL')
 
-    const fetchkpi = async () => {
+    const fetchKpi = async () => {
         const res = await fetch(`http://127.0.0.1:5000/api/dashboard/kpi?year=${selectedYear}&municipality=${selectedMunicipality}&type=${selectedType}`)
         const data = await res.json()
         setKpi(data)
@@ -54,21 +54,21 @@ function Dashboard() {
                 <div className='flex gap-2 items-center mb-4'>
                     <span className="text-sm font-semibold text-gray-500">FILTERS:</span>
                     <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setSelectedYear(e.target.value)}>
-                    <option>ALL YEARS</option>
+                    <option value="ALL">ALL YEARS</option>
                     {years.map((year) => (
                         <option key={year}>{year}</option>
                     ))}
                 </select>
                 <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setSelectedMunicipality(e.target.value)}>
-                    <option>ALL MUNICIPALITIES</option>
+                    <option value="ALL">ALL MUNICIPALITIES</option>
                     {municipalities.map((m) => (
-                    <option key={m.municipality_id}>{m.municipality_name}</option>
+                    <option value={m.municipality_id} key={m.municipality_id}>{m.municipality_name}</option>
                     ))}
                 </select>
                 <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setSelectedType(e.target.value)} >
-                    <option>ALL TYPES</option>
+                    <option value="ALL">ALL TYPES</option>
                     {types.map((m) =>  (
-                        <option key={m.type_id}>{m.type_name}</option>
+                        <option value={m.type_id} key={m.type_id}>{m.type_name}</option>
                     ))}
                 </select>
                 </div>
@@ -85,7 +85,7 @@ function Dashboard() {
                     <p className="text-sm text-gray-500">Top Request Type</p>
 
                     <h1 className="text-lg font-bold text-gray-800">
-                        {kpi ? kpi.top_type.type_name : 'Loading...'}
+                        {kpi && kpi.top_type ? kpi.top_type.type_name : 'N/A'}
                     </h1>
 
                     <p className="text-sm text-gray-400">

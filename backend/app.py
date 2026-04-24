@@ -83,14 +83,14 @@ def get_kpi():
         params.append(year)
 
     if municipality != "ALL":
-        filters.append("m.municipality_name = %s")
+        filters.append("r.municipality_id = %s")
         params.append(municipality)
 
     if type_ != "ALL":
-        filters.append("a.type_name = %s")
+        filters.append("r.assistance_type_id = %s")
         params.append(type_)
 
-    where_clause = "WHERE " + " AND".join(filters) if filters else ""
+    where_clause = "WHERE " + " AND ".join(filters) if filters else ""
 
     conn = get_db()
     cursor = conn.cursor(dictionary=True)
