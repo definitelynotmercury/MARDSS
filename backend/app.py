@@ -140,5 +140,41 @@ def get_kpi():
         "top_municipality": highest_municipality
     })
 
+@app.route("/api/dashboard/trend")
+def get_dashboard_trend():
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT r.year, a.type_name, SUM(r.request_count) AS total FROM assistance_records r JOIN assistance_types a ON r.assistance_type_id = a.type_id GROUP BY r.year, r.assistance_type_id ORDER BY r.year")
+
+    data = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+
+
+    result = {}  # temporary dict to build by year
+
+    for row in data:
+        year = row['year']
+        if year not in result:
+            result[year] = {'year': year}
+        result[year][row['type_name']] = int(row['total'])
+
+    final = list(result.values())
+
+    return jsonify(final)
+
+@app.route("/api/dashboard/barchart")
+def get_dashboard_barchart():
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT m.municipality_name, SUM(request_count) AS total  FROM assistance_records r JOIN municipalities m ON r.municipality_id = m.municipality_id GROUP BY m.municipality_id ORDER BY SUM(request_count) DESC")
+    data = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    return jsonify(data)
+
 if __name__ == '__main__':
     app.run(debug=True)
+
