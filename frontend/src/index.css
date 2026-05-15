@@ -1,3 +1,15 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+svg:focus {
+  outline: none;
+}
+
+.recharts-sector:focus,
+.recharts-pie-sector path:focus,
+.recharts-bar-rectangle rect:focus,
+path:focus,
+rect:focus {
+  outline: none;
+}
