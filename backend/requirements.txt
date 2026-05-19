@@ -7,3 +7,4 @@ numpy
 PyJWT
 bcrypt
 openpyxl
+google-genai
