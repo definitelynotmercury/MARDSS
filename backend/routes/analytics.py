@@ -56,5 +56,27 @@ def comparison():
     return jsonify(final)
 
 
+@analytics_bp.route('/api/analytics/drill_down')
+def drill_down():
+    municipality = request.args.get('municipality', 'BULAKAN')
 
+    filters = ["(m.municipality_name = %s)"]
+    where_clause = "WHERE " + " AND ".join(filters)
 
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute(f"""
+        SELECT a.type_name, m.municipality_name, CAST(SUM(r.request_count) AS UNSIGNED) AS total FROM assistance_records r 
+        JOIN assistance_types a ON r.assistance_type_id = a.type_id
+        JOIN municipalities m ON r.municipality_id = m.municipality_id
+        {where_clause}
+        GROUP BY m.municipality_name, a.type_name
+        ORDER BY total DESC
+    """, [municipality])
+
+    data = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    return jsonify(data)
