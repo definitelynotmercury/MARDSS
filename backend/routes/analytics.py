@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 import mysql.connector
+from datetime import date
 from config import DB_CONFIG
 
 analytics_bp = Blueprint('analytics',__name__)
@@ -80,3 +81,65 @@ def drill_down():
     conn.close()
 
     return jsonify(data)
+
+@analytics_bp.route('/api/analytics/n_rankings')
+def n_rankings():
+    top_n = int(request.args.get("topN", 5))
+    selected_municipality = request.args.get("selectedMunicipalityRanking", "ALL")
+
+    current_year = date.today().year
+    latest_data_year = current_year - 1
+    previous_data_year = current_year - 2
+
+    filters = ["(r.year  = %s OR r.year  = %s)"]
+    where_clause = "WHERE " + " AND ".join(filters)
+
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute(f"""SELECT  m.municipality_name, r.year, CAST(SUM(r.request_count) AS UNSIGNED) AS total FROM assistance_records r 
+        JOIN assistance_types a ON r.assistance_type_id = a.type_id
+        JOIN municipalities m ON r.municipality_id = m.municipality_id
+        {where_clause}
+        GROUP BY m.municipality_name, r.year
+        ORDER BY m.municipality_name, r.year 
+        """, [latest_data_year, previous_data_year])
+    
+    data = cursor.fetchall()
+    cursor.close()  
+    conn.close()
+
+    result = {}
+    previous_year_total = 0
+    current_year_total = 0
+    for row in data:
+        municipality_name = row['municipality_name']
+        if municipality_name not in result:
+            result[municipality_name] = {'municipality_name': municipality_name}
+            result[municipality_name]['previous'] = int(row['total'])
+        else:
+            result[municipality_name]['current'] = int(row['total'])
+
+
+    for municipality_name in result:
+        item = result[municipality_name]
+        prev = item.get('previous', 0)
+        curr = item.get('current', 0)
+
+        if prev > 0:
+            item['growth_rate'] = round(((curr - prev) / prev) * 100, 1)
+        else:
+            item['growth_rate'] = 0
+            
+    final = list(result.values())
+
+    final.sort(key=lambda x: x['current'], reverse=True)
+
+    if selected_municipality != "ALL":
+        result = [item for item in final if item["municipality_name"] == selected_municipality]
+        return jsonify(result)
+    
+    final = final[:top_n]
+
+    
+    return(jsonify(final))

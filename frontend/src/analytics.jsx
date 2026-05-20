@@ -38,6 +38,7 @@ function Analytics() {
     fetchComparisonData()
     }, [municipality1, municipality2, selectedType, selectedYear])  
 
+    //script to generate year options from 2023 to current year
     const years = []
     let startYear = 2023
     const currentYear = new Date().getFullYear()
@@ -47,6 +48,7 @@ function Analytics() {
         startYear++
     }
 
+    //states and functions for drilldown section
     const [drilldown_data, setDrilldownData] = useState([])
     const [drill_down_municipality, setDrillDownMunicipality] = useState('BULAKAN')
 
@@ -61,9 +63,23 @@ function Analytics() {
     
     const maxTotal = Math.max(...drilldown_data.map(d => d.total), 1)
 
+
+    const [rankings, setRankings] = useState([])
+    const [topN, setTopN] = useState(5)
+    const [selectedMunicipalityRanking, setSelectedMunicipalityRanking] = useState('ALL')
+
+    useEffect(() => {
+        const fetchRankings = async () => {
+            const response = await fetch(`http://127.0.0.1:5000/api/analytics/n_rankings?topN=${topN}&selectedMunicipalityRanking=${selectedMunicipalityRanking}`)
+            const data = await response.json()
+            setRankings(data)
+        }
+        fetchRankings()
+    }, [topN, selectedMunicipalityRanking])
+
     return (
         <Layout>
-            <h1 className="text-xl font-bold text-gray-700">Analytics</h1>
+            <h1 className="text-xl font-bold text-gray-700" p-4>Analytics</h1>
             <div className="bg-white shadow rounded p-4 mb-6">
                 <p className="font-semibold text-gray-700 mb-1">Side-by-side Comparison</p>
                 <p className="text-sm text-gray-400 mb-4">Compare two municipalities and single out assistance types</p>
@@ -130,6 +146,62 @@ function Analytics() {
                         </div>
                     ))}
                 </div>
+            </div>
+            <div className="bg-white shadow rounded p-4 mb-6">
+                <p className="font-semibold text-gray-700 mb-1">Top N Rankings</p>
+                <p className="text-sm text-gray-400 mb-4">Ranked table with badges and inline bar indicators</p>
+                <div className='flex gap-2 items-center mb-4'>
+                    <span className="text-sm font-semibold text-gray-500">Filters:</span>
+                    <select className="border rounded px-2 py-1 text-sm" onChange={e => setTopN(Number(e.target.value))}>
+                        {[5, 10, 15, 20, 25, 30].map(n => <option key={n} value={n}>TOP {n} TYPES</option>)}
+                    </select>
+                    <select className= "border rounded px-2 py-1 text-sm" onChange={(e) => setSelectedMunicipalityRanking(e.target.value)} value={selectedMunicipalityRanking}>
+                        {municipalities.map((m) =>  (
+                            <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="text-left text-gray-500 border-b">
+                            <th className="pb-3 pr-4">Rank</th>
+                            <th className="pb-3 pr-4">Municipality</th>
+                            <th className="pb-3 pr-4">Previous Year</th>
+                            <th className="pb-3 pr-4">Current Year</th>
+                            <th className="pb-3 pr-4">Volume</th>
+                            <th className="pb-3">Growth Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rankings.map((item, index) => (
+                            <tr key={item.municipality_name} className="border-b hover:bg-gray-50">
+                                <td className="py-3 pr-4">
+                                    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-bold ${index === 0 ? 'bg-blue-800' : index === 1 ? 'bg-blue-600' : index === 2 ? 'bg-blue-400' : 'bg-gray-300 text-gray-600'}`}>
+                                        {index + 1}
+                                    </span>
+                                </td>
+                                <td className="py-3 pr-4 font-medium text-gray-700">{item.municipality_name}</td>
+                                <td className="py-3 pr-4 text-gray-500">{item.previous?.toLocaleString() ?? 'N/A'}</td>
+                                <td className="py-3 pr-4 text-gray-800 font-semibold">{item.current?.toLocaleString() ?? 'N/A'}</td>
+                                <td className="py-3 pr-4 w-40">
+                                    <div className="h-2 bg-gray-200 rounded-full">
+                                        <div
+                                            className="h-2 bg-teal-600 rounded-full"
+                                            style={{ width: `${(item.current / Math.max(...rankings.map(r => r.current || 0), 1)) * 100}%` }}
+                                        />
+                                    </div>
+                                </td>
+                                <td className="py-3">
+                                    <span className={`font-semibold ${item.growth_rate >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                        {item.growth_rate >= 0 ? '+' : ''}{item.growth_rate}%
+                                    </span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
             </div>
         </Layout>
     )
