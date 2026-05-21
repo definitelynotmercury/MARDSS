@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 import mysql.connector
 from datetime import date
-from config import DB_CONFIG
+from config import DB_CONFIG, client
 
 analytics_bp = Blueprint('analytics',__name__)
 
@@ -143,3 +143,29 @@ def n_rankings():
 
     
     return(jsonify(final))
+
+@analytics_bp.route('/api/analytics/narrative', methods=['POST'])
+def generate_narrative():
+    data = request.get_json()
+    comparisonData = data.get('comparisonData', [])
+    drilldown_Data = data.get('drilldown_data', [])
+    rankings = data.get('rankings', [])
+
+    prompt = f"""
+        You are a data analyst reporting for the Provincial Social Welfare and Development Office (PSWDO) of Bulacan.
+        Based on the following dashboard data, write a concise 3-4 sentence narrative that describes what the data shows.
+        Do not suggest any actions or recommendations. Only explain the patterns, trends, and figures presented.
+
+        -comparison between two municipalities across different assistance types, showing the total number of requests for each type in each municipality. {comparisonData}
+
+        -drill-down data for a specific municipality, showing the breakdown of assistance requests by type. {drilldown_Data}
+
+        -rankings of municipalities based on their total assistance requests and growth rates. {rankings}
+
+        Be specific, mention actual numbers and names. Keep it professional and concise.
+        """
+    response = client.models.generate_content(
+        model="gemini-3-flash-preview",
+        contents=prompt
+    )
+    return jsonify({"narrative": response.text})

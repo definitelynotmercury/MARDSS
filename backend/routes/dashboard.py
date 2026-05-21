@@ -1,11 +1,8 @@
 from flask import Blueprint, jsonify, request
 import mysql.connector
-from config import DB_CONFIG, GEMINI_API_KEY
-from google import genai
+from config import DB_CONFIG, client
 
 dashboard_bp = Blueprint('dashboard', __name__)
-
-client = genai.Client(api_key=GEMINI_API_KEY)
 
 def get_db():
     return mysql.connector.connect(**DB_CONFIG)

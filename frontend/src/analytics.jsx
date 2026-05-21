@@ -63,7 +63,7 @@ function Analytics() {
     
     const maxTotal = Math.max(...drilldown_data.map(d => d.total), 1)
 
-
+    // States for rankings section
     const [rankings, setRankings] = useState([])
     const [topN, setTopN] = useState(5)
     const [selectedMunicipalityRanking, setSelectedMunicipalityRanking] = useState('ALL')
@@ -76,6 +76,23 @@ function Analytics() {
         }
         fetchRankings()
     }, [topN, selectedMunicipalityRanking])
+
+     // Narrative
+    const [narrative, setNarrative] = useState('')
+    const [narrativeLoading, setNarrativeLoading] = useState(false)
+
+    const generateNarrative = async () => {
+        setNarrativeLoading(true)
+        setNarrative('')
+        const res = await fetch(`http://127.0.0.1:5000/api/analytics/narrative`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comparisonData, drilldown_data, rankings})
+        })
+        const data = await res.json()
+        setNarrative(data.narrative)
+        setNarrativeLoading(false)
+    }
 
     return (
         <Layout>
@@ -202,6 +219,24 @@ function Analytics() {
                     </tbody>
                 </table>
             </div>
+            
+            </div>
+            <div className="bg-white shadow rounded p-4 mb-6">
+                <p className="font-semibold text-gray-700 mb-1">Narrative Output</p>
+                {!narrative && !narrativeLoading && (
+                    <p className="text-sm text-gray-400 mb-4">
+                        Click the button to generate an AI-powered narrative based on current dashboard data.
+                    </p>
+                )}
+                {narrativeLoading && <p className="text-sm text-gray-400">Generating narrative...</p>}
+                {narrative && !narrativeLoading && <p className="text-sm text-gray-700 mb-4">{narrative}</p>}
+                <button
+                    onClick={generateNarrative}
+                    disabled={narrativeLoading}
+                    className="bg-blue-600 text-white px-4 py-2 rounded text-sm mt-2 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {narrativeLoading ? 'Generating...' : 'Generate Narrative'}
+                </button>
             </div>
         </Layout>
     )
