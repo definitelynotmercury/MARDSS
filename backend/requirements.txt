@@ -8,3 +8,4 @@ PyJWT
 bcrypt
 openpyxl
 google-genai
+scikit-learn
