@@ -1,5 +1,26 @@
 import Layout from "./Layout";
 import { useState, useEffect } from 'react'
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts'
+
+const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+        const order = ['historical', 'upper', 'projected', 'lower']
+        const sorted = order
+            .map(name => payload.find(e => e.name === name))
+            .filter(Boolean)
+        return (
+            <div className="bg-white border border-gray-200 rounded p-2 text-sm">
+                <p className="font-semibold">{label}</p>
+                {sorted.map((entry) => (
+                    <p key={entry.name} style={{ color: entry.color }}>
+                        {entry.name}: {entry.value}
+                    </p>
+                ))}
+            </div>
+        )
+    }
+    return null
+}
 
 function Forecast() {
 
@@ -41,6 +62,22 @@ function Forecast() {
         fetchForecastData()
     }, [selectedMunicipality, selectedType])
 
+    const lastTotal = forecastData.historical_totals[forecastData.historical_totals.length - 1]
+
+    const chartData = [
+        ...forecastData.historical_years.map((year, i) => ({
+            year: year,
+            historical: forecastData.historical_totals[i],
+            projected: i === forecastData.historical_years.length - 1 ? lastTotal : null  // bridge only on last point
+        })),
+        ...forecastData.future_years.map((year, i) => ({
+            year: year,
+            projected: forecastData.future_predictions[i],
+            lower: forecastData.lower_bound[i],
+            upper: forecastData.upper_bound[i]
+        }))
+    ]
+
     return(
         <Layout>
             <h1 className="text-xl font-bold text-gray-700">Forecasting</h1>
@@ -81,6 +118,23 @@ function Forecast() {
                     <h1 className="text-2xl font-bold text-gray-800">{forecastData.avg_growth_rate.toFixed(2)}%</h1>
                     <p className="text-xs text-gray-500">Based on historical data</p>
                 </div>
+            </div>
+
+            <div className="bg-white shadow rounded p-4 mb-6">
+                <p className="font-semibold text-gray-700 mb-1">Demand Forecast</p>
+                <p className="text-sm text-gray-400 mb-4">Historical data (solid line) and projections (dashed line) with confidence range</p>
+                <ResponsiveContainer width="100%" height={600}>
+                    <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="year" />
+                        <YAxis />
+                        <Line dataKey="historical" stroke="#8884d8" />
+                        <Line dataKey="projected" stroke="#82ca9d"/>
+                        <Line dataKey="upper" stroke="#ff7300" strokeDasharray="3 3" />
+                        <Line dataKey="lower" stroke="#ff7300" strokeDasharray="3 3" />
+                        <Tooltip content={<CustomTooltip />} />
+                    </LineChart>
+                </ResponsiveContainer>
             </div>
         </Layout>
     )
