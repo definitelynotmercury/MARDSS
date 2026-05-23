@@ -136,6 +136,26 @@ function Forecast() {
                     </LineChart>
                 </ResponsiveContainer>
             </div>
+
+            <div className="bg-white shadow rounded p-4">
+                <p className="font-semibold text-gray-700 mb-1">Forecast Details</p>
+                <p className="text-sm text-gray-600">Yearly breakdown with confidence intervals</p>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="text-left text-gray-500 border-b">
+                                <th className="px-4 py-2">Year</th>
+                                <th className="px-4 py-2">Projected Requests</th>
+                                <th className="px-4 py-2">Lower Bound</th>
+                                <th className="px-4 py-2">Upper Bound</th>
+                                <th className="px-4 py-2">Type</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+
+            </div>
         </Layout>
     )
 }
