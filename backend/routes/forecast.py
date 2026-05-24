@@ -93,3 +93,38 @@ def predict():
         "lower_bound": lower.tolist(),
         "upper_bound": upper.tolist()
     })
+
+@forecast_bp.route('/api/forecast/narrative', methods=['POST'])
+def generate_narrative():
+    data = request.get_json()
+    forecast = data.get('forecastData', {})
+    selected_municipality = data.get('selectedMunicipality', 'ALL')
+    selected_type = data.get('selectedType', 'ALL')
+
+    historical_years = forecast.get('historical_years', [])
+    historical_totals = forecast.get('historical_totals', [])
+    future_years = forecast.get('future_years', [])
+    forecastData = forecast.get('future_predictions', [0, 0])
+    lower_bound = forecast.get('lower_bound', [0, 0])
+    upper_bound = forecast.get('upper_bound', [0, 0])
+
+    prompt = f"""
+        You are a data analyst reporting for the Provincial Social Welfare and Development Office (PSWDO) of Bulacan.
+        Based on the following dashboard data, write a concise 3-4 sentence narrative that describes what the data shows.
+        Do not suggest any actions or recommendations. Only explain the patterns, trends, and figures presented.
+
+        -selected municipality: {selected_municipality} - if it says all, it means the data is for the entire province
+        -selected assistance type: {selected_type} - if it says all, it means the data includes all types of assistance
+        -Historical data of total assistance requests from {historical_years[0]} to {historical_years[-1]}: {historical_totals}
+        -Predicted totals for the next two years ({future_years[0]} and {future_years[1]}): {forecastData}
+        -95% confidence intervals for the forecasts: {list(zip(lower_bound, upper_bound))}
+
+        
+        """
+    response = client.models.generate_content(
+        model="gemini-3-flash-preview",
+        contents=prompt
+    )
+    
+
+    return jsonify({"narrative": response.text})
