@@ -152,6 +152,34 @@ function Forecast() {
                                 <th className="px-4 py-2">Type</th>
                             </tr>
                         </thead>
+                        <tbody>
+                            {forecastData.historical_years.map((year,i) => (
+                                <tr key={i} className="border-b">
+                                    <td className="px-4 py-2">{year}</td>
+                                    <td className="px-4 py-2">{forecastData.historical_totals[i]}</td>
+                                    <td className="px-4 py-2">-</td>
+                                    <td className="px-4 py-2">-</td>
+                                    <td className="px-4 py-2">
+                                        <span className="bg-gray-200 text-gray-900 px-3 py-1 rounded-full text-sm font-medium">
+                                            Historical
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                            {forecastData.future_years.map((year, i) => (
+                                <tr key={i} className="border-b">
+                                    <td className="px-4 py-2">{year}</td>
+                                    <td className="px-4 py-2">{forecastData.future_predictions[i]}</td>
+                                    <td className="px-4 py-2">{forecastData.lower_bound[i]}</td>
+                                    <td className="px-4 py-2">{forecastData.upper_bound[i]}</td>
+                                    <td className="px-4 py-2" bg-blue-100 >
+                                        <span className="bg-blue-200 text-blue-900 px-3 py-1 rounded-full text-sm font-medium">
+                                            Projected
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
                     </table>
                 </div>
 
