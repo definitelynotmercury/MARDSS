@@ -105,7 +105,7 @@ function Dashboard() {
     // ── Year options ───────────────────────────────────────────────────────
     const years = []
     let y = 2023
-    while (y <= new Date().getFullYear()) years.push(y++)
+    while (y < new Date().getFullYear()) years.push(y++)
 
     // ── Line chart: filter typeTotals by topN or specific type ────────────
     const visibleTypes = selectedLineType !== 'ALL'
