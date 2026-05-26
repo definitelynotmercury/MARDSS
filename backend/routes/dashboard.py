@@ -106,16 +106,28 @@ def get_dashboard_trend():
 
 @dashboard_bp.route("/api/dashboard/barchart")
 def get_dashboard_barchart():
+    year = request.args.get("year", "ALL")
+
+    filters = []        
+    params = []         
+
+    if year != "ALL":
+        filters.append("r.year = %s")
+        params.append(int(year))
+
+    where_clause = "WHERE " + " AND ".join(filters) if filters else ""
+
     conn = get_db()
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("""
+        cursor.execute(f"""
             SELECT m.municipality_name, SUM(request_count) AS total
             FROM assistance_records r
             JOIN municipalities m ON r.municipality_id = m.municipality_id
+            {where_clause}
             GROUP BY m.municipality_id
             ORDER BY total DESC
-        """)
+        """, params)          
         data = cursor.fetchall()
         cursor.close()
     finally:
@@ -212,32 +224,101 @@ def generate_narrative():
     kpi = data.get("kpi", {})
     irregularities = data.get("irregularities", [])
     trend = data.get("trend", [])
-    municipalities = data.get("municipalities", [])
+    pie_data = data.get("pieData", [])
+    bar_data = data.get("barData", [])
+    filters = data.get("filters", {})
 
-    # Summarize trend: only top 5 types by total across years
-    type_totals = {}
-    for year_row in trend:
-        for key, val in year_row.items():
-            if key == 'year':
-                continue
-            type_totals[key] = type_totals.get(key, 0) + val
-    top_types = sorted(type_totals.items(), key=lambda x: x[1], reverse=True)[:5]
-    trend_summary = [{"type": k, "total": v} for k, v in top_types]
+    # KPI filters
+    year = filters.get("year", "ALL")
+    municipality = filters.get("municipality", "ALL")
+    type_ = filters.get("type", "ALL")
+
+    # Chart-level filters
+    line_type = filters.get("lineType", "ALL")
+    top_n = filters.get("topN", 10)
+    pie_year = filters.get("pieYear", "ALL")
+    top_n_pie = filters.get("topNPie", 5)
+    pie_type = filters.get("pieType", "ALL")
+    bar_year = filters.get("barYear", "ALL")
+
+    # Summarize trend (already filtered by global filters)
+    # Summarize trend
+    trend_by_year = {}
+
+    for row in trend:
+        y = row.get("year")
+
+        # If a specific line type is selected
+        if line_type != "ALL":
+            total = row.get(line_type, 0)
+
+        # Otherwise sum everything
+        else:
+            total = sum(v for k, v in row.items() if k != "year")
+
+        trend_by_year[y] = total
+
+    trend_summary_str = ", ".join(
+        [f"{y}: {t} total requests" for y, t in sorted(trend_by_year.items())]
+    )
+
+    # Line chart visible types (respect lineType filter)
+    if line_type != "ALL":
+        line_summary = f"Showing only: {line_type}"
+    else:
+        type_totals = {}
+        for row in trend:
+            for k, v in row.items():
+                if k != 'year':
+                    type_totals[k] = type_totals.get(k, 0) + v
+        top_line_types = sorted(type_totals.items(), key=lambda x: x[1], reverse=True)[:top_n]
+        line_summary = [{"type": k, "total": v} for k, v in top_line_types]
+
+    # Pie data (already filtered by pieYear and pieType)
+    pie_summary = [{"type": p["name"], "value": p["value"]} for p in pie_data]
+
+    # Bar data (already filtered by barYear)
+    bar_summary = [{"municipality": b["municipality_name"], "total": b["total"]} for b in bar_data[:5]]
+
+    irregularity_messages = [i['message'] for i in irregularities] if irregularities else ["None detected"]
+
+    active_filters = (
+        f"Global — Year: {year}, Municipality: {municipality}, Type: {type_} | "
+        f"Line Chart — Type: {line_type}, Top N: {top_n} | "
+        f"Pie Chart — Year: {pie_year}, Type: {pie_type}, Top N: {top_n_pie} | "
+        f"Bar Chart — Year: {bar_year}"
+    )
 
     prompt = f"""
         You are a data analyst reporting for the Provincial Social Welfare and Development Office (PSWDO) of Bulacan.
-        Based on the following dashboard data, write a concise 3-4 sentence narrative that describes what the data shows.
-        Do not suggest any actions or recommendations. Only explain the patterns, trends, and figures presented.
+        Write a comprehensive but concise narrative (5-6 sentences) covering all sections of the dashboard based on the data below.
+        Do not suggest actions or recommendations. Only describe what the data shows.
+        Structure your narrative: overall totals → year-over-year trend → type distribution → geographic breakdown → irregularities.
+        Make sure to reflect the active filters in your narrative — if a specific type or year is selected, describe only that context.
 
+        - Active Filters: {active_filters}
+
+        [KPI]
         - Total Requests: {kpi.get('total_requests')}
         - Top Assistance Type: {kpi.get('top_type', {}).get('type_name')} ({kpi.get('top_type', {}).get('total')} requests)
         - Top Municipality: {kpi.get('top_municipality', {}).get('municipality_name')} ({kpi.get('top_municipality', {}).get('total')} requests)
-        - Irregularities: {[i['message'] for i in irregularities]}
-        - Top 5 Assistance Types Overall: {trend_summary}
-        - Top 5 Municipalities by Volume: {municipalities[:5]}
 
-        Be specific, mention actual numbers and names. Keep it professional and concise.
-            """
+        [Yearly Trend - Line Chart]
+        - Totals per year: {trend_summary_str}
+        - Visible types: {line_summary}
+        if there is a specific lineType filter, mention only that type's trend instead of the overall trend.
+
+        [Type Distribution - Pie Chart]
+        - Breakdown: {pie_summary}
+
+        [Top Municipalities - Bar Chart]
+        - {bar_summary}
+
+        [Irregularities]
+        - {irregularity_messages}
+
+        Be specific with numbers and names. Keep it professional.
+    """
 
     response = client.models.generate_content(
         model="gemini-3-flash-preview",
@@ -295,17 +376,34 @@ def get_type_totals():
 def get_pie_data():
     top_n = int(request.args.get("top_n", 5))
     selected_type = request.args.get("type", "ALL")
+    year = request.args.get("year", "ALL")
+
+    filters = []
+    params = []
+
+    if year != "ALL":
+        filters.append("r.year = %s")
+        params.append(int(year))
+
+    if selected_type != "ALL":
+        filters.append("a.type_name = %s")
+        params.append(selected_type)
+
+    where_clause = "WHERE " + " AND ".join(filters) if filters else ""
 
     conn = get_db()
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("""
+
+
+        cursor.execute(f"""
             SELECT a.type_name, SUM(r.request_count) AS total
             FROM assistance_records r
             JOIN assistance_types a ON r.assistance_type_id = a.type_id
+            {where_clause}
             GROUP BY a.type_name
             ORDER BY total DESC
-        """)
+        """, params)
         data = cursor.fetchall()
         cursor.close()
     finally:

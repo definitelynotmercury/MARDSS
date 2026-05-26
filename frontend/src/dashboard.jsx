@@ -16,7 +16,6 @@ function Dashboard() {
     const [municipalities, setMunicipalities] = useState([])
     const [types, setTypes] = useState([])
 
-    // Selected global filters
     const [selectedYear, setSelectedYear] = useState('ALL')
     const [selectedMunicipality, setSelectedMunicipality] = useState('ALL')
     const [selectedType, setSelectedType] = useState('ALL')
@@ -37,6 +36,10 @@ function Dashboard() {
     // Pie chart filters
     const [topNPie, setTopNPie] = useState(5)
     const [selectedPieAssistanceType, setSelectedPieAssistanceType] = useState('ALL')
+    const [selectedPieYear, setSelectedPieYear] = useState('ALL')
+
+    //barchart filters
+    const [selectedBarYear, setSelectedBarYear] = useState('ALL')
 
     // Irregularities
     const [irregularities, setIrregularities] = useState([])
@@ -48,19 +51,17 @@ function Dashboard() {
     // ── Initial load ───────────────────────────────────────────────────────
     useEffect(() => {
         const fetchStatic = async () => {
-            const [muniRes, typeRes, irregsRes, trendRes, barRes, typeTotalsRes] = await Promise.all([
+            const [muniRes, typeRes, irregsRes, trendRes, typeTotalsRes] = await Promise.all([
                 fetch(`${BASE_URL}/api/municipalities`),
                 fetch(`${BASE_URL}/api/assistance_types`),
                 fetch(`${BASE_URL}/api/dashboard/irregularities`),
                 fetch(`${BASE_URL}/api/dashboard/trend`),
-                fetch(`${BASE_URL}/api/dashboard/barchart`),
                 fetch(`${BASE_URL}/api/dashboard/type-totals`),
             ])
             setMunicipalities(await muniRes.json())
             setTypes(await typeRes.json())
             setIrregularities(await irregsRes.json())
             setTrendData(await trendRes.json())
-            setBarData(await barRes.json())
             setTypeTotals(await typeTotalsRes.json())
         }
         fetchStatic()
@@ -68,14 +69,24 @@ function Dashboard() {
 
     // ── Pie data refetches when pie filters change ─────────────────────────
     useEffect(() => {
-        const fetchPie = async () => {
+    const fetchPie = async () => {
+        const res = await fetch(
+            `${BASE_URL}/api/dashboard/pie?top_n=${topNPie}&type=${selectedPieAssistanceType}&year=${selectedPieYear}`
+        )
+        setPieData(await res.json())
+    }
+    fetchPie()
+    }, [topNPie, selectedPieAssistanceType, selectedPieYear])
+
+    useEffect(() => {
+        const fetchBar = async () => {
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/pie?top_n=${topNPie}&type=${selectedPieAssistanceType}`
+                `${BASE_URL}/api/dashboard/barchart?year=${selectedBarYear}`
             )
-            setPieData(await res.json())
+            setBarData(await res.json())
         }
-        fetchPie()
-    }, [topNPie, selectedPieAssistanceType])
+        fetchBar()
+    }, [selectedBarYear])
 
     // ── KPI refetches when global filters change ───────────────────────────
     useEffect(() => {
@@ -90,17 +101,38 @@ function Dashboard() {
 
     // ── Narrative ──────────────────────────────────────────────────────────
     const generateNarrative = async () => {
-        setNarrativeLoading(true)
-        setNarrative('')
-        const res = await fetch(`${BASE_URL}/api/dashboard/narrative`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ kpi, irregularities, trend: trendData, municipalities: barData })
+    setNarrativeLoading(true)
+    setNarrative('')
+    const res = await fetch(`${BASE_URL}/api/dashboard/narrative`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            kpi,
+            irregularities,
+            trend: trendData,
+            pieData,
+            barData,
+            filters: {
+                // global
+                year: selectedYear,
+                municipality: selectedMunicipality,
+                type: selectedType,
+                // line chart
+                lineType: selectedLineType,
+                topN,
+                // pie chart
+                pieYear: selectedPieYear,
+                pieType: selectedPieAssistanceType,
+                topNPie,
+                // bar chart
+                barYear: selectedBarYear,
+            }
         })
-        const data = await res.json()
-        setNarrative(data.narrative)
-        setNarrativeLoading(false)
-    }
+    })
+    const data = await res.json()
+    setNarrative(data.narrative)
+    setNarrativeLoading(false)
+}
 
     // ── Year options ───────────────────────────────────────────────────────
     const years = []
@@ -228,6 +260,10 @@ function Dashboard() {
                         <option value="ALL">ALL TYPES</option>
                         {types.map(t => <option value={t.type_name} key={t.type_id}>{t.type_name}</option>)}
                     </select>
+                    <select className="border rounded px-2 py-1 text-sm" onChange={e => setSelectedPieYear(e.target.value)}>
+                        <option value="ALL">ALL YEARS</option>
+                        {years.map(year => <option key={year}>{year}</option>)}
+                    </select>
                 </div>
                 <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
@@ -246,6 +282,13 @@ function Dashboard() {
             <div className="bg-white shadow rounded p-4 mb-6">
                 <p className="font-semibold text-gray-700 mb-1">Total Requests by Municipality/City</p>
                 <p className="text-sm text-gray-400 mb-4">Top Municipality/City by Volume</p>
+                <div className="flex gap-2 items-center mb-4">
+                    <span className="text-sm font-semibold text-gray-500">FILTERS: </span>
+                    <select className="border rounded px-2 py-1 text-sm" onChange={e => setSelectedBarYear(e.target.value)}>
+                        <option value="ALL">ALL YEARS</option>
+                        {years.map(year => <option key={year}>{year}</option>)}
+                    </select>
+                </div>
                 <ResponsiveContainer width="100%" height={800}>
                     <BarChart data={barData} layout="vertical" tabIndex={-1}>
                         <CartesianGrid strokeDasharray="3 3" />

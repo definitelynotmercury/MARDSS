@@ -12,7 +12,7 @@ function Layout({children}){
     ]
 
     return (
-        <div className="flex min-h-screen bg-gray-100">
+        <div className="flex h-screen bg-gray-100">
             {/* Sidebar */}
             <div className="w-48 bg-[#0d1b2a] text-white flex flex-col">
                 <div className="p-4 text-xl font-bold">
@@ -47,7 +47,7 @@ function Layout({children}){
                     Provincial Social Welfare and Development Office
                 </div>
                 {/* Page content */}
-                <div className="p-6 flex-1">
+                <div className="p-6 flex-1 overflow-y-auto">
                     {children}
                 </div>
             </div>

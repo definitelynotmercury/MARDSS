@@ -51,15 +51,16 @@ function Analytics() {
     //states and functions for drilldown section
     const [drilldown_data, setDrilldownData] = useState([])
     const [drill_down_municipality, setDrillDownMunicipality] = useState('BULAKAN')
+    const [drill_down_year, setDrillDownYear] = useState("ALL")  
 
     useEffect(() => {
         const fetchDrilldownData = async () => {
-            const response = await fetch(`http://127.0.0.1:5000/api/analytics/drill_down?municipality=${drill_down_municipality}`)
+            const response = await fetch(`http://127.0.0.1:5000/api/analytics/drill_down?municipality=${drill_down_municipality}&year=${drill_down_year}`)
             const data = await response.json()
             setDrilldownData(data)
         }   
         fetchDrilldownData()
-    }, [drill_down_municipality])
+    }, [drill_down_municipality, drill_down_year])
     
     const maxTotal = Math.max(...drilldown_data.map(d => d.total), 1)
 
@@ -146,6 +147,12 @@ function Analytics() {
                             <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
                         ))}
                     </select>
+                    <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setDrillDownYear(e.target.value)} value={drill_down_year}>
+                        <option value="ALL">ALL YEARS</option>
+                        {years.map((year) => (
+                            <option key={year}>{year}</option>
+                        ))}
+                    </select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                     {drilldown_data.map((item) => (
@@ -173,6 +180,7 @@ function Analytics() {
                         {[5, 10, 15, 20, 25, 30].map(n => <option key={n} value={n}>TOP {n} TYPES</option>)}
                     </select>
                     <select className= "border rounded px-2 py-1 text-sm" onChange={(e) => setSelectedMunicipalityRanking(e.target.value)} value={selectedMunicipalityRanking}>
+                        <option value="ALL">ALL MUNICIPALITIES</option>
                         {municipalities.map((m) =>  (
                             <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
                         ))}

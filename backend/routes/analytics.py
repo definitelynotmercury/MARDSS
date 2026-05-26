@@ -60,8 +60,15 @@ def comparison():
 @analytics_bp.route('/api/analytics/drill_down')
 def drill_down():
     municipality = request.args.get('municipality', 'BULAKAN')
-
+    selected_year = request.args.get('year', 'ALL')
+    
     filters = ["(m.municipality_name = %s)"]
+    params = [municipality]
+
+    if selected_year != 'ALL':
+        filters.append("r.year = %s")
+        params.append(selected_year)
+
     where_clause = "WHERE " + " AND ".join(filters)
 
     conn = get_db()
@@ -74,7 +81,7 @@ def drill_down():
         {where_clause}
         GROUP BY m.municipality_name, a.type_name
         ORDER BY total DESC
-    """, [municipality])
+    """, params)
 
     data = cursor.fetchall()
     cursor.close()
@@ -156,9 +163,9 @@ def generate_narrative():
         Based on the following dashboard data, write a concise 3-4 sentence narrative that describes what the data shows.
         Do not suggest any actions or recommendations. Only explain the patterns, trends, and figures presented.
 
-        -comparison between two municipalities across different assistance types, showing the total number of requests for each type in each municipality. {comparisonData}
+        -comparison between two municipalities across different assistance types, showing the total number of requests for each type in each municipality mentions the actual values of the requests THE NOTABLES ONES. {comparisonData}
 
-        -drill-down data for a specific municipality, showing the breakdown of assistance requests by type. {drilldown_Data}
+        -drill-down data for a specific municipality, showing the breakdown of assistance requests by type explain the actual values. {drilldown_Data}
 
         -rankings of municipalities based on their total assistance requests and growth rates. {rankings}
 
