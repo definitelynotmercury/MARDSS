@@ -1,5 +1,10 @@
 import Layout from "./Layout";
 import { useState, useEffect } from "react";
+import {
+    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+    PieChart, Pie, Cell,
+    BarChart, Bar
+} from 'recharts'
 
 const sectionLabels = {
     dashboardKpi: 'Dashboard Summary',
@@ -30,29 +35,57 @@ function Export(){
         topNRanking: false,
         forecast: false,
     })
+    //filters for each section
+    // Dashboard KPI
     const [selectedDashboardYear, setSelectedDashboardYear] = useState('ALL')
     const [selectedDashboardType, setSelectedDashboardType] = useState('ALL')
     const [selectedDashboardMunicipality, setSelectedDashboardMunicipality] = useState('ALL')
+    // YoY Trends
     const [selectedYoYTopN, setSelectedYoYTopN] = useState(10)
     const [selectedYoYType, setSelectedYoYType] = useState('ALL')
+    // Distribution by Assistance Type
     const [selectedPieChartTopN, setSelectedPieChartTopN] = useState(5)
     const [selectedPieChartType, setSelectedPieChartType] = useState('ALL')
     const [selectedPieChartYear, setSelectedPieChartYear] = useState('ALL')
+    // Distribution by Municipality
     const [selectedBarChartYear, setSelectedBarChartYear] = useState('ALL')
+    // Comparison Chart
     const [compMunicipality1, setCompMunicipality1] = useState('ALL')
     const [compMunicipality2, setCompMunicipality2] = useState('ALL')
     const [compType, setCompType] = useState('ALL')
     const [compYear, setCompYear] = useState('ALL')
+    // Municipality Drilldown
     const [drilldownMunicipality, setDrilldownMunicipality] = useState('ALL')
     const [drilldownYear, setDrilldownYear] = useState('ALL')
+    // Top N Rankings
     const [topN, setTopN] = useState(5)
     const [selectedMunicipalityRanking, setSelectedMunicipalityRanking] = useState('ALL')
+    //forecast
     const [forecastMunicipality, setForecastMunicipality] = useState('ALL')
     const [forecastType, setForecastType] = useState('ALL')
 
     // Shared
     const [municipalities, setMunicipalities] = useState([])
     const [types, setTypes] = useState([])
+
+    // Data for preview
+    const [kpiPreview, setKpiPreview] = useState(null)
+    const [yoyTrendData, setYoyTrendData] = useState([])
+    const [yoyTypeTotals, setYoyTypeTotals] = useState([])
+
+    const years = []
+    let y = 2023
+    while (y < new Date().getFullYear()) years.push(y++)
+
+    const generateColors = (count) =>
+    Array.from({ length: count }, (_, i) => `hsl(${(i * 360) / count}, 55%, 60%)`)
+
+    // Filter
+    const yoyVisibleTypes = selectedYoYType !== 'ALL'
+        ? yoyTypeTotals.filter(t => t.name === selectedYoYType)
+        : yoyTypeTotals.slice(0, selectedYoYTopN)
+
+    const yoyColors = generateColors(yoyVisibleTypes.length)
 
     useEffect(() => {
         const fetchdata = async() => {
@@ -64,11 +97,38 @@ function Export(){
         fetchdata()
     }, [])
 
+    useEffect(() => {
+        if (!sections.dashboardKpi) return
+            const fetchKpi = async () => {
+                const res = await fetch(
+                    `http://127.0.0.1:5000/api/dashboard/kpi?year=${selectedDashboardYear}&municipality=${selectedDashboardMunicipality}&type=${selectedDashboardType}`
+                )
+                setKpiPreview(await res.json())
+            }
+            fetchKpi()
+        }, [sections.dashboardKpi, selectedDashboardYear, selectedDashboardMunicipality, selectedDashboardType])
+
+    useEffect(() => {
+    if (!sections.yoyTrends) return
+
+    const loadYoY = async () => {
+        const [trendRes, typeTotalsRes] = await Promise.all([
+            fetch(`http://127.0.0.1:5000/api/dashboard/trend`),
+            fetch(`http://127.0.0.1:5000/api/dashboard/type-totals`)
+        ])
+
+        setYoyTrendData(await trendRes.json())
+        setYoyTypeTotals(await typeTotalsRes.json())
+    }
+
+    loadYoY()
+}, [sections.yoyTrends])
+
     // Add this state
     const [previewData, setPreviewData] = useState([])
     const [previewLoading, setPreviewLoading] = useState(false)
 
-    // Add this effect (below your existing municipalities/types useEffect)
+    // Fetch preview dataset whenever filters change
     useEffect(() => {
         const fetchPreview = async () => {
             setPreviewLoading(true)
@@ -85,9 +145,7 @@ function Export(){
         }
         fetchPreview()
     }, [selectedYearFrom, selectedYearTo, selectedMunicipality, selectedType])
-    const years = []
-    let y = 2023
-    while (y < new Date().getFullYear()) years.push(y++)
+
 
     const handleExcelExport = () => {
     const params = new URLSearchParams({
@@ -450,6 +508,62 @@ const handlePdfExport = () => {
                             </table>
                         </div>
                     )}
+
+                    <div className="text-sm text-gray-400 mt-2">
+                        {sections.dashboardKpi && (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                <div className="bg-white shadow rounded p-4">
+                                    <p className="text-sm text-gray-500">Total Requests</p>
+                                    <h1 className="text-2xl font-bold text-gray-800">
+                                        {kpiPreview ? kpiPreview.total_requests : 'Loading...'}
+                                    </h1>
+                                </div>
+
+                                <div className="bg-white shadow rounded p-4">
+                                    <p className="text-sm text-gray-500">Top Request Type</p>
+                                    <h1 className="text-lg font-bold text-gray-800">
+                                        {kpiPreview?.top_type?.type_name ?? 'N/A'}
+                                    </h1>
+                                    <p className="text-sm text-gray-400">
+                                        {kpiPreview?.top_type?.total
+                                        ? `${kpiPreview.top_type.total} requests`
+                                        : ''}
+                                    </p>
+                                </div>
+
+                                <div className="bg-white shadow rounded p-4">
+                                    <p className="text-sm text-gray-500">Top Municipality</p>
+                                    <h1 className="text-lg font-bold text-gray-800">
+                                        {kpiPreview?.top_municipality?.municipality_name ?? 'N/A'}
+                                    </h1>
+                                    <p className="text-sm text-gray-400">
+                                        {kpiPreview?.top_municipality?.total
+                                            ? `${kpiPreview.top_municipality.total} requests`
+                                            : ''}
+                                    </p>
+                                </div>
+                            </div>
+                        )} 
+                    </div>
+                    <div className="text-sm text-gray-400 mt-2">
+                        {sections.yoyTrends && yoyTrendData.length > 0 && (
+                        <div className="mt-4">
+                            <p className="font-semibold text-gray-700 mb-2">YoY Trend Analysis</p>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={yoyTrendData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="year" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    {yoyVisibleTypes.map((t, i) => (
+                                        <Line key={t.name} type="monotone" dataKey={t.name} stroke={yoyColors[i]} strokeWidth={2} />
+                                    ))}
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    )}
+                    </div>
                 </div>
 
             </div>
