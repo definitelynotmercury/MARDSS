@@ -64,9 +64,50 @@ function Export(){
         fetchdata()
     }, [])
 
+    // Add this state
+    const [previewData, setPreviewData] = useState([])
+    const [previewLoading, setPreviewLoading] = useState(false)
+
+    // Add this effect (below your existing municipalities/types useEffect)
+    useEffect(() => {
+        const fetchPreview = async () => {
+            setPreviewLoading(true)
+            const params = new URLSearchParams({
+                year_from: selectedYearFrom,
+                year_to: selectedYearTo,
+                municipality: selectedMunicipality,
+                type: selectedType,
+            })
+            const res = await fetch(`http://127.0.0.1:5000/api/export/dataset?${params}`)
+            const data = await res.json()
+            setPreviewData(data)
+            setPreviewLoading(false)
+        }
+        fetchPreview()
+    }, [selectedYearFrom, selectedYearTo, selectedMunicipality, selectedType])
     const years = []
     let y = 2023
     while (y < new Date().getFullYear()) years.push(y++)
+
+    const handleExcelExport = () => {
+    const params = new URLSearchParams({
+        year_from: selectedYearFrom,
+        year_to: selectedYearTo,
+        municipality: selectedMunicipality,
+        type: selectedType,
+    })
+    window.open(`http://127.0.0.1:5000/api/export/dataset/excel?${params}`, '_blank')
+    }
+
+const handlePdfExport = () => {
+    const params = new URLSearchParams({
+        year_from: selectedYearFrom,
+        year_to: selectedYearTo,
+        municipality: selectedMunicipality,
+        type: selectedType,
+    })
+    window.open(`http://127.0.0.1:5000/api/export/dataset/pdf?${params}`, '_blank')
+    }
 
     return(
         <Layout>
@@ -119,8 +160,8 @@ function Export(){
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Export PDF</button>
-                            <button className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">Export Excel</button>
+                            <button onClick={handlePdfExport}className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Export PDF</button>
+                            <button onClick={handleExcelExport}className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">Export Excel</button>
                         </div>
                     </div>
 
@@ -362,14 +403,16 @@ function Export(){
                 </div>
 
                 {/* Right column — Document Preview */}
-                <div className="bg-white p-4 rounded shadow">
+                <div className="bg-white p-4 rounded shadow h-full">
                     <p className="font-semibold text-gray-700">Document Preview</p>
                     <p className="text-sm text-gray-400 mb-4">Preview of exported report</p>
-                    <div className="border rounded p-6 text-center mb-4">
+
+                    {/* Header block */}
+                    <div className="border rounded p-4 text-center mb-4">
                         <h1 className="text-xl font-bold text-gray-800">MARDSS REPORT</h1>
                         <p className="text-sm text-gray-500">Medical Assistance Request Decision Support System</p>
                         <p className="text-sm text-gray-500">Province of Bulacan - PSWDO</p>
-                        <p className="text-sm text-gray-500">Period: {selectedYearFrom} - {selectedYearTo}</p>
+                        <p className="text-sm text-gray-500">Period: {selectedYearFrom} – {selectedYearTo}</p>
                         <p className="text-sm text-gray-500">
                             Municipality: {selectedMunicipality === 'ALL' ? 'All Municipalities' : selectedMunicipality}
                         </p>
@@ -377,6 +420,36 @@ function Export(){
                             Assistance Type: {selectedType === 'ALL' ? 'All Types' : selectedType}
                         </p>
                     </div>
+
+                    {/* Table */}
+                    {previewLoading ? (
+                        <p className="text-sm text-gray-400 text-center">Loading...</p>
+                    ) : previewData.length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center">No data found for selected filters.</p>
+                    ) : (
+                        <div className="overflow-auto max-h-96 border rounded">
+                            <table className="w-full text-sm text-left">
+                                <thead className="bg-gray-100 sticky top-0">
+                                    <tr>
+                                        <th className="px-3 py-2 text-gray-600">Year</th>
+                                        <th className="px-3 py-2 text-gray-600">Municipality</th>
+                                        <th className="px-3 py-2 text-gray-600">Assistance Type</th>
+                                        <th className="px-3 py-2 text-gray-600 text-right">Requests</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {previewData.map((row, i) => (
+                                        <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                            <td className="px-3 py-2">{row.year}</td>
+                                            <td className="px-3 py-2">{row.municipality_name}</td>
+                                            <td className="px-3 py-2">{row.type_name}</td>
+                                            <td className="px-3 py-2 text-right">{row.request_count}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
 
             </div>

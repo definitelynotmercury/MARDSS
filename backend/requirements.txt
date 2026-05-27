@@ -9,3 +9,4 @@ bcrypt
 openpyxl
 google-genai
 scikit-learn
+reportlab
