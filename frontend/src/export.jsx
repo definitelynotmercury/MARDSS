@@ -72,6 +72,7 @@ function Export(){
     const [kpiPreview, setKpiPreview] = useState(null)
     const [yoyTrendData, setYoyTrendData] = useState([])
     const [yoyTypeTotals, setYoyTypeTotals] = useState([])
+    const [pieChartData, setPieChartData] = useState([])
 
     const years = []
     let y = 2023
@@ -86,6 +87,7 @@ function Export(){
         : yoyTypeTotals.slice(0, selectedYoYTopN)
 
     const yoyColors = generateColors(yoyVisibleTypes.length)
+    const pieChartColors = generateColors(pieChartData.length)
 
     useEffect(() => {
         const fetchdata = async() => {
@@ -123,6 +125,16 @@ function Export(){
 
     loadYoY()
 }, [sections.yoyTrends])
+
+    useEffect(() => {
+        const fetchPie = async () => {
+            const res = await fetch(
+                `http://127.0.0.1:5000/api/dashboard/pie?top_n=${selectedPieChartTopN}&type=${selectedPieChartType}&year=${selectedPieChartYear}`
+            )
+            setPieChartData(await res.json())
+        }
+        fetchPie()
+        }, [selectedPieChartTopN, selectedPieChartType, selectedPieChartYear])
 
     // Add this state
     const [previewData, setPreviewData] = useState([])
@@ -563,6 +575,39 @@ const handlePdfExport = () => {
                             </ResponsiveContainer>
                         </div>
                     )}
+                    </div>
+                    <div className="text-sm text-gray-400 mt-2">
+                        {sections.distributionByAssistance && (
+                            <div className="bg-white shadow rounded p-4 mb-6">
+                                <p className="font-semibold text-gray-700 mb-1">Distribution by Assistance Type</p>
+                                <p className="text-sm text-gray-400 mb-4">Percentage Breakdown</p>
+                                <div className="flex gap-2 items-center mb-4">
+                                    <span className="text-sm font-semibold text-gray-500">FILTERS:</span>
+                                    <select className="border rounded px-2 py-1 text-sm" onChange={e => setSelectedPieChartTopN(Number(e.target.value))}>
+                                        {[5, 10, 15, 20, 25, 30].map(n => <option key={n} value={n}>TOP {n} TYPES</option>)}
+                                    </select>
+                                    <select className="border rounded px-2 py-1 text-sm" onChange={e => setSelectedPieChartType(e.target.value)}>
+                                        <option value="ALL">ALL TYPES</option>
+                                        {types.map(t => <option value={t.type_name} key={t.type_id}>{t.type_name}</option>)}
+                                    </select>
+                                    <select className="border rounded px-2 py-1 text-sm" onChange={e => setSelectedPieChartYear(e.target.value)}>
+                                        <option value="ALL">ALL YEARS</option>
+                                        {years.map(year => <option key={year}>{year}</option>)}
+                                    </select>
+                                </div>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                        <Pie data={pieChartData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100}>
+                                            {pieChartData.map((_, index) => (
+                                                <Cell key={index} fill={pieChartColors[index]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip />
+                                        <Legend />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
                     </div>
                 </div>
 

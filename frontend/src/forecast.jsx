@@ -22,6 +22,7 @@ const CustomTooltip = ({ active, payload, label }) => {
     return null
 }
 
+
 function Forecast() {
 
     const [municipalities, setMunicipalities] = useState([])
@@ -98,6 +99,17 @@ function Forecast() {
         }))
     ]
 
+    const renderEndLabel = (dataKey) => ({ x, y, value }) => {
+    if (value == null) return null;
+    const colors = { historical: '#8884d8', projected: '#82ca9d', upper: '#ff7300', lower: '#ff7300' }
+    const offsets = { historical: -10, projected: -10, upper: -20, lower: 5 }
+    return (
+        <text x={x} y={y + offsets[dataKey]} fontSize={11} fontWeight={600} textAnchor="middle" fill={colors[dataKey]}>
+            {value.toLocaleString()}
+        </text>
+    );
+};
+
     return(
         <Layout>
             <h1 className="text-xl font-bold text-gray-700">Forecasting</h1>
@@ -144,14 +156,14 @@ function Forecast() {
                 <p className="font-semibold text-gray-700 mb-1">Demand Forecast</p>
                 <p className="text-sm text-gray-400 mb-4">Historical data (solid line) and projections (dashed line) with confidence range</p>
                 <ResponsiveContainer width="100%" height={600}>
-                    <LineChart data={chartData}>
+                    <LineChart data={chartData} margin={{ top: 30, right: 20, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="year" />
                         <YAxis />
-                        <Line dataKey="historical" stroke="#8884d8" />
-                        <Line dataKey="projected" stroke="#82ca9d"/>
-                        <Line dataKey="upper" stroke="#ff7300" strokeDasharray="3 3" />
-                        <Line dataKey="lower" stroke="#ff7300" strokeDasharray="3 3" />
+                        <Line dataKey="historical" stroke="#8884d8" strokeWidth={2} dot={false} label={renderEndLabel('historical')} />
+                        <Line dataKey="projected"  stroke="#82ca9d" strokeWidth={2} strokeDasharray="5 5" dot={false} label={renderEndLabel('projected')} />
+                        <Line dataKey="upper"      stroke="#ff7300" strokeWidth={1} strokeDasharray="3 3" dot={false} label={renderEndLabel('upper')} />
+                        <Line dataKey="lower"      stroke="#ff7300" strokeWidth={1} strokeDasharray="3 3" dot={false} label={renderEndLabel('lower')} />
                         <Tooltip content={<CustomTooltip />} />
                     </LineChart>
                 </ResponsiveContainer>

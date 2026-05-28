@@ -3,10 +3,12 @@ import Layout from './Layout'
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell,
-    BarChart, Bar
+    BarChart, Bar, LabelList
 } from 'recharts'
 
 const BASE_URL = 'http://127.0.0.1:5000'
+
+
 
 function Dashboard() {
     const generateColors = (count) =>
@@ -30,7 +32,7 @@ function Dashboard() {
     const [pieData, setPieData] = useState([])
 
     // Line chart filters
-    const [topN, setTopN] = useState(10)
+    const [topN, setTopN] = useState(5)
     const [selectedLineType, setSelectedLineType] = useState('ALL')
 
     // Pie chart filters
@@ -147,6 +149,32 @@ function Dashboard() {
     const lineChartColors = generateColors(visibleTypes.length)
     const pieChartColors = generateColors(pieData.length)
 
+    const renderLabel = ({ x, y, value, index }) => {
+        if (index !== trendData.length - 1) return null;
+        return (
+            <text x={x - 35} y={y + 15} fill="#555" fontSize={14} textAnchor="start">
+                {value}
+            </text>
+        );
+    };
+
+    const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value }) => {
+        const total = pieData.reduce((sum, d) => sum + d.value, 0);
+        const RADIAN = Math.PI / 180;
+        const sliceAngle = (value / total) * 360;
+        if (sliceAngle < 20) return null;
+
+        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+        return (
+            <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
+                {value.toLocaleString()}
+            </text>
+        );
+    };
+
     return (
         <Layout>
             <h1 className="text-xl font-bold text-gray-700">Dashboard</h1>
@@ -226,14 +254,14 @@ function Dashboard() {
                 <div className="flex gap-2 items-center mb-4">
                     <span className="text-sm font-semibold text-gray-500">FILTERS:</span>
                     <select className="border rounded px-2 py-1 text-sm" onChange={e => setTopN(Number(e.target.value))}>
-                        {[10, 15, 20, 25, 30].map(n => <option key={n} value={n}>TOP {n} TYPES</option>)}
+                        {[5, 10, 15, 20, 25, 30].map(n => <option key={n} value={n}>TOP {n} TYPES</option>)}
                     </select>
                     <select className="border rounded px-2 py-1 text-sm" onChange={e => setSelectedLineType(e.target.value)}>
                         <option value="ALL">ALL TYPES</option>
                         {types.map(t => <option value={t.type_name} key={t.type_id}>{t.type_name}</option>)}
                     </select>
                 </div>
-                <ResponsiveContainer width="100%" height={600}>
+                <ResponsiveContainer width="100%" height={600} margin={{ top: 30, right: 30, left: 30, bottom: 30 }}>
                     <LineChart data={trendData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="year" />
@@ -241,14 +269,14 @@ function Dashboard() {
                         <Tooltip wrapperStyle={{ zIndex: 1000, top: 0 }} />
                         <Legend />
                         {visibleTypes.map((t, index) => (
-                            <Line key={t.name} type="monotone" dataKey={t.name} stroke={lineChartColors[index]} strokeWidth={3} />
+                            <Line key={t.name} type="monotone" dataKey={t.name} stroke={lineChartColors[index]} strokeWidth={3} label={renderLabel} />
                         ))}
                     </LineChart>
                 </ResponsiveContainer>
             </div>
 
             {/* ── Pie Chart ── */}
-            <div className="bg-white shadow rounded p-4 mb-6">
+            <div className="bg-white shadow rounded p-4 mb-6">  
                 <p className="font-semibold text-gray-700 mb-1">Distribution by Assistance Type</p>
                 <p className="text-sm text-gray-400 mb-4">Percentage Breakdown</p>
                 <div className="flex gap-2 items-center mb-4">
@@ -265,9 +293,9 @@ function Dashboard() {
                         {years.map(year => <option key={year}>{year}</option>)}
                     </select>
                 </div>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={350}>
                     <PieChart>
-                        <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100}>
+                        <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100} label={renderCustomLabel} labelLine={false} >
                             {pieData.map((_, index) => (
                                 <Cell key={index} fill={pieChartColors[index]} />
                             ))}
@@ -295,7 +323,13 @@ function Dashboard() {
                         <XAxis type="number" />
                         <YAxis dataKey="municipality_name" type="category" width={150} />
                         <Tooltip />
-                        <Bar dataKey="total" fill="#1e3a5f" stroke="none" tabIndex={-1} />
+                        <Bar dataKey="total" fill="#1e3a5f" stroke="none" tabIndex={-1}>
+                            <LabelList
+                                dataKey="total"
+                                position="insideRight"
+                                style={{ fill: '#ffffff', fontSize: 12, fontWeight: 600 }}
+                            />
+                        </Bar>
                     </BarChart>
                 </ResponsiveContainer>
             </div>

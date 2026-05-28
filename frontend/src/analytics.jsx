@@ -127,13 +127,13 @@ function Analytics() {
                     </select>
                 </div>
                 <ResponsiveContainer width="100%" height={800}>
-                    <BarChart data={comparisonData}  tabIndex={-1}>
+                    <BarChart data={comparisonData}  tabIndex={-1} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="type_name" angle={-45} textAnchor="end" interval={0} height={250}/>
                         <YAxis  type="number" width={150} />
                         <Tooltip />
-                        <Bar dataKey={municipality1} fill="#1e3a5f" stroke="none" tabIndex={-1} />
-                        <Bar dataKey={municipality2} fill="#3b82f6" stroke="none" tabIndex={-1} />
+                        <Bar dataKey={municipality1} fill="#1e3a5f" stroke="none" tabIndex={-1} label ={{ position: 'top' }} label={{ position: 'top', fontSize: 14, fontWeight: 600 }}/>
+                        <Bar dataKey={municipality2} fill="#3b82f6" stroke="none" tabIndex={-1} label ={{ position: 'top' }} label={{ position: 'top', fontSize: 14, fontWeight: 600 }}/>
                     </BarChart>
                 </ResponsiveContainer>
             </div>
