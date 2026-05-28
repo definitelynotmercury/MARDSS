@@ -108,7 +108,7 @@ function Forecast() {
             {value.toLocaleString()}
         </text>
     );
-};
+    };
 
     return(
         <Layout>
