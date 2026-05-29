@@ -10,3 +10,5 @@ openpyxl
 google-genai
 scikit-learn
 reportlab
+html2canvas
+jszip

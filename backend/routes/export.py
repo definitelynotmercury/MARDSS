@@ -10,6 +10,8 @@ from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
+import json
+from flask import request as flask_request
 
 export_bp = Blueprint('export', __name__)
 def get_db():
@@ -392,4 +394,268 @@ def export_dataset_pdf():
         mimetype='application/pdf',
         as_attachment=True,
         download_name=filename
+    )
+
+@export_bp.route('/api/export/charts/excel', methods=['POST'])
+def export_charts_excel():
+    body = flask_request.get_json()
+    selected_sections = body.get('sections', [])
+    filters = body.get('filters', {})
+
+    wb = openpyxl.Workbook()
+    wb.remove(wb.active)  # remove default empty sheet
+
+    blue = "1D4ED8"
+    light_blue = "EFF6FF"
+
+    def style_header_row(ws, row_num):
+        for cell in ws[row_num]:
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PatternFill("solid", fgColor=blue)
+            cell.alignment = Alignment(horizontal='center')
+
+    def style_data_rows(ws, start_row):
+        for i, row in enumerate(ws.iter_rows(min_row=start_row)):
+            for cell in row:
+                if i % 2 == 0:
+                    cell.fill = PatternFill("solid", fgColor=light_blue)
+
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+
+    # ── Dashboard KPI ──
+    if 'dashboardKpi' in selected_sections:
+        f = filters.get('dashboardKpi', {})
+        year = f.get('year', 'ALL')
+        municipality = f.get('municipality', 'ALL')
+        type_ = f.get('type', 'ALL')
+
+        conditions, params = [], []
+        if year != 'ALL': conditions.append("r.year = %s"); params.append(year)
+        if municipality != 'ALL': conditions.append("m.municipality_name = %s"); params.append(municipality)
+        if type_ != 'ALL': conditions.append("a.type_name = %s"); params.append(type_)
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+        cursor.execute(f"""
+            SELECT r.year, m.municipality_name, a.type_name, SUM(r.request_count) AS total
+            FROM assistance_records r
+            JOIN assistance_types a ON r.assistance_type_id = a.type_id
+            JOIN municipalities m ON r.municipality_id = m.municipality_id
+            {where}
+            GROUP BY r.year, m.municipality_name, a.type_name
+            ORDER BY total DESC
+        """, params)
+        rows = cursor.fetchall()
+
+        ws = wb.create_sheet("Dashboard KPI")
+        ws.append(['Year', 'Municipality', 'Assistance Type', 'Total Requests'])
+        style_header_row(ws, 1)
+        for row in rows:
+            ws.append([row['year'], row['municipality_name'], row['type_name'], row['total']])
+        style_data_rows(ws, 2)
+
+    # ── YoY Trends ──
+    if 'yoyTrends' in selected_sections:
+        cursor.execute("""
+            SELECT r.year, a.type_name, SUM(r.request_count) AS total
+            FROM assistance_records r
+            JOIN assistance_types a ON r.assistance_type_id = a.type_id
+            GROUP BY r.year, a.type_name
+            ORDER BY r.year, total DESC
+        """)
+        rows = cursor.fetchall()
+
+        ws = wb.create_sheet("YoY Trends")
+        ws.append(['Year', 'Assistance Type', 'Total'])
+        style_header_row(ws, 1)
+        for row in rows:
+            ws.append([row['year'], row['type_name'], row['total']])
+        style_data_rows(ws, 2)
+
+    # ── Distribution by Assistance Type ──
+    if 'distributionByAssistance' in selected_sections:
+        f = filters.get('distributionByAssistance', {})
+        top_n = int(f.get('top_n', 5))
+        type_ = f.get('type', 'ALL')
+        year = f.get('year', 'ALL')
+
+        conditions, params = [], []
+        if year != 'ALL': conditions.append("r.year = %s"); params.append(year)
+        if type_ != 'ALL': conditions.append("a.type_name = %s"); params.append(type_)
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+        cursor.execute(f"""
+            SELECT a.type_name AS name, SUM(r.request_count) AS value
+            FROM assistance_records r
+            JOIN assistance_types a ON r.assistance_type_id = a.type_id
+            {where}
+            GROUP BY a.type_name
+            ORDER BY value DESC
+            LIMIT %s
+        """, params + [top_n])
+        rows = cursor.fetchall()
+
+        ws = wb.create_sheet("Distribution by Type")
+        ws.append(['Assistance Type', 'Total Requests'])
+        style_header_row(ws, 1)
+        for row in rows:
+            ws.append([row['name'], row['value']])
+        style_data_rows(ws, 2)
+
+    # ── Distribution by Municipality ──
+    if 'distributionByMunicipality' in selected_sections:
+        f = filters.get('distributionByMunicipality', {})
+        year = f.get('year', 'ALL')
+
+        conditions, params = [], []
+        if year != 'ALL': conditions.append("r.year = %s"); params.append(year)
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+        cursor.execute(f"""
+            SELECT m.municipality_name, SUM(r.request_count) AS total
+            FROM assistance_records r
+            JOIN municipalities m ON r.municipality_id = m.municipality_id
+            {where}
+            GROUP BY m.municipality_name
+            ORDER BY total DESC
+        """, params)
+        rows = cursor.fetchall()
+
+        ws = wb.create_sheet("Distribution by Municipality")
+        ws.append(['Municipality', 'Total Requests'])
+        style_header_row(ws, 1)
+        for row in rows:
+            ws.append([row['municipality_name'], row['total']])
+        style_data_rows(ws, 2)
+
+    # ── Comparison Chart ──
+    if 'comparisonChart' in selected_sections:
+        f = filters.get('comparisonChart', {})
+        m1 = f.get('municipality_1', 'ALL')
+        m2 = f.get('municipality_2', 'ALL')
+        type_ = f.get('type', 'ALL')
+        year = f.get('year', 'ALL')
+
+        conditions, params = [], []
+        conditions.append("m.municipality_name IN (%s, %s)"); params.extend([m1, m2])
+        if year != 'ALL': conditions.append("r.year = %s"); params.append(year)
+        if type_ != 'ALL': conditions.append("a.type_name = %s"); params.append(type_)
+        where = "WHERE " + " AND ".join(conditions)
+
+        cursor.execute(f"""
+            SELECT m.municipality_name, a.type_name, SUM(r.request_count) AS total
+            FROM assistance_records r
+            JOIN assistance_types a ON r.assistance_type_id = a.type_id
+            JOIN municipalities m ON r.municipality_id = m.municipality_id
+            {where}
+            GROUP BY m.municipality_name, a.type_name
+            ORDER BY a.type_name
+        """, params)
+        rows = cursor.fetchall()
+
+        ws = wb.create_sheet("Comparison")
+        ws.append(['Municipality', 'Assistance Type', 'Total'])
+        style_header_row(ws, 1)
+        for row in rows:
+            ws.append([row['municipality_name'], row['type_name'], row['total']])
+        style_data_rows(ws, 2)
+
+    # ── Municipality Drilldown ──
+    if 'municipalityDrilldown' in selected_sections:
+        f = filters.get('municipalityDrilldown', {})
+        municipality = f.get('municipality', 'ALL')
+        year = f.get('year', 'ALL')
+
+        conditions, params = [], []
+        if municipality != 'ALL': conditions.append("m.municipality_name = %s"); params.append(municipality)
+        if year != 'ALL': conditions.append("r.year = %s"); params.append(year)
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+        cursor.execute(f"""
+            SELECT a.type_name, SUM(r.request_count) AS total
+            FROM assistance_records r
+            JOIN assistance_types a ON r.assistance_type_id = a.type_id
+            JOIN municipalities m ON r.municipality_id = m.municipality_id
+            {where}
+            GROUP BY a.type_name
+            ORDER BY total DESC
+        """, params)
+        rows = cursor.fetchall()
+
+        ws = wb.create_sheet("Municipality Drilldown")
+        ws.append(['Assistance Type', 'Total'])
+        style_header_row(ws, 1)
+        for row in rows:
+            ws.append([row['type_name'], row['total']])
+        style_data_rows(ws, 2)
+
+    # ── Top N Rankings ──
+    if 'topNRanking' in selected_sections:
+        f = filters.get('topNRanking', {})
+        top_n = int(f.get('top_n', 5))
+        municipality = f.get('municipality', 'ALL')
+
+        conditions, params = [], []
+        if municipality != 'ALL': conditions.append("m.municipality_name = %s"); params.append(municipality)
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+        cursor.execute(f"""
+            SELECT m.municipality_name, SUM(r.request_count) AS total
+            FROM assistance_records r
+            JOIN municipalities m ON r.municipality_id = m.municipality_id
+            {where}
+            GROUP BY m.municipality_name
+            ORDER BY total DESC
+            LIMIT %s
+        """, params + [top_n])
+        rows = cursor.fetchall()
+
+        ws = wb.create_sheet("Top N Rankings")
+        ws.append(['Rank', 'Municipality', 'Total Requests'])
+        style_header_row(ws, 1)
+        for i, row in enumerate(rows):
+            ws.append([i + 1, row['municipality_name'], row['total']])
+        style_data_rows(ws, 2)
+
+    # ── Forecast ──
+    if 'forecast' in selected_sections:
+        f = filters.get('forecast', {})
+        municipality = f.get('municipality', 'ALL')
+        type_ = f.get('type', 'ALL')
+
+        conditions, params = [], []
+        if municipality != 'ALL': conditions.append("m.municipality_name = %s"); params.append(municipality)
+        if type_ != 'ALL': conditions.append("a.type_name = %s"); params.append(type_)
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+        cursor.execute(f"""
+            SELECT r.year, SUM(r.request_count) AS total
+            FROM assistance_records r
+            JOIN assistance_types a ON r.assistance_type_id = a.type_id
+            JOIN municipalities m ON r.municipality_id = m.municipality_id
+            {where}
+            GROUP BY r.year
+            ORDER BY r.year
+        """, params)
+        rows = cursor.fetchall()
+
+        ws = wb.create_sheet("Forecast Historical")
+        ws.append(['Year', 'Total Requests'])
+        style_header_row(ws, 1)
+        for row in rows:
+            ws.append([row['year'], row['total']])
+        style_data_rows(ws, 2)
+
+    cursor.close()
+    conn.close()
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name='MARDSS_Charts.xlsx'
     )

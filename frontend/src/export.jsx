@@ -1,5 +1,8 @@
 import Layout from "./Layout";
 import { useState, useEffect } from "react";
+import { useRef } from "react"
+import html2canvas from "html2canvas"
+import JSZip from "jszip"
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell,
@@ -55,6 +58,17 @@ function Export() {
         topNRanking: false,
         forecast: false,
     })
+
+    const chartRefs = {
+    dashboardKpi: useRef(null),
+    yoyTrends: useRef(null),
+    distributionByAssistance: useRef(null),
+    distributionByMunicipality: useRef(null),
+    comparisonChart: useRef(null),
+    municipalityDrilldown: useRef(null),
+    topNRanking: useRef(null),
+    forecast: useRef(null),
+    }
 
     // Dashboard KPI
     const [selectedDashboardYear, setSelectedDashboardYear] = useState('ALL')
@@ -242,6 +256,38 @@ function Export() {
         fetchPreview()
     }, [selectedYearFrom, selectedYearTo, selectedMunicipality, selectedType])
 
+
+    const handleChartExcelExport = () => {
+        const payload = {
+            sections: Object.keys(sections).filter(k => sections[k]),
+            filters: {
+                dashboardKpi: { year: selectedDashboardYear, municipality: selectedDashboardMunicipality, type: selectedDashboardType },
+                yoyTrends: { top_n: selectedYoYTopN, type: selectedYoYType },
+                distributionByAssistance: { top_n: selectedPieChartTopN, type: selectedPieChartType, year: selectedPieChartYear },
+                distributionByMunicipality: { year: selectedBarChartYear },
+                comparisonChart: { municipality_1: compMunicipality1, municipality_2: compMunicipality2, type: compType, year: compYear },
+                municipalityDrilldown: { municipality: drilldownMunicipality, year: drilldownYear },
+                topNRanking: { top_n: topN, municipality: selectedMunicipalityRanking },
+                forecast: { municipality: forecastMunicipality, type: forecastType },
+            }
+        }
+
+        fetch('http://127.0.0.1:5000/api/export/charts/excel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.blob())
+        .then(blob => {
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'MARDSS_Charts.xlsx'
+            a.click()
+            URL.revokeObjectURL(url)
+        })
+    }
+
     const chartData = [
         ...forecastData.historical_years.map((year, i) => ({
             year: year,
@@ -255,6 +301,32 @@ function Export() {
             upper: forecastData.upper_bound[i]
         }))
     ]
+
+    const handleChartImageExport = async () => {
+        const zip = new JSZip()
+        const folder = zip.folder("MARDSS_Charts")
+
+        for (const [key, ref] of Object.entries(chartRefs)) {
+            if (!sections[key] || !ref.current) continue
+
+            const canvas = await html2canvas(ref.current, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                useCORS: true,
+            })
+
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+            folder.file(`${sectionLabels[key]}.png`, blob)
+        }
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' })
+        const url = URL.createObjectURL(zipBlob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'MARDSS_Charts.zip'
+        a.click()
+        URL.revokeObjectURL(url)
+    }
 
     const handleExcelExport = () => {
         const params = new URLSearchParams({
@@ -533,8 +605,8 @@ function Export() {
                         ))}
 
                         <div className="grid grid-cols-2 gap-4 mt-4">
-                            <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Export PDF</button>
-                            <button className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">Export Excel</button>
+                            <button onClick={handleChartImageExport} className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Export Images</button>
+                            <button onClick={handleChartExcelExport} className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">Export Excel</button>
                         </div>
                     </div>
                 </div>
@@ -606,7 +678,7 @@ function Export() {
 
                                 {/* Dashboard KPI */}
                                 {sections.dashboardKpi && (
-                                    <div>
+                                    <div ref={chartRefs.dashboardKpi}>
                                         <p className="font-semibold text-gray-700 mb-2">Dashboard Summary</p>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <div className="bg-gray-50 border rounded p-4">
@@ -639,7 +711,7 @@ function Export() {
 
                                 {/* YoY Trends */}
                                 {sections.yoyTrends && yoyTrendData.length > 0 && (
-                                    <div>
+                                    <div ref={chartRefs.yoyTrends}>
                                         <p className="font-semibold text-gray-700 mb-2">YoY Trend Analysis</p>
                                         <ResponsiveContainer width="100%" height={300}>
                                             <LineChart data={yoyTrendData}>
@@ -658,7 +730,7 @@ function Export() {
 
                                 {/* Distribution by Assistance Type */}
                                 {sections.distributionByAssistance && (
-                                    <div>
+                                    <div ref={chartRefs.distributionByAssistance}>
                                         <p className="font-semibold text-gray-700 mb-1">Distribution by Assistance Type</p>
                                         <p className="text-sm text-gray-400 mb-4">Percentage Breakdown</p>
                                         <ResponsiveContainer width="100%" height={300}>
@@ -677,7 +749,7 @@ function Export() {
 
                                 {/* Distribution by Municipality */}
                                 {sections.distributionByMunicipality && (
-                                    <div>
+                                    <div ref={chartRefs.distributionByMunicipality}>
                                         <p className="font-semibold text-gray-700 mb-1">Total Requests by Municipality/City</p>
                                         <p className="text-sm text-gray-400 mb-4">Top Municipality/City by Volume</p>
                                         <ResponsiveContainer width="100%" height={800}>
@@ -699,7 +771,7 @@ function Export() {
                                 )}
 
                                 {sections.comparisonChart && (
-                                    <div>
+                                    <div ref={chartRefs.comparisonChart}>
                                         <p className="font-semibold text-gray-700 mb-1">Side-by-side Comparison</p>
                                         <p className="text-sm text-gray-400 mb-4">
                                             {compMunicipality1} vs {compMunicipality2}
@@ -722,7 +794,7 @@ function Export() {
 
                                 {/* ── NEW: Municipality Drilldown ── */}
                                 {sections.municipalityDrilldown && (
-                                    <div>
+                                    <div ref={chartRefs.municipalityDrilldown}>
                                         <p className="font-semibold text-gray-700 mb-1">Municipality Drill-Down</p>
                                         <p className="text-sm text-gray-400 mb-4">
                                             {drilldownMunicipality}
@@ -749,7 +821,7 @@ function Export() {
  
                                 {/* ── NEW: Top N Rankings ── */}
                                 {sections.topNRanking && (
-                                    <div>
+                                    <div ref={chartRefs.topNRanking}>
                                         <p className="font-semibold text-gray-700 mb-1">Top N Rankings</p>
                                         <p className="text-sm text-gray-400 mb-4">
                                             Top {topN} municipalities by total requests
@@ -802,7 +874,7 @@ function Export() {
 
                                 {/* ── NEW: Forecast ── */}
                                 {sections.forecast && (
-                                    <div className="bg-white shadow rounded p-4 mb-6">
+                                    <div className="bg-white shadow rounded p-4 mb-6" ref={chartRefs.forecast}>
                                         <p className="font-semibold text-gray-700 mb-1">Demand Forecast</p>
                                         <p className="text-sm text-gray-400 mb-4">Historical data (solid line) and projections (dashed line) with confidence range</p>
                                             <ResponsiveContainer width="100%" height={600}>
