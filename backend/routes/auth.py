@@ -23,6 +23,14 @@ def login():
     conn.close()
 
     if user and bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
-        return jsonify({'message': 'Login successful', 'role': user['role']}), 200
+        return jsonify({
+            'message': 'Login successful',
+            'user_id': user['user_id'],
+            'username': user['username'],
+            'full_name': user['full_name'],
+            'email': user['email'],
+            'role': user['role'],
+            'profile_picture': user['profile_picture']
+        }), 200
     else:
         return jsonify({'message': 'Invalid username or password'}), 401

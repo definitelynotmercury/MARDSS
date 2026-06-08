@@ -8,7 +8,7 @@ function Layout({children}){
         {label : 'Dashboard', path: '/dashboard'},
         {label : 'Analytics', path: '/analytics'},
         {label : 'Forecast', path: '/forecast'},
-        {label : 'Export', path: '/export'}
+        {label : 'Export', path: '/export'},
     ]
 
     return (
@@ -33,12 +33,23 @@ function Layout({children}){
                         </button>
                     ))}
                 </nav>
-                <button
-                    onClick={() => navigate('/')}
-                    className="text-gray-400 text-sm px-6 py-4 hover:text-white text-left"
-                >
-                    Logout
-                </button>
+                <div className="flex flex-col px-2 pb-4 gap-1">
+                    <button
+                        onClick={() => navigate('/settings')}
+                        className="text-gray-400 text-sm px-4 py-2 rounded hover:bg-gray-700 hover:text-white text-left"
+                    >
+                        Account Settings
+                    </button>
+                    <button
+                        onClick={() => {
+                            localStorage.removeItem('user')
+                            navigate('/')
+                        }}
+                        className="text-gray-400 text-sm px-4 py-2 rounded hover:bg-gray-700 hover:text-white text-left"
+                    >
+                        Logout
+                    </button>
+                </div>
             </div>
             {/* Main content */}
             <div className="flex-1 flex flex-col">

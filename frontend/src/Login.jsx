@@ -15,6 +15,7 @@ function Login() {
         const data = await response.json()
         
         if(data.message === 'Login successful'){
+            localStorage.setItem('user', JSON.stringify(data))
             navigate('/dashboard')
         }else{
             alert('Invalid username or password')
