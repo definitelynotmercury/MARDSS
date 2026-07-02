@@ -16,7 +16,11 @@ function Login() {
         
         if(data.message === 'Login successful'){
             localStorage.setItem('user', JSON.stringify(data))
-            navigate('/dashboard')
+            if (data.role === 'admin') {
+                navigate('/admin')
+            } else {
+                navigate('/dashboard')
+            }
         }else{
             alert('Invalid username or password')
         }

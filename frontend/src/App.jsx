@@ -5,7 +5,7 @@ import Analytics from './Analytics'
 import Forecast from './forecast'
 import Export from './export'
 import Settings from './Settings'
-
+import Admin from './Admin'
 function App() {
     return (
         <BrowserRouter>
@@ -16,6 +16,7 @@ function App() {
                 <Route path="/forecast" element={<Forecast />} />
                 <Route path="/export" element={<Export />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/admin" element={<Admin />} />
             </Routes>
         </BrowserRouter>
     )
