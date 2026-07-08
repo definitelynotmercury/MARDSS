@@ -6,6 +6,6 @@ DB_CONFIG = {
     'database': 'mardss'
 }
 
-GEMINI_API_KEY = "AIzaSyAH9DC5OFmm2W04gj1Sm7pH06hXq6mXzNI"
+GEMINI_API_KEY = "AQ.Ab8RN6IYu7zsnLANuJySUi6RlAxQ3DFHJ19yuitBygB7hJJ6Lw"
 
 client = genai.Client(api_key=GEMINI_API_KEY)
