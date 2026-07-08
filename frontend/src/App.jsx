@@ -6,6 +6,7 @@ import Forecast from './forecast'
 import Export from './export'
 import Settings from './Settings'
 import Admin from './Admin'
+import AdminUploadReport from './AdminUploadReport'
 function App() {
     return (
         <BrowserRouter>
@@ -17,6 +18,7 @@ function App() {
                 <Route path="/export" element={<Export />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/AdminUploadReport" element={<AdminUploadReport/>} />
             </Routes>
         </BrowserRouter>
     )

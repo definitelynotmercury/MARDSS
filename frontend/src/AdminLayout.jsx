@@ -6,6 +6,7 @@ function AdminLayout({ children }) {
 
     const navItems = [
         { label: 'Manage Accounts', path: '/admin' },
+        {label: 'Upload Entry', path: '/AdminUploadReport'}
     ]
 
     const handleLogout = () => {
