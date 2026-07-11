@@ -34,6 +34,7 @@ function Dashboard() {
     // Line chart filters
     const [topN, setTopN] = useState(5)
     const [selectedLineType, setSelectedLineType] = useState('ALL')
+    const [selectedYearForLine, setSelectedYearForLine] = useState('ALL')
 
     // Pie chart filters
     const [topNPie, setTopNPie] = useState(5)
@@ -53,21 +54,28 @@ function Dashboard() {
     // ── Initial load ───────────────────────────────────────────────────────
     useEffect(() => {
         const fetchStatic = async () => {
-            const [muniRes, typeRes, irregsRes, trendRes, typeTotalsRes] = await Promise.all([
+            const [muniRes, typeRes, irregsRes, typeTotalsRes] = await Promise.all([
                 fetch(`${BASE_URL}/api/municipalities`),
                 fetch(`${BASE_URL}/api/assistance_types`),
                 fetch(`${BASE_URL}/api/dashboard/irregularities`),
-                fetch(`${BASE_URL}/api/dashboard/trend`),
                 fetch(`${BASE_URL}/api/dashboard/type-totals`),
             ])
             setMunicipalities(await muniRes.json())
             setTypes(await typeRes.json())
             setIrregularities(await irregsRes.json())
-            setTrendData(await trendRes.json())
             setTypeTotals(await typeTotalsRes.json())
         }
         fetchStatic()
     }, [])
+
+    // ── yearly trend refetches when picking a specific year ───────────────────────
+    useEffect(() => {
+        const fetchTrend = async () => {
+            const res = await fetch(`${BASE_URL}/api/dashboard/trend?year=${selectedYearForLine}`)
+            setTrendData(await res.json())
+        }
+        fetchTrend()
+    }, [selectedYearForLine])
 
     // ── Pie data refetches when pie filters change ─────────────────────────
     useEffect(() => {
@@ -139,7 +147,7 @@ function Dashboard() {
     // ── Year options ───────────────────────────────────────────────────────
     const years = []
     let y = 2023
-    while (y < new Date().getFullYear()) years.push(y++)
+    while (y <= new Date().getFullYear()) years.push(y++)
 
     // ── Line chart: filter typeTotals by topN or specific type ────────────
     const visibleTypes = selectedLineType !== 'ALL'
@@ -175,6 +183,7 @@ function Dashboard() {
         );
     };
 
+    
     return (
         <Layout>
             <h1 className="text-xl font-bold text-gray-700">Dashboard</h1>
@@ -260,11 +269,15 @@ function Dashboard() {
                         <option value="ALL">ALL TYPES</option>
                         {types.map(t => <option value={t.type_name} key={t.type_id}>{t.type_name}</option>)}
                     </select>
+                    <select className="border rounded px-2 py-1 text-sm" onChange={e => setSelectedYearForLine(e.target.value)}>
+                        <option value="ALL">ALL YEARS</option>
+                        {years.map(year => <option key={year}>{year}</option>)}
+                    </select>
                 </div>
                 <ResponsiveContainer width="100%" height={600} margin={{ top: 30, right: 30, left: 30, bottom: 30 }}>
                     <LineChart data={trendData}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="year" />
+                        <XAxis dataKey={trendData[0]?.month ? 'month' : 'year'} />
                         <YAxis />
                         <Tooltip wrapperStyle={{ zIndex: 1000, top: 0 }} />
                         <Legend />

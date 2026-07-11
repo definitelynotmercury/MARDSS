@@ -4,6 +4,9 @@ from config import DB_CONFIG, client
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
+MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
 def get_db():
     return mysql.connector.connect(**DB_CONFIG)
 
@@ -80,26 +83,45 @@ def get_kpi():
 @dashboard_bp.route("/api/dashboard/trend")
 def get_dashboard_trend():
     conn = get_db()
+    year = request.args.get("year", "ALL")
+
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT r.year, a.type_name, SUM(r.request_count) AS total
-            FROM assistance_records r
-            JOIN assistance_types a ON r.assistance_type_id = a.type_id
-            GROUP BY r.year, r.assistance_type_id
-            ORDER BY r.year
-        """)
+
+        if year == "ALL":
+            
+            cursor.execute("""
+                SELECT r.year, a.type_name, SUM(r.request_count) AS total
+                FROM assistance_records r
+                JOIN assistance_types a ON r.assistance_type_id = a.type_id
+                GROUP BY r.year, r.assistance_type_id
+                ORDER BY r.year
+            """)
+        else:
+            cursor.execute("""
+                SELECT r.month, a.type_name, SUM(r.request_count) AS total
+                FROM assistance_records r
+                JOIN assistance_types a ON r.assistance_type_id = a.type_id
+                WHERE r.year = %s
+                GROUP BY r.month, r.assistance_type_id
+                ORDER BY r.month
+                           """,(int(year),))
         data = cursor.fetchall()
         cursor.close()
     finally:
         conn.close()
 
     result = {}
+    key_field = 'year' if year == "ALL" else 'month'
+
     for row in data:
-        year = row['year']
-        if year not in result:
-            result[year] = {'year': year}
-        result[year][row['type_name']] = int(row['total'])
+        key = row[key_field]
+
+        if key_field == 'month':
+            key = MONTH_NAMES[int(key) - 1]  # Convert month number to name
+        if key not in result:
+            result[key] = {key_field: key}
+        result[key][row['type_name']] = int(row['total'])
 
     return jsonify(list(result.values()))
 

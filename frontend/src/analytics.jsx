@@ -43,7 +43,7 @@ function Analytics() {
     let startYear = 2023
     const currentYear = new Date().getFullYear()
 
-    while (startYear < currentYear) {
+    while (startYear <= currentYear) {
         years.push(startYear)
         startYear++
     }
