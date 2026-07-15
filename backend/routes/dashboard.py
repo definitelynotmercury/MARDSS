@@ -14,6 +14,7 @@ def get_db():
 @dashboard_bp.route('/api/dashboard/kpi')
 def get_kpi():
     year = request.args.get('year', 'ALL')
+    month = request.args.get('month', 'ALL')
     municipality = request.args.get('municipality', 'ALL')
     type_ = request.args.get('type', 'ALL')
 
@@ -29,7 +30,9 @@ def get_kpi():
     if type_ != 'ALL':
         filters.append("r.assistance_type_id = %s")
         params.append(type_)
-
+    if month != 'ALL':
+        filters.append("r.month = %s")
+        params.append(month)
     where_clause = "WHERE " + " AND ".join(filters) if filters else ""
 
     conn = get_db()
@@ -118,7 +121,7 @@ def get_dashboard_trend():
         key = row[key_field]
 
         if key_field == 'month':
-            key = MONTH_NAMES[int(key) - 1]  # Convert month number to name
+            key = MONTH_NAMES[int(key) - 1]
         if key not in result:
             result[key] = {key_field: key}
         result[key][row['type_name']] = int(row['total'])
@@ -129,6 +132,7 @@ def get_dashboard_trend():
 @dashboard_bp.route("/api/dashboard/barchart")
 def get_dashboard_barchart():
     year = request.args.get("year", "ALL")
+    month = request.args.get("month", "ALL")
 
     filters = []        
     params = []         
@@ -136,6 +140,10 @@ def get_dashboard_barchart():
     if year != "ALL":
         filters.append("r.year = %s")
         params.append(int(year))
+
+    if month != "ALL":
+        filters.append("r.month = %s")
+        params.append(int(month))
 
     where_clause = "WHERE " + " AND ".join(filters) if filters else ""
 
@@ -399,6 +407,8 @@ def get_pie_data():
     top_n = int(request.args.get("top_n", 5))
     selected_type = request.args.get("type", "ALL")
     year = request.args.get("year", "ALL")
+    month = request.args.get("month", "ALL")
+
 
     filters = []
     params = []
@@ -410,6 +420,10 @@ def get_pie_data():
     if selected_type != "ALL":
         filters.append("a.type_name = %s")
         params.append(selected_type)
+
+    if month != "ALL":
+        filters.append("r.month = %s")
+        params.append(month)
 
     where_clause = "WHERE " + " AND ".join(filters) if filters else ""
 

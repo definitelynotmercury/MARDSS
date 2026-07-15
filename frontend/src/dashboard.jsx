@@ -21,6 +21,8 @@ function Dashboard() {
     const [selectedYear, setSelectedYear] = useState('ALL')
     const [selectedMunicipality, setSelectedMunicipality] = useState('ALL')
     const [selectedType, setSelectedType] = useState('ALL')
+    const [selectedMonth, setSelectedMonth] = useState('ALL')
+    const [showMonthFilter, setShowMonthFilter] = useState(false)
 
     // KPI
     const [kpi, setKpi] = useState(null)
@@ -40,9 +42,13 @@ function Dashboard() {
     const [topNPie, setTopNPie] = useState(5)
     const [selectedPieAssistanceType, setSelectedPieAssistanceType] = useState('ALL')
     const [selectedPieYear, setSelectedPieYear] = useState('ALL')
+    const [showPieMonthFilter, setShowPieMonthFilter] = useState(false)
+    const [selectedPieMonth, setSelectedPieMonth] = useState('ALL') 
 
     //barchart filters
     const [selectedBarYear, setSelectedBarYear] = useState('ALL')
+    const [showBarMonthFilter, setShowBarMonthFilter] = useState(false)
+    const [selectedBarMonth, setSelectedBarMonth] = useState('ALL')
 
     // Irregularities
     const [irregularities, setIrregularities] = useState([])
@@ -81,33 +87,33 @@ function Dashboard() {
     useEffect(() => {
     const fetchPie = async () => {
         const res = await fetch(
-            `${BASE_URL}/api/dashboard/pie?top_n=${topNPie}&type=${selectedPieAssistanceType}&year=${selectedPieYear}`
+            `${BASE_URL}/api/dashboard/pie?top_n=${topNPie}&type=${selectedPieAssistanceType}&year=${selectedPieYear}&month=${selectedPieMonth}`
         )
         setPieData(await res.json())
     }
     fetchPie()
-    }, [topNPie, selectedPieAssistanceType, selectedPieYear])
+    }, [topNPie, selectedPieAssistanceType, selectedPieYear, selectedPieMonth])
 
     useEffect(() => {
         const fetchBar = async () => {
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/barchart?year=${selectedBarYear}`
+                `${BASE_URL}/api/dashboard/barchart?year=${selectedBarYear}&month=${selectedBarMonth}`
             )
             setBarData(await res.json())
         }
         fetchBar()
-    }, [selectedBarYear])
+    }, [selectedBarYear, selectedBarMonth])
 
     // ── KPI refetches when global filters change ───────────────────────────
     useEffect(() => {
         const fetchKpi = async () => {
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/kpi?year=${selectedYear}&municipality=${selectedMunicipality}&type=${selectedType}`
+                `${BASE_URL}/api/dashboard/kpi?year=${selectedYear}&municipality=${selectedMunicipality}&type=${selectedType}&month=${selectedMonth}`
             )
             setKpi(await res.json())
         }
         fetchKpi()
-    }, [selectedYear, selectedMunicipality, selectedType])
+    }, [selectedYear, selectedMunicipality, selectedType, selectedMonth])
 
     // ── Narrative ──────────────────────────────────────────────────────────
     const generateNarrative = async () => {
@@ -148,6 +154,21 @@ function Dashboard() {
     const years = []
     let y = 2023
     while (y <= new Date().getFullYear()) years.push(y++)
+
+    const months = [
+    { label: 'Jan', value: 1 },
+    { label: 'Feb', value: 2 },
+    { label: 'Mar', value: 3 },
+    { label: 'Apr', value: 4 },
+    { label: 'May', value: 5 },
+    { label: 'Jun', value: 6 },
+    { label: 'Jul', value: 7 },
+    { label: 'Aug', value: 8 },
+    { label: 'Sep', value: 9 },
+    { label: 'Oct', value: 10 },
+    { label: 'Nov', value: 11 },
+    { label: 'Dec', value: 12 },
+    ]
 
     // ── Line chart: filter typeTotals by topN or specific type ────────────
     const visibleTypes = selectedLineType !== 'ALL'
@@ -192,10 +213,27 @@ function Dashboard() {
             {/* ── Global Filters ── */}
             <div className="flex gap-2 items-center mb-4">
                 <span className="text-sm font-semibold text-gray-500">FILTERS:</span>
-                <select className="border rounded px-2 py-1 text-sm" onChange={e => setSelectedYear(e.target.value)}>
+                <select className="border rounded px-2 py-1 text-sm" 
+                onChange={e => {
+                const value = e.target.value
+                setSelectedYear(value)
+                setShowMonthFilter(value !== 'ALL')
+                if (value === 'ALL') {
+                    setSelectedMonth('ALL')
+                    }}}>
                     <option value="ALL">ALL YEARS</option>
                     {years.map(year => <option key={year}>{year}</option>)}
                 </select>
+                {showMonthFilter && (
+                    <select className="border rounded px-2 py-1 text-sm" onChange={e => setSelectedMonth(e.target.value)}>
+                        <option value="ALL">ALL MONTHS</option>
+                        {months.map(month => (
+                            <option key={month.value} value={month.value}>
+                                {month.label}
+                            </option>
+                        ))}
+                    </select>
+                )}
                 <select className="border rounded px-2 py-1 text-sm" onChange={e => setSelectedMunicipality(e.target.value)}>
                     <option value="ALL">ALL MUNICIPALITIES</option>
                     {municipalities.map(m => (
@@ -301,10 +339,23 @@ function Dashboard() {
                         <option value="ALL">ALL TYPES</option>
                         {types.map(t => <option value={t.type_name} key={t.type_id}>{t.type_name}</option>)}
                     </select>
-                    <select className="border rounded px-2 py-1 text-sm" onChange={e => setSelectedPieYear(e.target.value)}>
+                    <select className="border rounded px-2 py-1 text-sm" 
+                    onChange={e => {const value = e.target.value
+                                     setSelectedPieYear(value)
+                                     setShowPieMonthFilter(value !== 'ALL')
+                                     if (value === 'ALL') {
+                                     setSelectedPieMonth('ALL')
+                        }}}>
                         <option value="ALL">ALL YEARS</option>
                         {years.map(year => <option key={year}>{year}</option>)}
                     </select>
+                    { showPieMonthFilter && (
+                        <select className="border rounded px-2 py-1 text-sm" onChange={e => setSelectedPieMonth(e.target.value)}>
+                            <option value="ALL">ALL MONTHS</option>
+                            {months.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}
+                        </select>
+                        )
+                    }
                 </div>
                 <ResponsiveContainer width="100%" height={350}>
                     <PieChart>
@@ -325,10 +376,25 @@ function Dashboard() {
                 <p className="text-sm text-gray-400 mb-4">Top Municipality/City by Volume</p>
                 <div className="flex gap-2 items-center mb-4">
                     <span className="text-sm font-semibold text-gray-500">FILTERS: </span>
-                    <select className="border rounded px-2 py-1 text-sm" onChange={e => setSelectedBarYear(e.target.value)}>
+                    <select className="border rounded px-2 py-1 text-sm" 
+                    onChange={e => {
+                    const value = e.target.value
+                    setSelectedBarYear(value)
+                    setShowBarMonthFilter(value !== 'ALL')
+                    if (value === 'ALL') {
+                        setSelectedBarMonth('ALL')
+                    }}}>
                         <option value="ALL">ALL YEARS</option>
                         {years.map(year => <option key={year}>{year}</option>)}
                     </select>
+                    {
+                        showBarMonthFilter && (
+                            <select className = "border rounded px-2 py-1 text-sm" onChange={e => setSelectedBarMonth(e.target.value)}>
+                                <option value="ALL">ALL MONTHS</option>
+                                {months.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}
+                            </select>
+                        )
+                    }
                 </div>
                 <ResponsiveContainer width="100%" height={800}>
                     <BarChart data={barData} layout="vertical" tabIndex={-1}>
