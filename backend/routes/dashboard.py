@@ -262,34 +262,43 @@ def generate_narrative():
     year = filters.get("year", "ALL")
     municipality = filters.get("municipality", "ALL")
     type_ = filters.get("type", "ALL")
+    month = filters.get("month", "ALL")
 
     # Chart-level filters
     line_type = filters.get("lineType", "ALL")
     top_n = filters.get("topN", 10)
+    line_year = filters.get("lineYear", "ALL")
     pie_year = filters.get("pieYear", "ALL")
     top_n_pie = filters.get("topNPie", 5)
     pie_type = filters.get("pieType", "ALL")
+    pie_month = filters.get("pieMonth", "ALL")
     bar_year = filters.get("barYear", "ALL")
+    bar_month = filters.get("barMonth", "ALL")
 
-    # Summarize trend (already filtered by global filters)
-    # Summarize trend
+    # Summarize trend — rows are keyed by 'year' when line_year == 'ALL',
+    # or by 'month' when a specific year is selected
+    trend_granularity = "month" if line_year != "ALL" else "year"
     trend_by_year = {}
 
     for row in trend:
-        y = row.get("year")
+        key = row.get(trend_granularity)
+        if key is None:
+            continue
 
-        # If a specific line type is selected
         if line_type != "ALL":
             total = row.get(line_type, 0)
-
-        # Otherwise sum everything
         else:
-            total = sum(v for k, v in row.items() if k != "year")
+            total = sum(v for k, v in row.items() if k not in ("year", "month"))
 
-        trend_by_year[y] = total
+        trend_by_year[key] = trend_by_year.get(key, 0) + total
+
+    if trend_granularity == "year":
+        sorted_trend = sorted(trend_by_year.items())
+    else:
+        sorted_trend = sorted(trend_by_year.items(), key=lambda kv: MONTH_NAMES.index(kv[0]))
 
     trend_summary_str = ", ".join(
-        [f"{y}: {t} total requests" for y, t in sorted(trend_by_year.items())]
+        [f"{k}: {t} total requests" for k, t in sorted_trend]
     )
 
     # Line chart visible types (respect lineType filter)
@@ -299,42 +308,54 @@ def generate_narrative():
         type_totals = {}
         for row in trend:
             for k, v in row.items():
-                if k != 'year':
+                if k not in ("year", "month"):
                     type_totals[k] = type_totals.get(k, 0) + v
         top_line_types = sorted(type_totals.items(), key=lambda x: x[1], reverse=True)[:top_n]
         line_summary = [{"type": k, "total": v} for k, v in top_line_types]
 
-    # Pie data (already filtered by pieYear and pieType)
     pie_summary = [{"type": p["name"], "value": p["value"]} for p in pie_data]
-
-    # Bar data (already filtered by barYear)
     bar_summary = [{"municipality": b["municipality_name"], "total": b["total"]} for b in bar_data[:5]]
 
     irregularity_messages = [i['message'] for i in irregularities] if irregularities else ["None detected"]
 
+    month_name = MONTH_NAMES[int(month) - 1] if month != "ALL" else None
+    if month_name and year != "ALL":
+        kpi_period = f"{month_name} {year}"
+    elif year != "ALL":
+        kpi_period = f"the full year {year}"
+    else:
+        kpi_period = "the entire dataset (all years)"
+
     active_filters = (
-        f"Global — Year: {year}, Municipality: {municipality}, Type: {type_} | "
-        f"Line Chart — Type: {line_type}, Top N: {top_n} | "
-        f"Pie Chart — Year: {pie_year}, Type: {pie_type}, Top N: {top_n_pie} | "
-        f"Bar Chart — Year: {bar_year}"
+        f"Global — Year: {year}, Month: {month_name or 'ALL'}, Municipality: {municipality}, Type: {type_} | "
+        f"Line Chart — Type: {line_type}, Year: {line_year}, Top N: {top_n} | "
+        f"Pie Chart — Year: {pie_year}, Month: {pie_month}, Type: {pie_type}, Top N: {top_n_pie} | "
+        f"Bar Chart — Year: {bar_year}, Month: {bar_month}"
     )
 
     prompt = f"""
         You are a data analyst reporting for the Provincial Social Welfare and Development Office (PSWDO) of Bulacan.
+
+        IMPORTANT: The KPI totals and top type/municipality below are scoped specifically to {kpi_period}.
+        Your first sentence MUST explicitly name this period (e.g. "For {kpi_period}, ..."). 
+        Never describe the KPI figures as a full-year or multi-year total unless kpi_period says so — 
+        the KPI numbers below are ALREADY filtered to {kpi_period} only.
+
         Write a comprehensive but concise narrative (5-6 sentences) covering all sections of the dashboard based on the data below.
         Do not suggest actions or recommendations. Only describe what the data shows.
-        Structure your narrative: overall totals → year-over-year trend → type distribution → geographic breakdown → irregularities.
-        Make sure to reflect the active filters in your narrative — if a specific type or year is selected, describe only that context.
+        Structure your narrative: overall totals (scoped to {kpi_period}) → {trend_granularity}-over-{trend_granularity} trend (this trend panel has its own independent year filter, separate from {kpi_period}) → type distribution → geographic breakdown → irregularities.
+        Make sure to reflect the active filters in your narrative — if a specific type, year, or month is selected,
+        describe only that context (e.g. "In March 2025..." rather than implying full-year totals when a month is set).
 
         - Active Filters: {active_filters}
 
-        [KPI]
+        [KPI — scoped to {kpi_period}]
         - Total Requests: {kpi.get('total_requests')}
         - Top Assistance Type: {kpi.get('top_type', {}).get('type_name')} ({kpi.get('top_type', {}).get('total')} requests)
         - Top Municipality: {kpi.get('top_municipality', {}).get('municipality_name')} ({kpi.get('top_municipality', {}).get('total')} requests)
 
-        [Yearly Trend - Line Chart]
-        - Totals per year: {trend_summary_str}
+        [{trend_granularity.capitalize()}ly Trend - Line Chart]
+        - Totals per {trend_granularity}: {trend_summary_str}
         - Visible types: {line_summary}
         if there is a specific lineType filter, mention only that type's trend instead of the overall trend.
 
@@ -351,7 +372,7 @@ def generate_narrative():
     """
 
     response = client.models.generate_content(
-        model="gemini-3-flash-preview",
+        model="gemini-3.1-flash-lite",
         contents=prompt
     )
     return jsonify({"narrative": response.text})

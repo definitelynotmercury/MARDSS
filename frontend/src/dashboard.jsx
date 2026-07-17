@@ -129,19 +129,11 @@ function Dashboard() {
             pieData,
             barData,
             filters: {
-                // global
-                year: selectedYear,
-                municipality: selectedMunicipality,
-                type: selectedType,
-                // line chart
-                lineType: selectedLineType,
-                topN,
-                // pie chart
-                pieYear: selectedPieYear,
-                pieType: selectedPieAssistanceType,
-                topNPie,
-                // bar chart
-                barYear: selectedBarYear,
+            year: selectedYear, municipality: selectedMunicipality, type: selectedType,
+            month: selectedMonth,
+            lineType: selectedLineType, topN, lineYear: selectedYearForLine,
+            pieYear: selectedPieYear, pieType: selectedPieAssistanceType, topNPie, pieMonth: selectedPieMonth,
+            barYear: selectedBarYear, barMonth: selectedBarMonth,
             }
         })
     })
