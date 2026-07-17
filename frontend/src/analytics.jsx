@@ -4,6 +4,22 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { useFetcher } from 'react-router-dom'
 
 function Analytics() {
+
+    const months = [
+    { label: 'Jan', value: 1 },
+    { label: 'Feb', value: 2 },
+    { label: 'Mar', value: 3 },
+    { label: 'Apr', value: 4 },
+    { label: 'May', value: 5 },
+    { label: 'Jun', value: 6 },
+    { label: 'Jul', value: 7 },
+    { label: 'Aug', value: 8 },
+    { label: 'Sep', value: 9 },
+    { label: 'Oct', value: 10 },
+    { label: 'Nov', value: 11 },
+    { label: 'Dec', value: 12 },
+    ]
+
     // State variables for filters and data for the comparison chart
     const [municipality1, setMunicipality1] = useState('BULAKAN')
     const [municipality2, setMunicipality2] = useState('CALUMPIT')
@@ -12,6 +28,8 @@ function Analytics() {
     const [comparisonData, setComparisonData] = useState([])
     const [municipalities, setMunicipalities] = useState([])
     const [types, setTypes] = useState([])
+    const [showComparisonMonthFilter, setShowComparisonMonthFilter] = useState(false)
+    const [comparisonMonth, setComparisonMonth] = useState('ALL')
 
     useEffect(() => {
         const fetchdata = async() => {
@@ -29,14 +47,14 @@ function Analytics() {
 
     // Function to fetch comparison data based on selected filters
     const fetchComparisonData = async () => {
-    const response = await fetch(`http://127.0.0.1:5000/api/analytics/comparison?municipality_1=${municipality1}&municipality_2=${municipality2}&type=${selectedType}&year=${selectedYear}`)
+    const response = await fetch(`http://127.0.0.1:5000/api/analytics/comparison?municipality_1=${municipality1}&municipality_2=${municipality2}&type=${selectedType}&year=${selectedYear}&month=${comparisonMonth}`)
     const data = await response.json()
     setComparisonData(data)
     }
 
     useEffect(() => {
     fetchComparisonData()
-    }, [municipality1, municipality2, selectedType, selectedYear])  
+    }, [municipality1, municipality2, selectedType, selectedYear, comparisonMonth])  
 
     //script to generate year options from 2023 to current year
     const years = []
@@ -52,15 +70,17 @@ function Analytics() {
     const [drilldown_data, setDrilldownData] = useState([])
     const [drill_down_municipality, setDrillDownMunicipality] = useState('BULAKAN')
     const [drill_down_year, setDrillDownYear] = useState("ALL")  
+    const [drill_down_month, setDrillDownMonth] = useState("ALL")
+    const [showDrilldownMonthFilter, setShowDrilldownMonthFilter] = useState(false)
 
     useEffect(() => {
         const fetchDrilldownData = async () => {
-            const response = await fetch(`http://127.0.0.1:5000/api/analytics/drill_down?municipality=${drill_down_municipality}&year=${drill_down_year}`)
+            const response = await fetch(`http://127.0.0.1:5000/api/analytics/drill_down?municipality=${drill_down_municipality}&year=${drill_down_year}&month=${drill_down_month}`)
             const data = await response.json()
             setDrilldownData(data)
         }   
         fetchDrilldownData()
-    }, [drill_down_municipality, drill_down_year])
+    }, [drill_down_municipality, drill_down_year, drill_down_month])
     
     const maxTotal = Math.max(...drilldown_data.map(d => d.total), 1)
 
@@ -119,12 +139,29 @@ function Analytics() {
                             <option key={t.type_id} value={t.type_name}>{t.type_name}</option>
                         ))}
                     </select>
-                    <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setSelectedYear(e.target.value)}>
+                    <select className="border rounded px-2 py-1 text-sm" 
+                    onChange={(e) => {
+                        const Value = e.target.value
+                        setSelectedYear(Value)
+                        if (Value === 'ALL') {
+                            setShowComparisonMonthFilter(false)
+                        } else {
+                            setShowComparisonMonthFilter(true)
+                        }
+                    }}>
                         <option value="ALL">ALL YEARS</option>
                         {years.map((year) => (
                             <option key={year}>{year}</option>
                         ))}
                     </select>
+                    {showComparisonMonthFilter && (
+                        <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setComparisonMonth(e.target.value)} value={comparisonMonth}>
+                            <option value="ALL">ALL MONTHS</option>
+                            {months.map((month) => (
+                                <option key={month.value} value={month.value}>{month.label}</option>
+                            ))}
+                        </select>
+                    )}
                 </div>
                 <ResponsiveContainer width="100%" height={800}>
                     <BarChart data={comparisonData}  tabIndex={-1} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
@@ -147,12 +184,29 @@ function Analytics() {
                             <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
                         ))}
                     </select>
-                    <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setDrillDownYear(e.target.value)} value={drill_down_year}>
+                    <select className="border rounded px-2 py-1 text-sm" onChange={(e) =>     
+                         {
+                            const Value = e.target.value
+                            setDrillDownYear(Value)
+                            if (Value === 'ALL') {
+                                setShowDrilldownMonthFilter(false)
+                            } else {
+                                setShowDrilldownMonthFilter(true)
+                            }
+                         }} value={drill_down_year}>
                         <option value="ALL">ALL YEARS</option>
                         {years.map((year) => (
                             <option key={year}>{year}</option>
                         ))}
                     </select>
+                    {showDrilldownMonthFilter && (
+                        <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setDrillDownMonth(e.target.value)} value={drill_down_month}>
+                            <option value="ALL">ALL MONTHS</option>
+                            {months.map((month) => (
+                                <option key={month.value} value={month.value}>{month.label}</option>
+                            ))}
+                        </select>
+                    )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                     {drilldown_data.map((item) => (

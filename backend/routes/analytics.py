@@ -15,6 +15,7 @@ def comparison():
     municipality_2 = request.args.get('municipality_2', 'HAGONOY')
     type_ = request.args.get('type', 'ALL')
     year = request.args.get('year', 'ALL')
+    month = request.args.get('month', 'ALL')
 
     filters = ["(m.municipality_name = %s OR m.municipality_name = %s)"]
     params = [municipality_1, municipality_2]
@@ -26,6 +27,10 @@ def comparison():
     if type_ != 'ALL':
         filters.append("a.type_name = %s")
         params.append(type_)
+
+    if month != 'ALL':
+        filters.append("r.month = %s")
+        params.append(month)
 
     where_clause = "WHERE " + " AND ".join(filters)
 
@@ -61,6 +66,7 @@ def comparison():
 def drill_down():
     municipality = request.args.get('municipality', 'BULAKAN')
     selected_year = request.args.get('year', 'ALL')
+    month = request.args.get('month', 'ALL')
     
     filters = ["(m.municipality_name = %s)"]
     params = [municipality]
@@ -68,6 +74,10 @@ def drill_down():
     if selected_year != 'ALL':
         filters.append("r.year = %s")
         params.append(selected_year)
+    
+    if month != 'ALL':
+        filters.append("r.month = %s")
+        params.append(month)
 
     where_clause = "WHERE " + " AND ".join(filters)
 
