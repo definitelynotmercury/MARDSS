@@ -85,18 +85,39 @@ function Analytics() {
     const maxTotal = Math.max(...drilldown_data.map(d => d.total), 1)
 
     // States for rankings section
+        
+    const [availableMonths, setAvailableMonths] = useState([])
     const [rankings, setRankings] = useState([])
     const [topN, setTopN] = useState(5)
     const [selectedMunicipalityRanking, setSelectedMunicipalityRanking] = useState('ALL')
+    const [rankingMonth, setRankingMonth] = useState("ALL")
 
     useEffect(() => {
         const fetchRankings = async () => {
-            const response = await fetch(`http://127.0.0.1:5000/api/analytics/n_rankings?topN=${topN}&selectedMunicipalityRanking=${selectedMunicipalityRanking}`)
+           const response = await fetch(`http://127.0.0.1:5000/api/analytics/n_rankings?topN=${topN}&selectedMunicipalityRanking=${selectedMunicipalityRanking}&month=${rankingMonth}`)
             const data = await response.json()
             setRankings(data)
         }
         fetchRankings()
-    }, [topN, selectedMunicipalityRanking])
+    }, [topN, selectedMunicipalityRanking, rankingMonth])
+
+    useEffect(() => {
+        const fetchAvailableMonths = async () => {
+            const response = await fetch('http://127.0.0.1:5000/api/analytics/available_months')
+            const data = await response.json()
+            setAvailableMonths(data)
+        }
+        fetchAvailableMonths()
+    }, [])
+
+    useEffect(() => {
+        const fetchLatestMonth = async () => {
+            const response = await fetch('http://127.0.0.1:5000/api/analytics/latest_month')
+            const data = await response.json()
+            setRankingMonth(data.month)
+        }
+        fetchLatestMonth()
+    }, [])
 
      // Narrative
     const [narrative, setNarrative] = useState('')
@@ -108,7 +129,7 @@ function Analytics() {
         const res = await fetch(`http://127.0.0.1:5000/api/analytics/narrative`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ comparisonData, drilldown_data, rankings})
+            body: JSON.stringify({ comparisonData, selectedYear,comparisonMonth ,drilldown_data, drill_down_year, drill_down_month, rankings})
         })
         const data = await res.json()
         setNarrative(data.narrative)
@@ -239,6 +260,13 @@ function Analytics() {
                             <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
                         ))}
                     </select>
+                    <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setRankingMonth(Number(e.target.value))} value={rankingMonth}>
+                        {availableMonths.map((m) => (
+                            <option key={`${m.year}-${m.month}`} value={m.month}>
+                                {months.find(mo => mo.value === m.month)?.label} {m.year}
+                            </option>
+                        ))}
+                    </select>
                 </div>
                 <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -246,8 +274,12 @@ function Analytics() {
                         <tr className="text-left text-gray-500 border-b">
                             <th className="pb-3 pr-4">Rank</th>
                             <th className="pb-3 pr-4">Municipality</th>
-                            <th className="pb-3 pr-4">Previous Year</th>
-                            <th className="pb-3 pr-4">Current Year</th>
+                            <th className="pb-3 pr-4">
+                                {months.find(m => m.value === Number(rankingMonth))?.label} {new Date().getFullYear() - 1}
+                            </th>
+                            <th className="pb-3 pr-4">
+                                {months.find(m => m.value === Number(rankingMonth))?.label} {new Date().getFullYear()}
+                            </th>
                             <th className="pb-3 pr-4">Volume</th>
                             <th className="pb-3">Growth Rate</th>
                         </tr>
