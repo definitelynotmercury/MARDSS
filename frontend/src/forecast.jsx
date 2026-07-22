@@ -1,6 +1,6 @@
 import Layout from "./Layout";
 import { useState, useEffect } from 'react'
-import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts'
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart } from 'recharts'
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -31,14 +31,25 @@ function Forecast() {
     const [selectedType, setSelectedType] = useState('ALL')
 
     const [forecastData, setForecastData] = useState({
-    future_years: [],
-    future_predictions: [],
-    historical_totals: [],
-    historical_years: [],
-    lower_bound: [],
-    upper_bound: [],
-    avg_growth_rate: 0
+    timeline: [],
+    forecast: [],
+    average_growth_rate: 0
     })
+
+    const months = [
+    { label: 'Jan', value: 1 },
+    { label: 'Feb', value: 2 },
+    { label: 'Mar', value: 3 },
+    { label: 'Apr', value: 4 },
+    { label: 'May', value: 5 },
+    { label: 'Jun', value: 6 },
+    { label: 'Jul', value: 7 },
+    { label: 'Aug', value: 8 },
+    { label: 'Sep', value: 9 },
+    { label: 'Oct', value: 10 },
+    { label: 'Nov', value: 11 },
+    { label: 'Dec', value: 12 },
+    ]
 
     //narrative
     const[narrative,setNarrative] = useState('')
@@ -82,22 +93,24 @@ function Forecast() {
         setNarrative(data.narrative)
         setNarrativeLoading(false)
         }
+    
 
-    const lastTotal = forecastData.historical_totals[forecastData.historical_totals.length - 1]
-
-    const chartData = [
-        ...forecastData.historical_years.map((year, i) => ({
-            year: year,
-            historical: forecastData.historical_totals[i],
-            projected: i === forecastData.historical_years.length - 1 ? lastTotal : null  // bridge only on last point
-        })),
-        ...forecastData.future_years.map((year, i) => ({
-            year: year,
-            projected: forecastData.future_predictions[i],
-            lower: forecastData.lower_bound[i],
-            upper: forecastData.upper_bound[i]
-        }))
-    ]
+        const lastTotal = forecastData.timeline[forecastData.timeline.length-1]?.total
+        const chartData = [
+            ...forecastData.timeline.map((row,i) =>({
+                label: row.label,
+                total: row.total,
+                future_prediction: i === forecastData.timeline.length-1 ? lastTotal :null
+            })),
+            ...forecastData.forecast.map((row)=>({
+                label: row.label,
+                future_prediction: row.future_prediction,
+                lower : row.lower,
+                upper : row.upper
+            }))
+        ]
+        console.log(chartData)
+    
 
     const renderEndLabel = (dataKey) => ({ x, y, value }) => {
     if (value == null) return null;
@@ -107,7 +120,7 @@ function Forecast() {
         <text x={x} y={y + offsets[dataKey]} fontSize={11} fontWeight={600} textAnchor="middle" fill={colors[dataKey]}>
             {value.toLocaleString()}
         </text>
-    );
+        );
     };
 
     return(
@@ -134,20 +147,25 @@ function Forecast() {
             </select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-white shadow rounded p-4">
-                    <p className="text-sm text-gray-500">{forecastData.future_years[0]} Requests</p>
-                    <h1 className="text-2xl font-bold text-gray-800">{forecastData.future_predictions[0]}</h1>
-                    <p className="text-xs text-gray-500">Range: {forecastData.lower_bound[0]} - {forecastData.upper_bound[0]}</p>
+                    <p className="text-sm text-gray-500">{forecastData.forecast[0]?.month} {forecastData.forecast[0]?.year} Requests</p>
+                    <h1 className="text-2xl font-bold text-gray-800">{forecastData.forecast[0]?.future_prediction}</h1>
+                    <p className="text-xs text-gray-500">Range: {forecastData.forecast[0]?.lower} - {forecastData.forecast[0]?.upper}</p>
                 </div>
                 <div className="bg-white shadow rounded p-4">
-                    <p className="text-sm text-gray-500">{forecastData.future_years[1]} Requests</p>
-                    <h1 className="text-2xl font-bold text-gray-800">{forecastData.future_predictions[1]}</h1>
-                    <p className="text-xs text-gray-500">Range: {forecastData.lower_bound[1]} - {forecastData.upper_bound[1]}</p>
+                    <p className="text-sm text-gray-500">{forecastData.forecast[1]?.month} {forecastData.forecast[1]?.year} Requests</p>
+                    <h1 className="text-2xl font-bold text-gray-800">{forecastData.forecast[1]?.future_prediction}</h1>
+                    <p className="text-xs text-gray-500">Range: {forecastData.forecast[1]?.lower} - {forecastData.forecast[1]?.upper}</p>
+                </div>
+                <div className="bg-white shadow rounded p-4">
+                    <p className="text-sm text-gray-500">{forecastData.forecast[2]?.month} {forecastData.forecast[2]?.year} Requests</p>
+                    <h1 className="text-2xl font-bold text-gray-800">{forecastData.forecast[2]?.future_prediction}</h1>
+                    <p className="text-xs text-gray-500">Range: {forecastData.forecast[3]?.lower} - {forecastData.forecast[3]?.upper}</p>
                 </div>
                 <div className="bg-white shadow rounded p-4">
                     <p className="text-sm text-gray-500">Avg. Annual Growth Rate</p>
-                    <h1 className="text-2xl font-bold text-gray-800">{forecastData.avg_growth_rate.toFixed(2)}%</h1>
+                    <h1 className="text-2xl font-bold text-gray-800">{forecastData.average_growth_rate.toFixed(2)}%</h1>
                     <p className="text-xs text-gray-500">Based on historical data</p>
                 </div>
             </div>
@@ -158,12 +176,12 @@ function Forecast() {
                 <ResponsiveContainer width="100%" height={600}>
                     <LineChart data={chartData} margin={{ top: 30, right: 20, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="year" />
+                        <XAxis dataKey="label" />
                         <YAxis />
-                        <Line dataKey="historical" stroke="#8884d8" strokeWidth={2} dot={false} label={renderEndLabel('historical')} />
-                        <Line dataKey="projected"  stroke="#82ca9d" strokeWidth={2} strokeDasharray="5 5" dot={false} label={renderEndLabel('projected')} />
-                        <Line dataKey="upper"      stroke="#ff7300" strokeWidth={1} strokeDasharray="3 3" dot={false} label={renderEndLabel('upper')} />
-                        <Line dataKey="lower"      stroke="#ff7300" strokeWidth={1} strokeDasharray="3 3" dot={false} label={renderEndLabel('lower')} />
+                        <Line dataKey="total" stroke="#8884d8" strokeWidth={2} dot={false} label={renderEndLabel('historical')} />
+                        <Line dataKey="future_prediction"  stroke="#82ca9d" strokeWidth={2} strokeDasharray="5 5" dot={false} label={renderEndLabel('projected')}/> 
+                        <Line dataKey="upper" stroke="#ff7300" strokeWidth={1} strokeDasharray="3 3" dot={false} label={renderEndLabel('upper')}/>
+                        <Line dataKey="lower" stroke="#ff7300" strokeWidth={1} strokeDasharray="3 3" dot={false} label={renderEndLabel('lower')} />
                         <Tooltip content={<CustomTooltip />} />
                     </LineChart>
                 </ResponsiveContainer>
@@ -178,6 +196,7 @@ function Forecast() {
                         <thead>
                             <tr className="text-left text-gray-500 border-b">
                                 <th className="px-4 py-2">Year</th>
+                                <th className="px-4 py-2">Month</th>
                                 <th className="px-4 py-2">Projected Requests</th>
                                 <th className="px-4 py-2">Lower Bound</th>
                                 <th className="px-4 py-2">Upper Bound</th>
@@ -185,10 +204,11 @@ function Forecast() {
                             </tr>
                         </thead>
                         <tbody>
-                            {forecastData.historical_years.map((year,i) => (
+                            {forecastData.timeline.map((item,i) => (
                                 <tr key={i} className="border-b">
-                                    <td className="px-4 py-2">{year}</td>
-                                    <td className="px-4 py-2">{forecastData.historical_totals[i]}</td>
+                                    <td className="px-4 py-2">{item.year}</td>
+                                    <td className="px-4 py-2">{item.month}</td>
+                                    <td className="px-4 py-2">{forecastData.timeline[i]?.total}</td>
                                     <td className="px-4 py-2">-</td>
                                     <td className="px-4 py-2">-</td>
                                     <td className="px-4 py-2">
@@ -198,12 +218,13 @@ function Forecast() {
                                     </td>
                                 </tr>
                             ))}
-                            {forecastData.future_years.map((year, i) => (
+                            {forecastData.forecast.map((item, i) => (
                                 <tr key={i} className="border-b">
-                                    <td className="px-4 py-2">{year}</td>
-                                    <td className="px-4 py-2">{forecastData.future_predictions[i]}</td>
-                                    <td className="px-4 py-2">{forecastData.lower_bound[i]}</td>
-                                    <td className="px-4 py-2">{forecastData.upper_bound[i]}</td>
+                                    <td className="px-4 py-2">{item.year}</td>
+                                    <td className="px-4 py-2">{item.month}</td>
+                                    <td className="px-4 py-2">{forecastData.forecast[i]?.future_prediction}</td>
+                                    <td className="px-4 py-2">{forecastData.forecast[i]?.lower}</td>
+                                    <td className="px-4 py-2">{forecastData.forecast[i]?.upper}</td>
                                     <td className="px-4 py-2" bg-blue-100 >
                                         <span className="bg-blue-200 text-blue-900 px-3 py-1 rounded-full text-sm font-medium">
                                             Projected

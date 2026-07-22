@@ -231,4 +231,4 @@ def available_months():
 
     latest_month = row['latest_month'] if row and row['latest_month'] else 1
 
-    return jsonify([{'year': current_year, 'month': m} for m in range(1, latest_month + 1)])
+    return jsonify([{'month': m} for m in range(1, latest_month + 1)])
