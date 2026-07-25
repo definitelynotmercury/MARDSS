@@ -20,6 +20,21 @@ const sectionLabels = {
     forecast: 'Demand Forecast',
 }
 
+const months = [
+    { label: 'Jan', value: 1 },
+    { label: 'Feb', value: 2 },
+    { label: 'Mar', value: 3 },
+    { label: 'Apr', value: 4 },
+    { label: 'May', value: 5 },
+    { label: 'Jun', value: 6 },
+    { label: 'Jul', value: 7 },
+    { label: 'Aug', value: 8 },
+    { label: 'Sep', value: 9 },
+    { label: 'Oct', value: 10 },
+    { label: 'Nov', value: 11 },
+    { label: 'Dec', value: 12 },
+    ]
+
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         const order = ['historical', 'upper', 'projected', 'lower']
@@ -77,26 +92,40 @@ function Export() {
     const [selectedDashboardYear, setSelectedDashboardYear] = useState('ALL')
     const [selectedDashboardType, setSelectedDashboardType] = useState('ALL')
     const [selectedDashboardMunicipality, setSelectedDashboardMunicipality] = useState('ALL')
+    const [selectedMonth, setSelectedMonth] = useState('ALL')
+    const [showMonthFilter, setShowMonthFilter] = useState(false)
     // YoY Trends
     const [selectedYoYTopN, setSelectedYoYTopN] = useState(10)
     const [selectedYoYType, setSelectedYoYType] = useState('ALL')
+    const [selectedYearForLine, setSelectedYearForLine] = useState('ALL')
     // Distribution by Assistance Type
     const [selectedPieChartTopN, setSelectedPieChartTopN] = useState(5)
     const [selectedPieChartType, setSelectedPieChartType] = useState('ALL')
     const [selectedPieChartYear, setSelectedPieChartYear] = useState('ALL')
+    const [showPieMonthFilter, setShowPieMonthFilter] = useState(false)
+    const [selectedPieMonth, setSelectedPieMonth] = useState('ALL') 
     // Distribution by Municipality
     const [selectedBarChartYear, setSelectedBarChartYear] = useState('ALL')
+    const [showBarMonthFilter, setShowBarMonthFilter] = useState(false)
+    const [selectedBarMonth, setSelectedBarMonth] = useState('ALL')
     // Comparison Chart
     const [compMunicipality1, setCompMunicipality1] = useState('BULAKAN')
     const [compMunicipality2, setCompMunicipality2] = useState('CALUMPIT')
     const [compType, setCompType] = useState('ALL')
     const [compYear, setCompYear] = useState('ALL')
+    const [showComparisonMonthFilter, setShowComparisonMonthFilter] = useState(false)
+    const [comparisonMonth, setComparisonMonth] = useState('ALL')
     // Municipality Drilldown
     const [drilldownMunicipality, setDrilldownMunicipality] = useState('BULAKAN')
     const [drilldownYear, setDrilldownYear] = useState('ALL')
+    const [drill_down_month, setDrillDownMonth] = useState("ALL")
+    const [showDrilldownMonthFilter, setShowDrilldownMonthFilter] = useState(false)
     // Top N Rankings
     const [topN, setTopN] = useState(5)
     const [selectedMunicipalityRanking, setSelectedMunicipalityRanking] = useState('ALL')
+    const [rankingMonth, setRankingMonth] = useState("ALL")
+    const [availableMonths, setAvailableMonths] = useState([])
+    
     // Forecast
     const [forecastMunicipality, setForecastMunicipality] = useState('ALL')
     const [forecastType, setForecastType] = useState('ALL')
@@ -119,15 +148,11 @@ function Export() {
     const drilldownMax = Math.max(...drilldownData.map(d => d.total), 1)
     const [rankingsData, setRankingsData] = useState([])
     const [forecastData, setForecastData] = useState({
-        future_years: [],
-        future_predictions: [],
-        historical_totals: [],
-        historical_years: [],
-        lower_bound: [],
-        upper_bound: [],
-        avg_growth_rate: 0
+        timeline: [],
+        forecast: [],
+        average_growth_rate: 0
     })
-    const lastTotal = forecastData.historical_totals[forecastData.historical_totals.length - 1]
+    const lastTotal = forecastData.timeline[forecastData.timeline.length - 1]?.total
 
     const years = []
     let y = 2023
@@ -168,87 +193,106 @@ function Export() {
         if (!sections.dashboardKpi) return
         const fetchKpi = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/dashboard/kpi?year=${selectedDashboardYear}&municipality=${selectedDashboardMunicipality}&type=${selectedDashboardType}`
+                `http://127.0.0.1:5000/api/dashboard/kpi?year=${selectedDashboardYear}&municipality=${selectedDashboardMunicipality}&type=${selectedDashboardType}&month=${selectedMonth}`
             )
             setKpiPreview(await res.json())
         }
         fetchKpi()
-    }, [sections.dashboardKpi, selectedDashboardYear, selectedDashboardMunicipality, selectedDashboardType])
+    }, [sections.dashboardKpi, selectedDashboardYear, selectedDashboardMunicipality, selectedDashboardType,selectedMonth])
 
     useEffect(() => {
         if (!sections.yoyTrends) return
         const loadYoY = async () => {
             const [trendRes, typeTotalsRes] = await Promise.all([
-                fetch(`http://127.0.0.1:5000/api/dashboard/trend`),
+                fetch(`http://127.0.0.1:5000/api/dashboard/trend?year=${selectedYearForLine}`),
                 fetch(`http://127.0.0.1:5000/api/dashboard/type-totals`)
             ])
             setYoyTrendData(await trendRes.json())
             setYoyTypeTotals(await typeTotalsRes.json())
         }
         loadYoY()
-    }, [sections.yoyTrends])
+    }, [sections.yoyTrends,selectedYearForLine])
 
     useEffect(() => {
         const fetchPie = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/dashboard/pie?top_n=${selectedPieChartTopN}&type=${selectedPieChartType}&year=${selectedPieChartYear}`
+                `http://127.0.0.1:5000/api/dashboard/pie?top_n=${selectedPieChartTopN}&type=${selectedPieChartType}&year=${selectedPieChartYear}&month=${selectedPieMonth}`
             )
             setPieChartData(await res.json())
         }
         fetchPie()
-    }, [selectedPieChartTopN, selectedPieChartType, selectedPieChartYear])
+    }, [selectedPieChartTopN, selectedPieChartType, selectedPieChartYear,selectedPieMonth])
 
     useEffect(() => {
         const fetchBar = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/dashboard/barchart?year=${selectedBarChartYear}`
+                `http://127.0.0.1:5000/api/dashboard/barchart?year=${selectedBarChartYear}&month=${selectedBarMonth}`
             )
             setBarChartData(await res.json())
         }
         fetchBar()
-    }, [selectedBarChartYear])
+    }, [selectedBarChartYear,selectedBarMonth])
 
     useEffect(() => {
         if (!sections.comparisonChart) return
         const fetchComparison = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/analytics/comparison?municipality_1=${compMunicipality1}&municipality_2=${compMunicipality2}&type=${compType}&year=${compYear}`
+                `http://127.0.0.1:5000/api/analytics/comparison?municipality_1=${compMunicipality1}&municipality_2=${compMunicipality2}&type=${compType}&year=${compYear}&month=${comparisonMonth}`
             )
             setComparisonData(await res.json())
         }
         fetchComparison()
-    }, [sections.comparisonChart, compMunicipality1, compMunicipality2, compType, compYear])
+    }, [sections.comparisonChart, compMunicipality1, compMunicipality2, compType, compYear,comparisonMonth])
+
 
     useEffect(() => {
         if (!sections.municipalityDrilldown) return
         const fetchDrilldown = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/analytics/drill_down?municipality=${drilldownMunicipality}&year=${drilldownYear}`
+                `http://127.0.0.1:5000/api/analytics/drill_down?municipality=${drilldownMunicipality}&year=${drilldownYear}&month=${drill_down_month}`
             )
             setDrilldownData(await res.json())
         }
         fetchDrilldown()
-    }, [sections.municipalityDrilldown, drilldownMunicipality, drilldownYear])
+    }, [sections.municipalityDrilldown, drilldownMunicipality, drilldownYear, drill_down_month])
 
     useEffect(() => {
-        if (!sections.topNRanking) return
         const fetchRankings = async () => {
-            const res = await fetch(
-                `http://127.0.0.1:5000/api/analytics/n_rankings?topN=${topN}&selectedMunicipalityRanking=${selectedMunicipalityRanking}`
-            )
-            setRankingsData(await res.json())
+           const response = await fetch(`http://127.0.0.1:5000/api/analytics/n_rankings?topN=${topN}&selectedMunicipalityRanking=${selectedMunicipalityRanking}&month=${rankingMonth}`)
+            const data = await response.json()
+            setRankingsData(data)
         }
         fetchRankings()
-    }, [sections.topNRanking, topN, selectedMunicipalityRanking])
+    }, [topN, selectedMunicipalityRanking, rankingMonth])
+
+    
 
     useEffect(() => {
-        const fetchForecastData = async () => {
+        const fetchForecastData = async() => {
             const response = await fetch(`http://127.0.0.1:5000/api/forecast/predict?municipality=${forecastMunicipality}&type=${forecastType}`)
             const data = await response.json()
             setForecastData(data)
         }
         fetchForecastData()
     }, [forecastMunicipality, forecastType])
+
+    useEffect(() => {
+        const fetchAvailableMonths = async () => {
+            const response = await fetch('http://127.0.0.1:5000/api/analytics/available_months')
+            const data = await response.json()
+            setAvailableMonths(data)
+        }
+        fetchAvailableMonths()
+    }, [])
+
+    useEffect(() => {
+        const fetchLatestMonth = async () => {
+            const response = await fetch('http://127.0.0.1:5000/api/analytics/latest_month')
+            const data = await response.json()
+            setRankingMonth(data.month)
+        }
+        fetchLatestMonth()
+    }, [])
 
     useEffect(() => {
         const fetchPreview = async () => {
@@ -298,16 +342,16 @@ function Export() {
     }
 
     const chartData = [
-        ...forecastData.historical_years.map((year, i) => ({
-            year: year,
-            historical: forecastData.historical_totals[i],
-            projected: i === forecastData.historical_years.length - 1 ? lastTotal : null
+        ...forecastData.timeline.map((row, i) => ({
+            label: row.label,
+            total: row.total,
+            future_prediction: i === forecastData.timeline.length - 1 ? lastTotal : null
         })),
-        ...forecastData.future_years.map((year, i) => ({
-            year: year,
-            projected: forecastData.future_predictions[i],
-            lower: forecastData.lower_bound[i],
-            upper: forecastData.upper_bound[i]
+        ...forecastData.forecast.map((row) => ({
+            label: row.label,
+            future_prediction: row.future_prediction,
+            lower: row.lower,
+            upper: row.upper
         }))
     ]
 
@@ -424,15 +468,15 @@ function Export() {
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={yoyTrendData}>
                             <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="year" />
+                            <XAxis dataKey={yoyTrendData[0]?.month ? 'month' : 'year'} />
                             <YAxis />
-                            <Tooltip />
+                            <Tooltip wrapperStyle={{ zIndex: 1000, top: 0 }} />
                             <Legend />
                             {yoyVisibleTypes.map((t, i) => (
                                 <Line key={t.name} type="monotone" dataKey={t.name} stroke={yoyColors[i]} strokeWidth={2} label={renderLabel} />
                             ))}
                         </LineChart>
-                    </ResponsiveContainer>
+                </ResponsiveContainer>
                 </div>
             )}
 
@@ -527,39 +571,44 @@ function Export() {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="text-left text-gray-500 border-b">
-                                    <th className="pb-3 pr-4">Rank</th>
-                                    <th className="pb-3 pr-4">Municipality</th>
-                                    <th className="pb-3 pr-4">Previous Year</th>
-                                    <th className="pb-3 pr-4">Current Year</th>
-                                    <th className="pb-3 pr-4">Volume</th>
-                                    <th className="pb-3">Growth Rate</th>
-                                </tr>
+                                <th className="pb-3 pr-4">Rank</th>
+                                <th className="pb-3 pr-4">Municipality</th>
+                                <th className="pb-3 pr-4">
+                                    {months.find(m => m.value === Number(rankingMonth))?.label} {new Date().getFullYear() - 1}
+                                </th>
+                                <th className="pb-3 pr-4">
+                                    {months.find(m => m.value === Number(rankingMonth))?.label} {new Date().getFullYear()}
+                                </th>
+                                <th className="pb-3 pr-4">Volume</th>
+                                <th className="pb-3">Growth Rate</th>
+                            </tr>
                             </thead>
                             <tbody>
                                 {rankingsData.map((item, index) => (
-                                    <tr key={item.municipality_name} className="border-b hover:bg-gray-50">
-                                        <td className="py-3 pr-4">
-                                            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-bold
-                                                ${index === 0 ? 'bg-blue-800' : index === 1 ? 'bg-blue-600' : index === 2 ? 'bg-blue-400' : 'bg-gray-300 text-gray-600'}`}>
-                                                {index + 1}
-                                            </span>
-                                        </td>
-                                        <td className="py-3 pr-4 font-medium text-gray-700">{item.municipality_name}</td>
-                                        <td className="py-3 pr-4 text-gray-500">{item.previous?.toLocaleString() ?? 'N/A'}</td>
-                                        <td className="py-3 pr-4 text-gray-800 font-semibold">{item.current?.toLocaleString() ?? 'N/A'}</td>
-                                        <td className="py-3 pr-4 w-40">
-                                            <div className="h-2 bg-gray-200 rounded-full">
-                                                <div className="h-2 bg-teal-600 rounded-full"
-                                                    style={{ width: `${(item.current / Math.max(...rankingsData.map(r => r.current || 0), 1)) * 100}%` }} />
-                                            </div>
-                                        </td>
-                                        <td className="py-3">
-                                            <span className={`font-semibold ${item.growth_rate >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                                {item.growth_rate >= 0 ? '+' : ''}{item.growth_rate}%
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
+                                <tr key={item.municipality_name} className="border-b hover:bg-gray-50">
+                                    <td className="py-3 pr-4">
+                                        <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-bold ${index === 0 ? 'bg-blue-800' : index === 1 ? 'bg-blue-600' : index === 2 ? 'bg-blue-400' : 'bg-gray-300 text-gray-600'}`}>
+                                            {index + 1}
+                                        </span>
+                                    </td>
+                                    <td className="py-3 pr-4 font-medium text-gray-700">{item.municipality_name}</td>
+                                    <td className="py-3 pr-4 text-gray-500">{item.previous?.toLocaleString() ?? 'N/A'}</td>
+                                    <td className="py-3 pr-4 text-gray-800 font-semibold">{item.current?.toLocaleString() ?? 'N/A'}</td>
+                                    <td className="py-3 pr-4 w-40">
+                                        <div className="h-2 bg-gray-200 rounded-full">
+                                            <div
+                                                className="h-2 bg-teal-600 rounded-full"
+                                                style={{ width: `${(item.current / Math.max(...rankingsData.map(r => r.current || 0), 1)) * 100}%` }}
+                                            />
+                                        </div>
+                                    </td>
+                                    <td className="py-3">
+                                        <span className={`font-semibold ${item.growth_rate >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                            {item.growth_rate >= 0 ? '+' : ''}{item.growth_rate}%
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
                             </tbody>
                         </table>
                     </div>
@@ -573,12 +622,12 @@ function Export() {
                     <ResponsiveContainer width="100%" height={600}>
                         <LineChart data={chartData} margin={{ top: 30, right: 20, left: 0, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="year" />
+                            <XAxis dataKey="label" />
                             <YAxis />
-                            <Line dataKey="historical" stroke="#8884d8" strokeWidth={2} dot={false} label={renderEndLabel('historical')} />
-                            <Line dataKey="projected"  stroke="#82ca9d" strokeWidth={2} strokeDasharray="5 5" dot={false} label={renderEndLabel('projected')} />
-                            <Line dataKey="upper"      stroke="#ff7300" strokeWidth={1} strokeDasharray="3 3" dot={false} label={renderEndLabel('upper')} />
-                            <Line dataKey="lower"      stroke="#ff7300" strokeWidth={1} strokeDasharray="3 3" dot={false} label={renderEndLabel('lower')} />
+                            <Line dataKey="total" stroke="#8884d8" strokeWidth={2} dot={false} label={renderEndLabel('historical')} />
+                            <Line dataKey="future_prediction"  stroke="#82ca9d" strokeWidth={2} strokeDasharray="5 5" dot={false} label={renderEndLabel('projected')}/> 
+                            <Line dataKey="upper" stroke="#ff7300" strokeWidth={1} strokeDasharray="3 3" dot={false} label={renderEndLabel('upper')}/>
+                            <Line dataKey="lower" stroke="#ff7300" strokeWidth={1} strokeDasharray="3 3" dot={false} label={renderEndLabel('lower')} />
                             <Tooltip content={<CustomTooltip />} />
                         </LineChart>
                     </ResponsiveContainer>
@@ -723,14 +772,34 @@ function Export() {
                                     </div>
 
                                     {key === 'dashboardKpi' && value && (
-                                        <div className="mt-2 grid grid-cols-3 gap-2 pl-6">
+                                        <div className="mt-2 grid grid-cols-4 gap-2 pl-6">
                                             <div>
                                                 <p className="text-sm text-gray-400">Year</p>
-                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedDashboardYear(e.target.value)} value={selectedDashboardYear}>
-                                                    <option value="ALL">ALL YEARS</option>
-                                                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" 
+                                                    onChange={e => {
+                                                    const value = e.target.value
+                                                    setSelectedDashboardYear(value)
+                                                    setShowMonthFilter(value !== 'ALL')
+                                                    if (value === 'ALL') {
+                                                        setSelectedMonth('ALL')
+                                                        }}} value={selectedDashboardYear}>
+                                                        <option value="ALL">ALL YEARS</option>
+                                                        {years.map(year => <option key={year}>{year}</option>)}
                                                 </select>
                                             </div>
+                                            {showMonthFilter && (
+                                                <div>
+                                                    <p className="text-sm text-gray-400">Month</p>
+                                                    <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedMonth(e.target.value)} value = {selectedMonth}>
+                                                    <option value="ALL">ALL MONTHS</option>
+                                                    {months.map(month => (
+                                                        <option key={month.value} value={month.value}>
+                                                            {month.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                </div>
+                                            )}
                                             <div>
                                                 <p className="text-sm text-gray-400">Municipality</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedDashboardMunicipality(e.target.value)} value={selectedDashboardMunicipality}>
@@ -748,7 +817,7 @@ function Export() {
                                         </div>
                                     )}
                                     {key === 'yoyTrends' && value && (
-                                        <div className="mt-2 grid grid-cols-2 gap-2 pl-6">
+                                        <div className="mt-2 grid grid-cols-3 gap-2 pl-6">
                                             <div>
                                                 <p className="text-sm text-gray-400">Top</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedYoYTopN(Number(e.target.value))} value={selectedYoYTopN}>
@@ -762,10 +831,17 @@ function Export() {
                                                     {types.map(t => <option key={t.type_id} value={t.type_name}>{t.type_name}</option>)}
                                                 </select>
                                             </div>
+                                            <div>
+                                                <p className="text-sm text-gray-400">Year</p>
+                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedYearForLine(e.target.value)} value = {selectedYearForLine}>
+                                                    <option value="ALL">ALL YEARS</option>
+                                                    {years.map(year => <option key={year}>{year}</option>)}
+                                                </select>
+                                            </div>
                                         </div>
                                     )}
                                     {key === 'distributionByAssistance' && value && (
-                                        <div className="mt-2 grid grid-cols-3 gap-2 pl-6">
+                                        <div className="mt-2 grid grid-cols-4 gap-2 pl-6">
                                             <div>
                                                 <p className="text-sm text-gray-400">Top</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedPieChartTopN(Number(e.target.value))} value={selectedPieChartTopN}>
@@ -781,26 +857,64 @@ function Export() {
                                             </div>
                                             <div>
                                                 <p className="text-sm text-gray-400">Year</p>
-                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedPieChartYear(e.target.value)} value={selectedPieChartYear}>
-                                                    <option value="ALL">ALL YEARS</option>
-                                                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" 
+                                                    onChange={e => {const value = e.target.value
+                                                                    setSelectedPieChartYear(value)
+                                                                    setShowPieMonthFilter(value !== 'ALL')
+                                                                    if (value === 'ALL') {
+                                                                    setSelectedPieMonth('ALL')
+                                                        }}} value={selectedPieChartYear}>
+                                                        <option value="ALL">ALL YEARS</option>
+                                                        {years.map(year => <option key={year}>{year}</option>)}
                                                 </select>
                                             </div>
+                                            { showPieMonthFilter && (
+                                                    <div>
+                                                        <p className="text-sm text-gray-400">Month</p>
+                                                        <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedPieMonth(e.target.value)} value={selectedPieMonth}>
+                                                            <option value="ALL">ALL MONTHS</option>
+                                                            {months.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}
+                                                        </select>
+                                                    </div>
+                                                    )
+                                                }
                                         </div>
                                     )}
                                     {key === 'distributionByMunicipality' && value && (
                                         <div className="mt-2 grid grid-cols-2 gap-2 pl-6">
                                             <div>
                                                 <p className="text-sm text-gray-400">Year</p>
-                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedBarChartYear(e.target.value)} value={selectedBarChartYear}>
+                                                <select
+                                                    className="w-full border border-gray-300 rounded p-2 mt-1 text-sm"
+                                                    value={selectedBarChartYear}
+                                                    onChange={e => {
+                                                        const value = e.target.value
+                                                        setSelectedBarChartYear(value)
+                                                        setShowBarMonthFilter(value !== 'ALL')
+                                                        if (value === 'ALL') {
+                                                            setSelectedBarMonth('ALL')
+                                                        }
+                                                    }}
+                                                >
                                                     <option value="ALL">ALL YEARS</option>
-                                                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                                                    {years.map(year => <option key={year}>{year}</option>)}
                                                 </select>
                                             </div>
+                                            {
+                                                showBarMonthFilter && (
+                                                    <div>
+                                                        <p className="text-sm text-gray-400">Month</p>
+                                                        <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedBarMonth(e.target.value)} value={selectedBarMonth}>
+                                                            <option value="ALL">ALL MONTHS</option>
+                                                            {months.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}
+                                                        </select>
+                                                    </div>
+                                                )
+                                            }
                                         </div>
                                     )}
                                     {key === 'comparisonChart' && value && (
-                                        <div className="mt-2 grid grid-cols-4 gap-2 pl-6">
+                                        <div className="mt-2 grid grid-cols-5 gap-2 pl-6">
                                             <div>
                                                 <p className="text-sm text-gray-400">Municipality 1</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setCompMunicipality1(e.target.value)} value={compMunicipality1}>
@@ -822,15 +936,37 @@ function Export() {
                                             </div>
                                             <div>
                                                 <p className="text-sm text-gray-400">Year</p>
-                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setCompYear(e.target.value)} value={compYear}>
+                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" 
+                                                onChange={(e) => {
+                                                    const Value = e.target.value
+                                                    setCompYear(Value)
+                                                    if (Value === 'ALL') {
+                                                        setShowComparisonMonthFilter(false)
+                                                    } else {
+                                                        setShowComparisonMonthFilter(true)
+                                                    }
+                                                }} value={compYear}>
                                                     <option value="ALL">ALL YEARS</option>
-                                                    {years.map(year => <option key={year} value={year}>{year}</option>)}
+                                                    {years.map((year) => (
+                                                        <option key={year}>{year}</option>
+                                                    ))}
                                                 </select>
                                             </div>
+                                            {showComparisonMonthFilter && (
+                                                <div>
+                                                    <p className="text-sm text-gray-400">Month</p>
+                                                    <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={(e) => setComparisonMonth(e.target.value)} value={comparisonMonth}>
+                                                        <option value="ALL">ALL MONTHS</option>
+                                                        {months.map((month) => (
+                                                            <option key={month.value} value={month.value}>{month.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                )}
                                         </div>
                                     )}
                                     {key === 'municipalityDrilldown' && value && (
-                                        <div className="mt-2 grid grid-cols-2 gap-2 pl-6">
+                                        <div className="mt-2 grid grid-cols-3 gap-2 pl-6">
                                             <div>
                                                 <p className="text-sm text-gray-400">Municipality</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setDrilldownMunicipality(e.target.value)} value={drilldownMunicipality}>
@@ -839,15 +975,39 @@ function Export() {
                                             </div>
                                             <div>
                                                 <p className="text-sm text-gray-400">Year</p>
-                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setDrilldownYear(e.target.value)} value={drilldownYear}>
+                                                <select
+                                                    className="w-full border border-gray-300 rounded p-2 mt-1 text-sm"
+                                                    value={drilldownYear}
+                                                    onChange={e => {
+                                                        const value = e.target.value
+                                                        setDrilldownYear(value)
+                                                        if (value === 'ALL') {
+                                                            setShowDrilldownMonthFilter(false)
+                                                            setDrilldownMonth('ALL')
+                                                        } else {
+                                                            setShowDrilldownMonthFilter(true)
+                                                        }
+                                                    }}
+                                                >
                                                     <option value="ALL">ALL YEARS</option>
                                                     {years.map(year => <option key={year} value={year}>{year}</option>)}
                                                 </select>
                                             </div>
+                                            {showDrilldownMonthFilter && (
+                                                    <div>
+                                                        <p className="text-sm text-gray-400">Month</p>
+                                                        <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={(e) => setDrillDownMonth(e.target.value)} value={drill_down_month}>
+                                                            <option value="ALL">ALL MONTHS</option>
+                                                            {months.map((month) => (
+                                                                <option key={month.value} value={month.value}>{month.label}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                )}
                                         </div>
                                     )}
                                     {key === 'topNRanking' && value && (
-                                        <div className="mt-2 grid grid-cols-2 gap-2 pl-6">
+                                        <div className="mt-2 grid grid-cols-3 gap-2 pl-6">
                                             <div>
                                                 <p className="text-sm text-gray-400">Top N</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setTopN(Number(e.target.value))} value={topN}>
@@ -859,6 +1019,16 @@ function Export() {
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedMunicipalityRanking(e.target.value)} value={selectedMunicipalityRanking}>
                                                     <option value="ALL">ALL MUNICIPALITIES</option>
                                                     {municipalities.map(m => <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>)}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-400">Month</p>
+                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={(e) => setRankingMonth(Number(e.target.value))} value={rankingMonth}>
+                                                    {availableMonths.map((m) => (
+                                                        <option key={`${m.year}-${m.month}`} value={m.month}>
+                                                            {months.find(mo => mo.value === m.month)?.label} {m.year}
+                                                        </option>
+                                                    ))}
                                                 </select>
                                             </div>
                                         </div>

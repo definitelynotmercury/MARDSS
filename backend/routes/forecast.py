@@ -6,6 +6,7 @@ from config import DB_CONFIG, client
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from datetime import date
+import matplotlib.pyplot as plt
 
 forecast_bp = Blueprint('forecast', __name__)
 
@@ -176,4 +177,3 @@ def generate_narrative():
     
 
     return jsonify({"narrative": response.text})
-    
