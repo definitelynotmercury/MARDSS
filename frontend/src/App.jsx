@@ -8,6 +8,8 @@ import Settings from './Settings'
 import Admin from './Admin'
 import AdminUploadReport from './AdminUploadReport'
 import ProtectedRoute from './ProtectedRoute'
+import AdminRoute from './AdminRoute'
+
 function App() {
     return (
         <BrowserRouter>
@@ -18,8 +20,8 @@ function App() {
                 <Route path="/forecast" element={<ProtectedRoute><Forecast /></ProtectedRoute>} />
                 <Route path="/export" element={<ProtectedRoute><Export /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-                <Route path="/AdminUploadReport" element={<ProtectedRoute><AdminUploadReport/></ProtectedRoute>} />
+                <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+                <Route path="/AdminUploadReport" element={<AdminRoute><AdminUploadReport/></AdminRoute>} />
             </Routes>
         </BrowserRouter>
     )

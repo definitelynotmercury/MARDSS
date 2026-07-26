@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 import mysql.connector
 from config import DB_CONFIG
 import bcrypt
-from auth_utils import token_required
+from auth_utils import token_required, admin_required
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -10,7 +10,7 @@ def get_db_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
 @admin_bp.route('/api/admin/users', methods=['GET'])
-@token_required
+@admin_required
 def get_users():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -21,7 +21,7 @@ def get_users():
     return jsonify(users)
 
 @admin_bp.route('/api/admin/users', methods=['POST'])
-@token_required
+@admin_required
 def create_user():
     data = request.get_json()
     username = data.get('username')
@@ -57,7 +57,7 @@ def create_user():
     return jsonify({"message": "User created successfully"}), 201
 
 @admin_bp.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
-@token_required
+@admin_required
 def delete_user(user_id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
