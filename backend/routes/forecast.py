@@ -7,6 +7,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from datetime import date
 import matplotlib.pyplot as plt
+from auth_utils import token_required
 
 forecast_bp = Blueprint('forecast', __name__)
 
@@ -18,6 +19,7 @@ def get_db():
 
    
 @forecast_bp.route('/api/forecast/predict')
+@token_required
 def predict():
     muncipality = request.args.get('municipality', 'ALL')
     type_ = request.args.get('type', 'ALL')
@@ -148,6 +150,7 @@ def predict():
 
 
 @forecast_bp.route('/api/forecast/narrative', methods=['POST'])
+@token_required
 def generate_narrative():
     data = request.get_json()
     forecast_data = data.get('forecastData', {})

@@ -1,4 +1,5 @@
 import Layout from "./Layout";
+import { getToken } from "./auth";
 import { useState, useEffect } from 'react'
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart } from 'recharts'
 
@@ -56,12 +57,21 @@ function Forecast() {
     const [narrativeLoading, setNarrativeLoading] = useState(false)
 
     useEffect(() => {
+        const token = getToken()
         const fetchdata = async() => {
-            const response1 = await fetch('http://127.0.0.1:5000/api/municipalities')
+            const response1 = await fetch('http://127.0.0.1:5000/api/municipalities',{
+                'headers': {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
             const muni_data = await response1.json()
             setMunicipalities(muni_data)
 
-            const response2 = await fetch('http://127.0.0.1:5000/api/assistance_types')
+            const response2 = await fetch('http://127.0.0.1:5000/api/assistance_types',{
+                'headers': {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
             const type_data = await response2.json()
             setTypes(type_data)
 
@@ -71,7 +81,11 @@ function Forecast() {
 
     useEffect(() => {
         const fetchForecastData = async() => {
-            const response = await fetch(`http://127.0.0.1:5000/api/forecast/predict?municipality=${selectedMunicipality}&type=${selectedType}`)
+            const token = getToken()
+            const response = await fetch(`http://127.0.0.1:5000/api/forecast/predict?municipality=${selectedMunicipality}&type=${selectedType}`,{ 
+                headers: {
+                'Authorization': `Bearer ${token}`
+            }})
             const data = await response.json()
             setForecastData(data)
         }
@@ -79,10 +93,11 @@ function Forecast() {
     }, [selectedMunicipality, selectedType])
 
     const generateNarrative = async() => {
+        const token = getToken()
         setNarrativeLoading(true)
         const response = await fetch('http://127.0.0.1:5000/api/forecast/narrative', {
             method: 'POST',
-            headers:{ 'Content-Type': 'application/json'},
+            headers:{ 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'},
             body: JSON.stringify({
                 forecastData,
                 selectedMunicipality,

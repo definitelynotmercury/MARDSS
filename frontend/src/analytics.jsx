@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Layout from './Layout'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { useFetcher } from 'react-router-dom'
+import {getToken} from './auth'
 
 function Analytics() {
 
@@ -32,12 +33,24 @@ function Analytics() {
     const [comparisonMonth, setComparisonMonth] = useState('ALL')
 
     useEffect(() => {
+        const token = getToken()
+        if (!token) {
+            window.location.href = '/login'
+        }
         const fetchdata = async() => {
-            const response1 = await fetch('http://127.0.0.1:5000/api/municipalities')
+            const response1 = await fetch('http://127.0.0.1:5000/api/municipalities', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
             const muni_data = await response1.json()
             setMunicipalities(muni_data)
 
-            const response2 = await fetch('http://127.0.0.1:5000/api/assistance_types')
+            const response2 = await fetch('http://127.0.0.1:5000/api/assistance_types', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
             const type_data = await response2.json()
             setTypes(type_data)
 
@@ -47,7 +60,12 @@ function Analytics() {
 
     // Function to fetch comparison data based on selected filters
     const fetchComparisonData = async () => {
-    const response = await fetch(`http://127.0.0.1:5000/api/analytics/comparison?municipality_1=${municipality1}&municipality_2=${municipality2}&type=${selectedType}&year=${selectedYear}&month=${comparisonMonth}`)
+    const token = getToken()
+    const response = await fetch(`http://127.0.0.1:5000/api/analytics/comparison?municipality_1=${municipality1}&municipality_2=${municipality2}&type=${selectedType}&year=${selectedYear}&month=${comparisonMonth}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
     const data = await response.json()
     setComparisonData(data)
     }
@@ -75,7 +93,12 @@ function Analytics() {
 
     useEffect(() => {
         const fetchDrilldownData = async () => {
-            const response = await fetch(`http://127.0.0.1:5000/api/analytics/drill_down?municipality=${drill_down_municipality}&year=${drill_down_year}&month=${drill_down_month}`)
+            const token = getToken()
+            const response = await fetch(`http://127.0.0.1:5000/api/analytics/drill_down?municipality=${drill_down_municipality}&year=${drill_down_year}&month=${drill_down_month}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
             const data = await response.json()
             setDrilldownData(data)
         }   
@@ -94,7 +117,12 @@ function Analytics() {
 
     useEffect(() => {
         const fetchRankings = async () => {
-           const response = await fetch(`http://127.0.0.1:5000/api/analytics/n_rankings?topN=${topN}&selectedMunicipalityRanking=${selectedMunicipalityRanking}&month=${rankingMonth}`)
+            const token = getToken()
+            const response = await fetch(`http://127.0.0.1:5000/api/analytics/n_rankings?topN=${topN}&selectedMunicipalityRanking=${selectedMunicipalityRanking}&month=${rankingMonth}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
             const data = await response.json()
             setRankings(data)
         }
@@ -103,7 +131,12 @@ function Analytics() {
 
     useEffect(() => {
         const fetchAvailableMonths = async () => {
-            const response = await fetch('http://127.0.0.1:5000/api/analytics/available_months')
+            const token = getToken()
+            const response = await fetch('http://127.0.0.1:5000/api/analytics/available_months', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
             const data = await response.json()
             setAvailableMonths(data)
         }
@@ -112,7 +145,12 @@ function Analytics() {
 
     useEffect(() => {
         const fetchLatestMonth = async () => {
-            const response = await fetch('http://127.0.0.1:5000/api/analytics/latest_month')
+            const token = getToken()
+            const response = await fetch('http://127.0.0.1:5000/api/analytics/latest_month', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
             const data = await response.json()
             setRankingMonth(data.month)
         }
@@ -124,11 +162,15 @@ function Analytics() {
     const [narrativeLoading, setNarrativeLoading] = useState(false)
 
     const generateNarrative = async () => {
+        const token = getToken()
         setNarrativeLoading(true)
         setNarrative('')
         const res = await fetch(`http://127.0.0.1:5000/api/analytics/narrative`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ comparisonData, selectedYear,comparisonMonth ,drilldown_data, drill_down_year, drill_down_month, rankings})
         })
         const data = await res.json()

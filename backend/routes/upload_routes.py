@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 import mysql.connector
 from config import DB_CONFIG
 from routes.monthly_import import parse_monthly_excel, ParseError
+from auth_utils import token_required
 
 upload_bp = Blueprint('upload', __name__)
 
@@ -11,6 +12,7 @@ def get_db_connection():
 
 
 @upload_bp.route('/api/admin/upload-monthly-report', methods=['POST'])
+@token_required
 def upload_monthly_report():
     if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400

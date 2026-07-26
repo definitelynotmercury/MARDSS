@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Layout from './Layout'
+import { getToken } from './auth'
 
 const BASE_URL = 'http://127.0.0.1:5000'
 
@@ -15,6 +16,7 @@ function Settings() {
     const [confirmPassword, setConfirmPassword] = useState('')
 
     const handlePictureUpload = async (file) => {
+    const token = getToken()
     if (!file) return
 
     const formData = new FormData()
@@ -23,7 +25,10 @@ function Settings() {
 
     const response = await fetch(`${BASE_URL}/api/settings/upload-picture`, {
             method: 'POST',
-            body: formData
+            body: formData,
+            headers : {
+                "Authorization" : `Bearer ${token}`
+            }
         })
         const data = await response.json()
 
@@ -37,10 +42,11 @@ function Settings() {
     }
 
     const handleSave = async () => {
+    const token = getToken()
     // update profile info
     const profileRes = await fetch(`${BASE_URL}/api/settings/update_profile`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json','Authorization' : `Bearer ${token}` },
         body: JSON.stringify({
             user_id: user.user_id,
             full_name: fullName,
@@ -58,13 +64,17 @@ function Settings() {
 
         const passRes = await fetch(`${BASE_URL}/api/settings/change-password`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
             body: JSON.stringify({
                 user_id: user.user_id,
                 current_password: currentPassword,
                 new_password: newPassword
             })
         })
+        
         const passData = await passRes.json()
         if (!passRes.ok) {
             alert(passData.message)

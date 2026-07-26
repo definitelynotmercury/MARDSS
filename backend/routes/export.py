@@ -12,6 +12,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
 import json
 from flask import request as flask_request
+from auth_utils import token_required
 
 export_bp = Blueprint('export', __name__)
 def get_db():
@@ -19,6 +20,7 @@ def get_db():
 
 
 @export_bp.route('/api/export/data')
+@token_required
 def get_export_data():
     year_from = request.args.get('year_from', 'ALL')
     year_to = request.args.get('year_to', 'ALL')
@@ -105,11 +107,13 @@ def get_export_data():
     return jsonify(result)
 
 @export_bp.route('/api/export/dataset')
+@token_required
 def get_dataset():
     year_from = request.args.get('year_from', 'ALL')
     year_to = request.args.get('year_to', 'ALL')
     municipality = request.args.get('municipality', 'ALL')
     type_ = request.args.get('type', 'ALL')
+    month = request.args.get('month', 'ALL')
 
     filters = []
     params = []
@@ -124,18 +128,21 @@ def get_dataset():
     if type_ != 'ALL':
         filters.append("a.type_name = %s")
         params.append(type_)
+    if month != 'ALL':
+        filters.append("r.month = %s")
+        params.append(month)
 
     where_clause = "WHERE " + " AND ".join(filters) if filters else ""
 
     conn = get_db()
     cursor = conn.cursor(dictionary=True)
     cursor.execute(f"""
-        SELECT r.year, m.municipality_name, a.type_name, r.request_count
+        SELECT r.year, r.month, m.municipality_name, a.type_name, r.request_count
         FROM assistance_records r
         JOIN assistance_types a ON r.assistance_type_id = a.type_id
         JOIN municipalities m ON r.municipality_id = m.municipality_id
         {where_clause}
-        ORDER BY r.year, m.municipality_name, a.type_name
+        ORDER BY r.year, r.month, m.municipality_name, a.type_name
     """, params)
     data = cursor.fetchall()
     cursor.close()
@@ -145,6 +152,7 @@ def get_dataset():
 
 
 @export_bp.route('/api/export/dataset/excel')
+@token_required
 def export_dataset_excel():
     year_from = request.args.get('year_from', 'ALL')
     year_to = request.args.get('year_to', 'ALL')
@@ -239,6 +247,7 @@ def export_dataset_excel():
     )
 
 @export_bp.route('/api/export/dataset/pdf')
+@token_required
 def export_dataset_pdf():
     year_from = request.args.get('year_from', 'ALL')
     year_to = request.args.get('year_to', 'ALL')
@@ -397,6 +406,7 @@ def export_dataset_pdf():
     )
 
 @export_bp.route('/api/export/charts/excel', methods=['POST'])
+@token_required
 def export_charts_excel():
     body = flask_request.get_json()
     selected_sections = body.get('sections', [])

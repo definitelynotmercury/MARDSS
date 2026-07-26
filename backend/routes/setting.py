@@ -3,6 +3,7 @@ import mysql.connector
 from config import DB_CONFIG
 import bcrypt
 import os
+from auth_utils import token_required
 
 setting_bp = Blueprint('setting', __name__)
 
@@ -13,6 +14,7 @@ UPLOAD_FOLDER = 'static/profile_pics'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @setting_bp.route('/api/settings/update_profile', methods=['PUT'])
+@token_required
 def update_profile():
     data = request.get_json()
     user_id = data.get('user_id')
@@ -44,6 +46,7 @@ def update_profile():
     return jsonify({'message': 'Account updated successfully'}), 200
 
 @setting_bp.route('/api/settings/change-password', methods=['PUT'])
+@token_required
 def change_password():
     data = request.get_json()
     user_id = data.get('user_id')
@@ -76,6 +79,7 @@ def change_password():
     return jsonify({'message': 'Password changed successfully'}), 200
 
 @setting_bp.route('/api/settings/upload-picture', methods=['POST'])
+@token_required
 def upload_picture():
     user_id = request.form.get('user_id')
     file = request.files.get('profile_picture')

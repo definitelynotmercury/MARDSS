@@ -7,18 +7,19 @@ import Export from './export'
 import Settings from './Settings'
 import Admin from './Admin'
 import AdminUploadReport from './AdminUploadReport'
+import ProtectedRoute from './ProtectedRoute'
 function App() {
     return (
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<Login />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/forecast" element={<Forecast />} />
-                <Route path="/export" element={<Export />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/AdminUploadReport" element={<AdminUploadReport/>} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+                <Route path="/forecast" element={<ProtectedRoute><Forecast /></ProtectedRoute>} />
+                <Route path="/export" element={<ProtectedRoute><Export /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                <Route path="/AdminUploadReport" element={<ProtectedRoute><AdminUploadReport/></ProtectedRoute>} />
             </Routes>
         </BrowserRouter>
     )

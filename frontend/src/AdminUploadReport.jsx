@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import AdminLayout from './AdminLayout'
-
+import { getToken } from './auth'
 const BASE_URL = 'http://127.0.0.1:5000'
 
 function AdminUploadReport() {
@@ -14,6 +14,7 @@ function AdminUploadReport() {
     }
 
     const handleUpload = async () => {
+        const token = getToken()
         if (!file) {
             alert('Please select a .xlsx file first')
             return
@@ -28,7 +29,10 @@ function AdminUploadReport() {
         try {
             const res = await fetch(`${BASE_URL}/api/admin/upload-monthly-report`, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers : {
+                    'Authorization' : `Bearer ${token}`
+                }
             })
             const data = await res.json()
 

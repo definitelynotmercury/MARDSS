@@ -12,8 +12,11 @@ DB_CONFIG = {
 }
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
 
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found — check your .env file")
+if not JWT_SECRET_KEY:
+    raise ValueError("JWT_SECRET_KEY not found — check your .env file")
 
 client = genai.Client(api_key=GEMINI_API_KEY)

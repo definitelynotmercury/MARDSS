@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 import mysql.connector
 from config import DB_CONFIG, client
+from auth_utils import token_required
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -12,6 +13,7 @@ def get_db():
 
 
 @dashboard_bp.route('/api/dashboard/kpi')
+@token_required
 def get_kpi():
     year = request.args.get('year', 'ALL')
     month = request.args.get('month', 'ALL')
@@ -84,6 +86,7 @@ def get_kpi():
 
 
 @dashboard_bp.route("/api/dashboard/trend")
+@token_required
 def get_dashboard_trend():
     conn = get_db()
     year = request.args.get("year", "ALL")
@@ -130,6 +133,7 @@ def get_dashboard_trend():
 
 
 @dashboard_bp.route("/api/dashboard/barchart")
+@token_required
 def get_dashboard_barchart():
     year = request.args.get("year", "ALL")
     month = request.args.get("month", "ALL")
@@ -167,6 +171,7 @@ def get_dashboard_barchart():
 
 
 @dashboard_bp.route("/api/dashboard/irregularities")
+@token_required
 def get_dashboard_irregularities():
     conn = get_db()
     try:
@@ -249,6 +254,7 @@ def get_dashboard_irregularities():
 
 
 @dashboard_bp.route("/api/dashboard/narrative", methods=["POST"])
+@token_required
 def generate_narrative():
     data = request.get_json()
     kpi = data.get("kpi", {})
@@ -379,6 +385,7 @@ def generate_narrative():
 
 
 @dashboard_bp.route("/api/municipalities")
+@token_required
 def get_municipalities():
     conn = get_db()
     try:
@@ -392,6 +399,7 @@ def get_municipalities():
 
 
 @dashboard_bp.route("/api/assistance_types")
+@token_required
 def get_assistance_types():
     conn = get_db()
     try:
@@ -404,6 +412,7 @@ def get_assistance_types():
     return jsonify(data)
 
 @dashboard_bp.route("/api/dashboard/type-totals")
+@token_required
 def get_type_totals():
     conn = get_db()
     try:
@@ -424,6 +433,7 @@ def get_type_totals():
 
 
 @dashboard_bp.route("/api/dashboard/pie")
+@token_required
 def get_pie_data():
     top_n = int(request.args.get("top_n", 5))
     selected_type = request.args.get("type", "ALL")

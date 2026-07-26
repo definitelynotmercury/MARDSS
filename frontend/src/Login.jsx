@@ -16,6 +16,8 @@ function Login() {
         
         if(data.message === 'Login successful'){
             localStorage.setItem('user', JSON.stringify(data))
+
+
             if (data.role === 'admin') {
                 navigate('/admin')
             } else {

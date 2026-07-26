@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from './AdminLayout'
-
+import { getToken } from './auth'
 const BASE_URL = 'http://127.0.0.1:5000'
 
 function Admin() {
@@ -14,7 +14,12 @@ function Admin() {
     const [role, setRole] = useState('staff')
 
     const fetchUsers = async () => {
-        const res = await fetch(`${BASE_URL}/api/admin/users`)
+        const token = getToken()
+        const res = await fetch(`${BASE_URL}/api/admin/users`,{
+            headers : {
+                'Authorization' : `Bearers ${token}`
+            }
+        })
         const data = await res.json()
         setUsers(data)
     }
@@ -24,9 +29,10 @@ function Admin() {
     }, [])
 
     const handleCreate = async () => {
+        const token = getToken()
         const res = await fetch(`${BASE_URL}/api/admin/users`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization' : `Bearers ${token}` },
             body: JSON.stringify({ username, full_name: fullName, email, password, role })
         })
         const data = await res.json()
@@ -46,10 +52,12 @@ function Admin() {
     }
 
     const handleDelete = async (userId) => {
+        const token = getToken()
         if (!confirm('Are you sure you want to delete this account?')) return
 
         const res = await fetch(`${BASE_URL}/api/admin/users/${userId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: { 'Authorization' : `Bearers ${token}` }
         })
         const data = await res.json()
 

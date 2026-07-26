@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 import mysql.connector
 from datetime import date
 from config import DB_CONFIG, client
-
+from auth_utils import token_required
 analytics_bp = Blueprint('analytics',__name__)
 
 def get_db():
@@ -10,6 +10,7 @@ def get_db():
 
 
 @analytics_bp.route('/api/analytics/comparison')
+@token_required
 def comparison():
     municipality_1 = request.args.get('municipality_1', 'BULAKAN')
     municipality_2 = request.args.get('municipality_2', 'HAGONOY')
@@ -63,6 +64,7 @@ def comparison():
 
 
 @analytics_bp.route('/api/analytics/drill_down')
+@token_required
 def drill_down():
     municipality = request.args.get('municipality', 'BULAKAN')
     selected_year = request.args.get('year', 'ALL')
@@ -100,6 +102,7 @@ def drill_down():
     return jsonify(data)
 
 @analytics_bp.route('/api/analytics/n_rankings')
+@token_required
 def n_rankings():
     top_n = int(request.args.get("topN", 5))
     selected_municipality = request.args.get("selectedMunicipalityRanking", "ALL")
@@ -194,6 +197,7 @@ def generate_narrative():
     return jsonify({"narrative": response.text})
 
 @analytics_bp.route('/api/analytics/latest_month')
+@token_required
 def latest_month():
     conn = get_db()
     cursor = conn.cursor(dictionary=True)
@@ -214,6 +218,7 @@ def latest_month():
         return jsonify({'year': date.today().year, 'month': date.today().month})
     
 @analytics_bp.route('/api/analytics/available_months')
+@token_required
 def available_months():
     current_year = date.today().year
 

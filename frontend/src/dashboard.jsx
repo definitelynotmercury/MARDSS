@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Layout from './Layout'
+import { getToken } from './auth'
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell,
@@ -59,12 +60,32 @@ function Dashboard() {
 
     // ── Initial load ───────────────────────────────────────────────────────
     useEffect(() => {
+        const token = getToken()
+        if (!token) {
+            window.location.href = '/login'
+        }
         const fetchStatic = async () => {
             const [muniRes, typeRes, irregsRes, typeTotalsRes] = await Promise.all([
-                fetch(`${BASE_URL}/api/municipalities`),
-                fetch(`${BASE_URL}/api/assistance_types`),
-                fetch(`${BASE_URL}/api/dashboard/irregularities`),
-                fetch(`${BASE_URL}/api/dashboard/type-totals`),
+                fetch(`${BASE_URL}/api/municipalities`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }),
+                fetch(`${BASE_URL}/api/assistance_types`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }),
+                fetch(`${BASE_URL}/api/dashboard/irregularities`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }),
+                fetch(`${BASE_URL}/api/dashboard/type-totals`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
             ])
             setMunicipalities(await muniRes.json())
             setTypes(await typeRes.json())
@@ -77,7 +98,12 @@ function Dashboard() {
     // ── yearly trend refetches when picking a specific year ───────────────────────
     useEffect(() => {
         const fetchTrend = async () => {
-            const res = await fetch(`${BASE_URL}/api/dashboard/trend?year=${selectedYearForLine}`)
+            const token = getToken()
+            const res = await fetch(`${BASE_URL}/api/dashboard/trend?year=${selectedYearForLine}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
             setTrendData(await res.json())
         }
         fetchTrend()
@@ -86,8 +112,13 @@ function Dashboard() {
     // ── Pie data refetches when pie filters change ─────────────────────────
     useEffect(() => {
     const fetchPie = async () => {
+        const token = getToken()
         const res = await fetch(
-            `${BASE_URL}/api/dashboard/pie?top_n=${topNPie}&type=${selectedPieAssistanceType}&year=${selectedPieYear}&month=${selectedPieMonth}`
+            `${BASE_URL}/api/dashboard/pie?top_n=${topNPie}&type=${selectedPieAssistanceType}&year=${selectedPieYear}&month=${selectedPieMonth}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
         )
         setPieData(await res.json())
     }
@@ -96,8 +127,13 @@ function Dashboard() {
 
     useEffect(() => {
         const fetchBar = async () => {
+            const token = getToken()
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/barchart?year=${selectedBarYear}&month=${selectedBarMonth}`
+                `${BASE_URL}/api/dashboard/barchart?year=${selectedBarYear}&month=${selectedBarMonth}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
             )
             setBarData(await res.json())
         }
@@ -107,8 +143,13 @@ function Dashboard() {
     // ── KPI refetches when global filters change ───────────────────────────
     useEffect(() => {
         const fetchKpi = async () => {
+            const token = getToken()
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/kpi?year=${selectedYear}&municipality=${selectedMunicipality}&type=${selectedType}&month=${selectedMonth}`
+                `${BASE_URL}/api/dashboard/kpi?year=${selectedYear}&municipality=${selectedMunicipality}&type=${selectedType}&month=${selectedMonth}`,{
+                    headers:{
+                        'Authorization' : `Bearer ${token}`
+                    }
+                }
             )
             setKpi(await res.json())
         }
@@ -119,9 +160,13 @@ function Dashboard() {
     const generateNarrative = async () => {
     setNarrativeLoading(true)
     setNarrative('')
+    const token = getToken()
     const res = await fetch(`${BASE_URL}/api/dashboard/narrative`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
             kpi,
             irregularities,

@@ -1,6 +1,7 @@
 import Layout from "./Layout";
 import { useState, useEffect } from "react";
 import { useRef } from "react"
+import{getToken} from "./auth"
 import html2canvas from "html2canvas"
 import JSZip from "jszip"
 import {
@@ -64,6 +65,7 @@ function Export() {
     const [selectedYearTo, setSelectedYearTo] = useState(2023)
     const [selectedType, setSelectedType] = useState('ALL')
     const [selectedMunicipality, setSelectedMunicipality] = useState('ALL')
+    const [selectedDatasetMonth, setSelectedDatasetMonth] = useState('ALL')
 
     // Chart export filters
     const [sections, setSections] = useState({
@@ -180,20 +182,34 @@ function Export() {
     };
 
     useEffect(() => {
+        const token = getToken()
         const fetchdata = async () => {
-            const response1 = await fetch('http://127.0.0.1:5000/api/municipalities')
+            const response1 = await fetch('http://127.0.0.1:5000/api/municipalities',{
+                headers : {
+                    'Authorization' : `Bearer ${token}`
+                }
+            })
             setMunicipalities(await response1.json())
-            const response2 = await fetch('http://127.0.0.1:5000/api/assistance_types')
+            const response2 = await fetch('http://127.0.0.1:5000/api/assistance_types',{
+                headers : {
+                    'Authorization' : `Bearer ${token}`
+                }
+            })
             setTypes(await response2.json())
         }
         fetchdata()
     }, [])
 
     useEffect(() => {
+        const token = getToken()
         if (!sections.dashboardKpi) return
         const fetchKpi = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/dashboard/kpi?year=${selectedDashboardYear}&municipality=${selectedDashboardMunicipality}&type=${selectedDashboardType}&month=${selectedMonth}`
+                `http://127.0.0.1:5000/api/dashboard/kpi?year=${selectedDashboardYear}&municipality=${selectedDashboardMunicipality}&type=${selectedDashboardType}&month=${selectedMonth}`,{
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }
+                }
             )
             setKpiPreview(await res.json())
         }
@@ -201,11 +217,19 @@ function Export() {
     }, [sections.dashboardKpi, selectedDashboardYear, selectedDashboardMunicipality, selectedDashboardType,selectedMonth])
 
     useEffect(() => {
+        const token = getToken()
         if (!sections.yoyTrends) return
         const loadYoY = async () => {
             const [trendRes, typeTotalsRes] = await Promise.all([
-                fetch(`http://127.0.0.1:5000/api/dashboard/trend?year=${selectedYearForLine}`),
-                fetch(`http://127.0.0.1:5000/api/dashboard/type-totals`)
+                fetch(`http://127.0.0.1:5000/api/dashboard/trend?year=${selectedYearForLine}`,{
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }
+                }),
+                fetch(`http://127.0.0.1:5000/api/dashboard/type-totals`,{
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }})
             ])
             setYoyTrendData(await trendRes.json())
             setYoyTypeTotals(await typeTotalsRes.json())
@@ -214,9 +238,13 @@ function Export() {
     }, [sections.yoyTrends,selectedYearForLine])
 
     useEffect(() => {
+        const token = getToken()
         const fetchPie = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/dashboard/pie?top_n=${selectedPieChartTopN}&type=${selectedPieChartType}&year=${selectedPieChartYear}&month=${selectedPieMonth}`
+                `http://127.0.0.1:5000/api/dashboard/pie?top_n=${selectedPieChartTopN}&type=${selectedPieChartType}&year=${selectedPieChartYear}&month=${selectedPieMonth}`,{
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }}
             )
             setPieChartData(await res.json())
         }
@@ -224,9 +252,13 @@ function Export() {
     }, [selectedPieChartTopN, selectedPieChartType, selectedPieChartYear,selectedPieMonth])
 
     useEffect(() => {
+        const token = getToken()
         const fetchBar = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/dashboard/barchart?year=${selectedBarChartYear}&month=${selectedBarMonth}`
+                `http://127.0.0.1:5000/api/dashboard/barchart?year=${selectedBarChartYear}&month=${selectedBarMonth}`,{
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }}
             )
             setBarChartData(await res.json())
         }
@@ -234,10 +266,14 @@ function Export() {
     }, [selectedBarChartYear,selectedBarMonth])
 
     useEffect(() => {
+        const token = getToken()
         if (!sections.comparisonChart) return
         const fetchComparison = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/analytics/comparison?municipality_1=${compMunicipality1}&municipality_2=${compMunicipality2}&type=${compType}&year=${compYear}&month=${comparisonMonth}`
+                `http://127.0.0.1:5000/api/analytics/comparison?municipality_1=${compMunicipality1}&municipality_2=${compMunicipality2}&type=${compType}&year=${compYear}&month=${comparisonMonth}`,{
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }}
             )
             setComparisonData(await res.json())
         }
@@ -246,10 +282,14 @@ function Export() {
 
 
     useEffect(() => {
+        const token = getToken()
         if (!sections.municipalityDrilldown) return
         const fetchDrilldown = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/analytics/drill_down?municipality=${drilldownMunicipality}&year=${drilldownYear}&month=${drill_down_month}`
+                `http://127.0.0.1:5000/api/analytics/drill_down?municipality=${drilldownMunicipality}&year=${drilldownYear}&month=${drill_down_month}`,{
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }}
             )
             setDrilldownData(await res.json())
         }
@@ -257,8 +297,12 @@ function Export() {
     }, [sections.municipalityDrilldown, drilldownMunicipality, drilldownYear, drill_down_month])
 
     useEffect(() => {
+        const token = getToken()
         const fetchRankings = async () => {
-           const response = await fetch(`http://127.0.0.1:5000/api/analytics/n_rankings?topN=${topN}&selectedMunicipalityRanking=${selectedMunicipalityRanking}&month=${rankingMonth}`)
+           const response = await fetch(`http://127.0.0.1:5000/api/analytics/n_rankings?topN=${topN}&selectedMunicipalityRanking=${selectedMunicipalityRanking}&month=${rankingMonth}`,{
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }})
             const data = await response.json()
             setRankingsData(data)
         }
@@ -268,8 +312,12 @@ function Export() {
     
 
     useEffect(() => {
+        const token = getToken()
         const fetchForecastData = async() => {
-            const response = await fetch(`http://127.0.0.1:5000/api/forecast/predict?municipality=${forecastMunicipality}&type=${forecastType}`)
+            const response = await fetch(`http://127.0.0.1:5000/api/forecast/predict?municipality=${forecastMunicipality}&type=${forecastType}`,{
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }})
             const data = await response.json()
             setForecastData(data)
         }
@@ -277,8 +325,12 @@ function Export() {
     }, [forecastMunicipality, forecastType])
 
     useEffect(() => {
+        const token = getToken()
         const fetchAvailableMonths = async () => {
-            const response = await fetch('http://127.0.0.1:5000/api/analytics/available_months')
+            const response = await fetch('http://127.0.0.1:5000/api/analytics/available_months',{
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }})
             const data = await response.json()
             setAvailableMonths(data)
         }
@@ -286,8 +338,12 @@ function Export() {
     }, [])
 
     useEffect(() => {
+        const token = getToken()
         const fetchLatestMonth = async () => {
-            const response = await fetch('http://127.0.0.1:5000/api/analytics/latest_month')
+            const response = await fetch('http://127.0.0.1:5000/api/analytics/latest_month',{
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }})
             const data = await response.json()
             setRankingMonth(data.month)
         }
@@ -295,6 +351,7 @@ function Export() {
     }, [])
 
     useEffect(() => {
+        const token = getToken()
         const fetchPreview = async () => {
             setPreviewLoading(true)
             const params = new URLSearchParams({
@@ -302,32 +359,71 @@ function Export() {
                 year_to: selectedYearTo,
                 municipality: selectedMunicipality,
                 type: selectedType,
+                month: selectedDatasetMonth,
             })
-            const res = await fetch(`http://127.0.0.1:5000/api/export/dataset?${params}`)
+            const res = await fetch(`http://127.0.0.1:5000/api/export/dataset?${params}`,{
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }})
             const data = await res.json()
             setPreviewData(data)
             setPreviewLoading(false)
         }
         fetchPreview()
-    }, [selectedYearFrom, selectedYearTo, selectedMunicipality, selectedType])
+    }, [selectedYearFrom, selectedYearTo, selectedMunicipality, selectedType, selectedDatasetMonth])
 
     const handleChartExcelExport = () => {
+        const token = getToken()
         const payload = {
             sections: Object.keys(sections).filter(k => sections[k]),
             filters: {
-                dashboardKpi: { year: selectedDashboardYear, municipality: selectedDashboardMunicipality, type: selectedDashboardType },
-                yoyTrends: { top_n: selectedYoYTopN, type: selectedYoYType },
-                distributionByAssistance: { top_n: selectedPieChartTopN, type: selectedPieChartType, year: selectedPieChartYear },
-                distributionByMunicipality: { year: selectedBarChartYear },
-                comparisonChart: { municipality_1: compMunicipality1, municipality_2: compMunicipality2, type: compType, year: compYear },
-                municipalityDrilldown: { municipality: drilldownMunicipality, year: drilldownYear },
-                topNRanking: { top_n: topN, municipality: selectedMunicipalityRanking },
-                forecast: { municipality: forecastMunicipality, type: forecastType },
+                dashboardKpi: {
+                    year: selectedDashboardYear,
+                    municipality: selectedDashboardMunicipality,
+                    type: selectedDashboardType,
+                    month: selectedMonth,
+                },
+                yoyTrends: {
+                    top_n: selectedYoYTopN,
+                    type: selectedYoYType,
+                    year: selectedYearForLine,
+                },
+                distributionByAssistance: {
+                    top_n: selectedPieChartTopN,
+                    type: selectedPieChartType,
+                    year: selectedPieChartYear,
+                    month: selectedPieMonth,
+                },
+                distributionByMunicipality: {
+                    year: selectedBarChartYear,
+                    month: selectedBarMonth,
+                },
+                comparisonChart: {
+                    municipality_1: compMunicipality1,
+                    municipality_2: compMunicipality2,
+                    type: compType,
+                    year: compYear,
+                    month: comparisonMonth,
+                },
+                municipalityDrilldown: {
+                    municipality: drilldownMunicipality,
+                    year: drilldownYear,
+                    month: drill_down_month,
+                },
+                topNRanking: {
+                    top_n: topN,
+                    municipality: selectedMunicipalityRanking,
+                    month: rankingMonth,
+                },
+                forecast: {
+                    municipality: forecastMunicipality,
+                    type: forecastType,
+                },
             }
         }
         fetch('http://127.0.0.1:5000/api/export/charts/excel', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization' : `Bearer ${token}` },
             body: JSON.stringify(payload)
         })
         .then(res => res.blob())
@@ -378,23 +474,33 @@ function Export() {
     }
 
     const handleExcelExport = () => {
+        const token = getToken()
         const params = new URLSearchParams({
             year_from: selectedYearFrom,
             year_to: selectedYearTo,
             municipality: selectedMunicipality,
             type: selectedType,
+            month: selectedDatasetMonth,
         })
-        window.open(`http://127.0.0.1:5000/api/export/dataset/excel?${params}`, '_blank')
+        window.open(`http://127.0.0.1:5000/api/export/dataset/excel?${params}`, '_blank',{
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }})
     }
 
     const handlePdfExport = () => {
+        const token = getToken()
         const params = new URLSearchParams({
             year_from: selectedYearFrom,
             year_to: selectedYearTo,
             municipality: selectedMunicipality,
             type: selectedType,
+            month: selectedDatasetMonth,
         })
-        window.open(`http://127.0.0.1:5000/api/export/dataset/pdf?${params}`, '_blank')
+        window.open(`http://127.0.0.1:5000/api/export/dataset/pdf?${params}`, '_blank',{
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }})
     }
 
     const renderEndLabel = (dataKey) => ({ x, y, value }) => {
@@ -695,6 +801,13 @@ function Export() {
                                     {municipalities.map(m => <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>)}
                                 </select>
                             </div>
+                            <div className="mb-4">
+                                <p className="font-semibold text-gray-700 mb-1">Month</p>
+                                <select className="w-full border border-gray-300 rounded p-2" onChange={e => setSelectedDatasetMonth(e.target.value)} value={selectedDatasetMonth}>
+                                    <option value="ALL">ALL MONTHS</option>
+                                    {months.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}
+                                </select>
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <button onClick={handlePdfExport} className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Export PDF</button>
@@ -713,6 +826,7 @@ function Export() {
                             <p className="text-sm text-gray-500">Period: {selectedYearFrom} – {selectedYearTo}</p>
                             <p className="text-sm text-gray-500">Municipality: {selectedMunicipality === 'ALL' ? 'All Municipalities' : selectedMunicipality}</p>
                             <p className="text-sm text-gray-500">Assistance Type: {selectedType === 'ALL' ? 'All Types' : selectedType}</p>
+                            <p className="text-sm text-gray-500">Month: {selectedDatasetMonth === 'ALL' ? 'All Months' : months.find(m => m.value === Number(selectedDatasetMonth))?.label}</p>
                         </div>
                         {previewLoading ? (
                             <p className="text-sm text-gray-400 text-center py-6">Loading...</p>
@@ -724,6 +838,7 @@ function Export() {
                                     <thead className="bg-gray-100 sticky top-0">
                                         <tr>
                                             <th className="px-3 py-2 text-gray-600">Year</th>
+                                            <th className="px-3 py-2 text-gray-600">Month</th>
                                             <th className="px-3 py-2 text-gray-600">Municipality</th>
                                             <th className="px-3 py-2 text-gray-600">Assistance Type</th>
                                             <th className="px-3 py-2 text-gray-600 text-right">Requests</th>
@@ -733,6 +848,7 @@ function Export() {
                                         {previewData.map((row, i) => (
                                             <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                                                 <td className="px-3 py-2">{row.year}</td>
+                                                <td className="px-3 py-2">{months.find(m => m.value === Number(row.month))?.label ?? row.month}</td>
                                                 <td className="px-3 py-2">{row.municipality_name}</td>
                                                 <td className="px-3 py-2">{row.type_name}</td>
                                                 <td className="px-3 py-2 text-right">{row.request_count}</td>
