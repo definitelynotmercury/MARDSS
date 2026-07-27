@@ -13,10 +13,23 @@ DB_CONFIG = {
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
+GMAIL = os.environ.get("GMAIL")
+GMAILPASS = os.environ.get("GMAILPASS")
 
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found — check your .env file")
 if not JWT_SECRET_KEY:
     raise ValueError("JWT_SECRET_KEY not found — check your .env file")
+if not GMAIL:
+    raise ValueError("GMAIL not found — check your .env file")
+if not GMAILPASS:
+    raise ValueError("GMAILPASS not found — check your .env file")
+
+MAIL_SERVER = 'smtp.gmail.com'
+MAIL_PORT = 587
+MAIL_USE_TLS = True
+MAIL_USERNAME = GMAIL
+MAIL_PASSWORD = GMAILPASS
+MAIL_DEFAULT_SENDER = GMAIL
 
 client = genai.Client(api_key=GEMINI_API_KEY)

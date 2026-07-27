@@ -1,3 +1,14 @@
+@import url('https://googleapis.com');
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px white inset !important;
+  -webkit-text-fill-color: black !important;
+  caret-color: black;
+}
 .counter {
   font-size: 16px;
   padding: 5px 10px;
