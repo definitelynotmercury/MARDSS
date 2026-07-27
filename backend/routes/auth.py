@@ -70,7 +70,7 @@ def forgot_password():
     user_id = user['user_id']
     email = user['email']
 
-    token_code = "".join(random.choices(string.digits, k=8))
+    token_code = "".join(random.choices(string.digits, k=6))
 
     cursor.execute("""
     INSERT INTO password_reset (user_id, token_code, expiry_time)

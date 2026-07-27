@@ -9,6 +9,8 @@ import Admin from './Admin'
 import AdminUploadReport from './AdminUploadReport'
 import ProtectedRoute from './ProtectedRoute'
 import AdminRoute from './AdminRoute'
+import ForgotPassword from './ForgotPassword'
+import VerifyCode from './VerifyCode'
 
 function App() {
     return (
@@ -22,6 +24,8 @@ function App() {
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
                 <Route path="/AdminUploadReport" element={<AdminRoute><AdminUploadReport/></AdminRoute>} />
+                <Route path="/forgotpassword" element={<ForgotPassword/>} />
+                <Route path="/verifycode"element={<VerifyCode/>}/>
             </Routes>
         </BrowserRouter>
     )
