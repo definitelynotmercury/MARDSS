@@ -11,7 +11,9 @@ import ProtectedRoute from './ProtectedRoute'
 import AdminRoute from './AdminRoute'
 import ForgotPassword from './ForgotPassword'
 import VerifyCode from './VerifyCode'
-
+import ResetPassword from"./ResetPassword"
+import PasswordResetSuccess from './PasswordResetSuccess'
+import PasswordResetError from './PasswordResetError'
 function App() {
     return (
         <BrowserRouter>
@@ -26,6 +28,9 @@ function App() {
                 <Route path="/AdminUploadReport" element={<AdminRoute><AdminUploadReport/></AdminRoute>} />
                 <Route path="/forgotpassword" element={<ForgotPassword/>} />
                 <Route path="/verifycode"element={<VerifyCode/>}/>
+                <Route path="/resetpassword"element={<ResetPassword/>}/>
+                <Route path="/passwordresetsuccess"element={<PasswordResetSuccess/>}/>
+                <Route path="/passwordreseterror"element={<PasswordResetError/>}/>
             </Routes>
         </BrowserRouter>
     )

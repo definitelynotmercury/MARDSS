@@ -65,10 +65,22 @@ def forgot_password():
     user = cursor.fetchone()
 
     if user is None:
+        cursor.close()
+        conn.close()
         return jsonify({'message': 'Code has been sent in your email'}), 200
 
     user_id = user['user_id']
-    email = user['email']
+
+    cursor.execute("""
+        SELECT * FROM password_reset 
+        WHERE user_id = %s AND TIMESTAMPDIFF(SECOND, NOW(), expiry_time) > 480
+    """, (user_id,))
+    recent_code = cursor.fetchone()
+
+    if recent_code is not None:
+        cursor.close()
+        conn.close()
+        return jsonify({'message': 'Code has been sent in your email'}), 200
 
     token_code = "".join(random.choices(string.digits, k=6))
 
@@ -77,7 +89,8 @@ def forgot_password():
     VALUES (%s, %s, DATE_ADD(NOW(), INTERVAL 10 MINUTE))
     ON DUPLICATE KEY UPDATE
     token_code = VALUES(token_code),
-    expiry_time = VALUES(expiry_time);
+    expiry_time = VALUES(expiry_time),
+    attempts = 0;
     """,(user_id,token_code))
 
     conn.commit()
@@ -120,3 +133,150 @@ def send_reset_code(to_email, code):
     msg.body = text_body
     msg.html = html_body
     mail.send(msg)
+
+
+@auth_bp.route('/api/is-valid-code', methods=['POST'])
+def is_valid_code():
+    data = request.get_json()
+    email = data['email']
+    submitted_code = data['flatCode']
+
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT * FROM users WHERE email = %s
+    """,(email,))
+
+    user = cursor.fetchone()
+
+    if user is None:
+       cursor.close()
+       conn.close()
+       return jsonify({'message': 'Invalid or expired code.'}), 400
+
+    user_id = user['user_id']
+
+    cursor.execute("""
+            SELECT * FROM password_reset WHERE user_id = %s
+        """,(user_id,))
+
+    data = cursor.fetchone()
+
+    if data is None:
+        cursor.close()
+        conn.close()
+        return jsonify({'message': 'Invalid or expired code.'}), 400
+
+    attempts = data['attempts']
+    token_code = data['token_code']
+
+    if attempts >= 5:
+        cursor.close()
+        conn.close()
+        return jsonify({'message': 'Invalid or expired code.'}), 400
+    
+    if submitted_code != token_code:
+        cursor.execute(
+            "UPDATE password_reset SET attempts = attempts + 1 WHERE user_id = %s",
+            (user_id,)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'message': 'Invalid or expired code.'}), 400
+
+    expiry_time = data['expiry_time']
+    current_time = datetime.now()
+
+    if current_time > expiry_time:
+        cursor.close()
+        conn.close()
+        return jsonify({'message': 'Invalid or expired code.'}), 400
+
+    cursor.close()
+    conn.close()
+    
+    return jsonify({'message': 'valid'}), 200
+
+
+@auth_bp.route('/api/password-reset', methods=['POST'])
+def password_reset():
+    data = request.get_json()
+    email = data['email']
+    submitted_code = data['code']
+    password = data['newPassword']
+
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT * FROM users WHERE email = %s
+    """,(email,))
+
+    user = cursor.fetchone()
+
+    if user is None:
+       cursor.close()
+       conn.close()
+       return jsonify({'message': 'Invalid or expired code.'}), 400
+
+    user_id = user['user_id']
+
+    cursor.execute("""
+            SELECT * FROM password_reset WHERE user_id = %s
+        """,(user_id,))
+
+    data = cursor.fetchone()
+
+    if data is None:
+        cursor.close()
+        conn.close()
+        return jsonify({'message': 'Invalid or expired code.'}), 400
+
+    attempts = data['attempts']
+    token_code = data['token_code']
+
+    if attempts >= 5:
+        cursor.close()
+        conn.close()
+        return jsonify({'message': 'Invalid or expired code.'}), 400
+    
+    if submitted_code != token_code:
+        cursor.execute(
+            "UPDATE password_reset SET attempts = attempts + 1 WHERE user_id = %s",
+            (user_id,)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'message': 'Invalid or expired code.'}), 400
+
+    expiry_time = data['expiry_time']
+    current_time = datetime.now()
+
+    if current_time > expiry_time:
+        cursor.close()
+        conn.close()
+        return jsonify({'message': 'Invalid or expired code.'}), 400
+
+    password_hash = bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt()).decode('utf-8')
+
+    cursor.execute("""
+        UPDATE users SET password_hash = %s WHERE user_id = %s
+    """,(password_hash,user_id))
+
+    conn.commit()
+
+
+    cursor.execute("""
+
+        DELETE FROM password_reset WHERE user_id = %s
+    """,(user_id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+    
+    return jsonify({'message': 'valid'}), 200

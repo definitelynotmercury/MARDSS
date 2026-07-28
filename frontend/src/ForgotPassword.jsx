@@ -7,7 +7,7 @@ function ForgotPassword (){
     const [email,setEmail] = useState('')
 
     const sendEmail = async(e) => {
-         e.preventDefault() 
+        e.preventDefault() 
         try {
             const response = await fetch('http://127.0.0.1:5000/api/forgot-password', {
                 method: 'POST',
@@ -16,7 +16,7 @@ function ForgotPassword (){
             });
             const data = await response.json();
             if (data.message === 'Code has been sent in your email') {
-                navigate('/verifycode');
+                navigate(`/verifycode?email=${encodeURIComponent(email)}`);
             }
         } catch (err) {
             console.error("Failed to send email:", err);
