@@ -1,4 +1,6 @@
 import { useNavigate,useLocation } from "react-router-dom";
+import { useState, useEffect } from 'react'
+import { getToken } from './auth'
 import {
   LayoutDashboard,
   BarChart2,
@@ -9,7 +11,11 @@ import {
   Bell,
 } from 'lucide-react';
 
+
+const BASE_URL = 'http://127.0.0.1:5000'
+
 function Layout({children}){
+    const user = JSON.parse(localStorage.getItem('user'))
     const navigate = useNavigate()
     const location = useLocation()
     const today = new Date()
@@ -27,6 +33,20 @@ function Layout({children}){
         { label: 'Export', path: '/export', icon: FileOutput },
     ];
 
+    const [irregularities, setIrregularities] = useState([])
+    const [showNotifications, setShowNotifications] = useState(false)
+
+
+    useEffect(() => {
+        const fetchIrregularities = async () => {
+            const token = getToken()
+            const res = await fetch(`${BASE_URL}/api/dashboard/irregularities`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            setIrregularities(await res.json())
+        }
+        fetchIrregularities()
+    }, [])
     return (
         <div className="flex flex-col h-screen bg-gray-100">
             {/* Topbar */}
@@ -46,11 +66,46 @@ function Layout({children}){
                         <div className="relative border border-white/40 rounded-full px-3 py-1 text-white text-lg">
                             {formattedDate}
                         </div>
-                        <button className="border border-white/40 rounded-full p-2 hover:bg-white/10">
-                            <Bell size={18} />
-                        </button>
-                        <div className="h-14 w-14 rounded-full bg-amber-500 flex items-center justify-center text-xs font-bold text-white">
-                            ADMIN
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowNotifications(prev => !prev)}
+                                className="border border-white/40 rounded-full p-2 hover:bg-white/10"
+                            >
+                                <Bell size={18} />
+                                {irregularities.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
+                                        {irregularities.length}
+                                    </span>
+                                )}
+                            </button>
+                            {showNotifications && (
+                                <div className="absolute right-0 mt-2 w-80 bg-white rounded shadow-lg text-gray-700 z-50 max-h-96 overflow-y-auto">
+                                    <div className="px-4 py-2 border-b font-semibold text-sm">Irregularities Detected</div>
+                                    {irregularities.length === 0 ? (
+                                        <p className="px-4 py-3 text-sm text-gray-400">No irregularities found.</p>
+                                    ) : (
+                                        irregularities.map((m, index) => (
+                                            <div key={index} className="border-l-4 border-yellow-400 bg-yellow-50 px-4 py-3">
+                                                <p className="font-semibold text-yellow-800 text-sm">{m.type_name}</p>
+                                                <p className="text-yellow-700 text-xs mt-1">{m.message}</p>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        <div className="w-14 h-14 rounded-full bg-gray-200 overflow-hidden mb-3 border-2">
+                            {user?.profile_picture ? (
+                                <img
+                                    src={`${BASE_URL}/${user.profile_picture}`}
+                                    alt="Profile"
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-3xl">
+                                    👤
+                                </div>
+                            )}
                         </div>
                     </div>
                     
