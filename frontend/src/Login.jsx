@@ -13,26 +13,42 @@ function Login() {
     const navigate = useNavigate()
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
+    const [loginError, setLoginError] = useState('')
+    const [isLoggingIn, setIsLoggingIn] = useState(false)
 
     const handleLogin = async () => {
+    setLoginError('')
+
+    if (!username || !password) {
+        setLoginError('Please enter both username and password.')
+        return
+    }
+
+    setIsLoggingIn(true)
+    try {
         const response = await fetch('http://127.0.0.1:5000/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
         })
         const data = await response.json()
-        
-        if(data.message === 'Login successful'){
-            localStorage.setItem('user', JSON.stringify(data))
 
-
-            if (data.role === 'admin') {
-                navigate('/admin')
+            if (data.message === 'Login successful') {
+                localStorage.setItem('user', JSON.stringify(data))
+                if (data.role === 'admin') {
+                    navigate('/admin')
+                } else {
+                    navigate('/dashboard')
+                }
             } else {
-                navigate('/dashboard')
+                setLoginError(data.message || 'Invalid username or password.')
             }
-        }else{
-            alert('Invalid username or password')
+        } catch (err) {
+            console.error('Login failed:', err)
+            setLoginError('Network error. Please check your connection and try again.')
+        } finally {
+            setIsLoggingIn(false)
         }
     }
 
@@ -62,15 +78,35 @@ function Login() {
                         onChange={(e) => setUsername(e.target.value)}
                     />
                     <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input
-                        className="w-full border border-gray-300 rounded px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Password"
-                        type="password"
-                        name="mardss-pass-field-x7z"
-                        autoComplete="new-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
+                    <div className="relative">
+                        <input
+                            className="w-full border border-gray-300 rounded px-3 py-2 pr-10 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Password"
+                            type={showPassword ? "text" : "password"}
+                            name="mardss-pass-field-x7z"
+                            autoComplete="new-password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            tabIndex={-1}
+                        >
+                            {showPassword ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                    <line x1="1" y1="1" x2="23" y2="23" />
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                            )}
+                        </button>
+                    </div>
 
                     <div className="flex items-center justify-between -mt-2">
                         <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
@@ -81,12 +117,16 @@ function Login() {
                             Forgot Password?
                         </a>
                     </div>
-
+                    
+                    {loginError && (
+                        <p className="text-red-500 text-sm text-center">{loginError}</p>
+                    )}
                     <button
                         onClick={handleLogin}
-                        className="w-full bg-[#16294D] text-white rounded-lg py-3 font-medium hover:bg-[#1e3562] transition-colors"
+                        disabled={isLoggingIn}
+                        className="w-full bg-[#16294D] text-white rounded-lg py-3 font-medium hover:bg-[#1e3562] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        Log in
+                        {isLoggingIn ? 'Logging in...' : 'Log in'}
                     </button>
 
                     <div className="flex items-center gap-3 my-2">
