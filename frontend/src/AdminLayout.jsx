@@ -5,6 +5,7 @@ function AdminLayout({ children }) {
     const navigate = useNavigate()
     const location = useLocation()
     const user = JSON.parse(localStorage.getItem('user'))
+    const BASE_URL = 'http://127.0.0.1:5000'
     const today = new Date()
     const formattedDate = today.toLocaleDateString('en-US', {
         weekday: 'long',
@@ -61,23 +62,31 @@ function AdminLayout({ children }) {
                 {/* Sidebar */}
                 <div className="w-48 bg-[#0B2E52] text-white flex flex-col">
                     <nav className="flex flex-col flex-1 px-2 gap-1 mt-2">
-                        {navItems.map((item) => (
-                            <button key={item.path}
-                                onClick={() => navigate(item.path)}
-                                className={`flex items-center gap-3 text-left px-4 py-2 rounded text-sm border-l-4 ${
-                                location.pathname === item.path
-                                    ? 'bg-blue-950/60 border-amber-500 text-white'
-                                    : 'border-transparent text-gray-300 hover:bg-gray-700'
-                            }`}
-                            >
-                                {item.label}
-                            </button>
-                        ))}
+                        {navItems.map((item) => {
+                            const Icon = item.icon;
+                            return(
+                                <button key={item.path}
+                                    onClick={() => navigate(item.path)}
+                                    className={`flex items-center gap-3 text-left px-4 py-2 rounded text-sm border-l-4 ${
+                                    location.pathname === item.path
+                                        ? 'bg-blue-950/60 border-amber-500 text-white'
+                                        : 'border-transparent text-gray-300 hover:bg-gray-700'
+                                }`}
+                                >
+                                    <Icon size={18} />
+                                    {item.label}
+                                </button>
+                                
+                            )
+                        }
+                            
+                        )}
                     </nav>
                     <button
                         onClick={handleLogout}
-                        className="text-gray-400 text-sm px-6 py-4 hover:text-white text-left"
+                        className="flex items-center gap-3 text-gray-400 text-sm px-4 py-2 rounded hover:bg-gray-700 hover:text-white text-left"
                     >
+                       <LogOut size={18} />
                         Logout
                     </button>
                 </div>

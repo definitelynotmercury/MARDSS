@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import jsonify, request,  g
 from config import JWT_SECRET_KEY
 from functools import wraps
 import jwt
@@ -20,6 +20,9 @@ def token_required(func):
             return jsonify({'message': 'Token is expired'}), 401
         except jwt.InvalidTokenError:
             return jsonify({'message': 'Token is invalid'}), 401
+
+        g.user_id = payload['user_id']   
+        g.role = payload['role']     
 
         return func(*args, **kwargs)
     return wrapper
@@ -43,6 +46,9 @@ def admin_required(func):
 
         if payload.get('role') != 'admin':
             return jsonify({'message': 'Admin access required'}), 403
+
+        g.user_id = payload['user_id']   
+        g.role = payload['role']         
 
         return func(*args, **kwargs)
     return wrapper

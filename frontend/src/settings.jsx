@@ -4,6 +4,24 @@ import { getToken } from './auth'
 
 const BASE_URL = 'http://127.0.0.1:5000'
 
+function isValidEmail(email){
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email)
+}
+
+function isValidUsername(username){
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    return usernameRegex.test(username)
+}
+
+function isValidPassword(password){
+    if(password.length >= 8 ){
+        return true
+    } 
+
+    return false
+}
+
 function Settings() {
     const user = JSON.parse(localStorage.getItem('user'))
 
@@ -14,6 +32,10 @@ function Settings() {
     const [currentPassword, setCurrentPassword] = useState('')
     const [newPassword, setNewPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
+    const [notification, setNotification] = useState({ show: false, message: '', type: 'success' })
+    const showNotification = (message, type = 'success') => {
+        setNotification({ show: true, message, type })
+    }
 
     const handlePictureUpload = async (file) => {
     const token = getToken()
@@ -42,8 +64,20 @@ function Settings() {
     }
 
     const handleSave = async () => {
-    const token = getToken()
-    // update profile info
+        const token = getToken()
+    
+        if (!isValidUsername(username)){
+            showNotification("Invalid username. Must be 3-20 characters long", 'error')
+            return
+        }
+
+        if (!isValidEmail(email)){
+            showNotification("Must be a valid email address (e.g. name@example.com)", 'error')
+            return
+        }
+
+
+
     const profileRes = await fetch(`${BASE_URL}/api/settings/update_profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json','Authorization' : `Bearer ${token}` },
@@ -57,8 +91,13 @@ function Settings() {
 
     // only change password if fields are filled
     if (currentPassword && newPassword && confirmPassword) {
+        if (!isValidPassword(newPassword)){
+            showNotification("Invalid password. must be longer than 8 characters", 'error')
+            return
+        }
+
         if (newPassword !== confirmPassword) {
-            alert('New passwords do not match')
+            showNotification("Invalid password. New passwords do not match", 'error')
             return
         }
 
@@ -77,17 +116,15 @@ function Settings() {
         
         const passData = await passRes.json()
         if (!passRes.ok) {
-            alert(passData.message)
+            showNotification(passData.message, 'error')
             return
         }
     }
 
     if (profileRes.ok) {
-        // update localStorage with new info
         const updatedUser = { ...user, full_name: fullName, email: email, username: username }
         localStorage.setItem('user', JSON.stringify(updatedUser))
-        alert('Settings saved successfully!')
-        window.location.reload()
+        showNotification('Settings saved successfully!', 'success')
     }
 }
 
@@ -120,6 +157,29 @@ function Settings() {
                         />
                     </label>
                 </div>
+
+                {notification.show && (
+                    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm text-center">
+                            <div className={`text-3xl mb-2 ${notification.type === 'error' ? 'text-red-500' : 'text-green-600'}`}>
+                                {notification.type === 'error' ? '⚠️' : '✅'}
+                            </div>
+                            <p className="text-sm text-gray-700 mb-6">{notification.message}</p>
+                            <button
+                                onClick={() => {
+                                    const wasSuccess = notification.type === 'success'
+                                    setNotification({ show: false, message: '', type: 'success' })
+                                    if (wasSuccess) {
+                                        window.location.reload()
+                                    }
+                                }}
+                                className="w-full px-4 py-2 rounded bg-blue-800 text-white hover:bg-blue-700"
+                            >
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                )}
                 {/* Personal Information */}
                 <div className="grid grid-cols-2 gap-4 mb-8">
                     <div>
