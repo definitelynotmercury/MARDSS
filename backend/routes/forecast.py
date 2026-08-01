@@ -113,6 +113,9 @@ def predict():
         current_value = totals[i]
         previous_value = totals[i-1]
 
+        if previous_value == 0:
+            continue
+
         growth_rate = (current_value - previous_value) / previous_value * 100
         growth_rates.append(growth_rate)
 

@@ -274,7 +274,7 @@ function Dashboard() {
                 <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
                     <div>
                         <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
-                            <TrendingUp size={16} className="text-gray-500" />
+                            <TrendingUp size={16} className="text-blue-600" />
                             Yearly Trend by Assistance Type
                         </p>
                         <p className="text-sm text-gray-400">Request volume from 2023 to 2025</p>
@@ -312,7 +312,7 @@ function Dashboard() {
                 <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
                     <div>
                         <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
-                            <PieChartIcon size={16} className="text-gray-500" />
+                            <PieChartIcon size={16} className="text-blue-600" />
                             Distribution by Assistance Type
                         </p>
                         <p className="text-sm text-gray-400">Percentage Breakdown</p>
@@ -361,7 +361,7 @@ function Dashboard() {
                 <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
                     <div>
                         <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
-                            <BarChart2 size={16} className="text-gray-500" />
+                            <BarChart2 size={16} className="text-blue-600" />
                             Total Requests by Municipality/City
                         </p>
                         <p className="text-sm text-gray-400">Top Municipality/City by Volume</p>
@@ -405,7 +405,7 @@ function Dashboard() {
             {/* ── Narrative ── */}
             <div className="bg-white shadow rounded p-4 mb-6 border-l-4 border-amber-500">
                 <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
-                    <FileText size={16} className="text-gray-500" />
+                    <FileText size={16} className="text-yellow-600" />
                     Narrative Output
                 </p>
                 {!narrative && !narrativeLoading && (

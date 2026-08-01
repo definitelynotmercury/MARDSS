@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Layout from './Layout'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { BarChart3, Search, Trophy, FileText } from 'lucide-react'
 import { useFetcher } from 'react-router-dom'
 import {getToken} from './auth'
 
@@ -180,97 +181,127 @@ function Analytics() {
 
     return (
         <Layout>
-            <h1 className="text-xl font-bold text-gray-700" p-4>Analytics</h1>
+            <h1 className="text-xl font-bold text-gray-700 mb-4">Analytics</h1>
+
+            {/* SIDE-BY-SIDE COMPARISON */}
             <div className="bg-white shadow rounded p-4 mb-6">
-                <p className="font-semibold text-gray-700 mb-1">Side-by-side Comparison</p>
-                <p className="text-sm text-gray-400 mb-4">Compare two municipalities and single out assistance types</p>
-                <div className='flex gap-2 items-center mb-4'>
-                    <span className="text-sm font-semibold text-gray-500">FILTERS:</span>
-                    <select className= "border rounded px-2 py-1 text-sm" onChange={(e) => setMunicipality1(e.target.value)} value={municipality1}>
-                        {municipalities.map((m) =>  (
-                            <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
-                        ))}
-                    </select>
-                    <select className= "border rounded px-2 py-1 text-sm" onChange={(e) => setMunicipality2(e.target.value)} value={municipality2}>
-                        {municipalities.map((m) =>  (
-                            <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
-                        ))}
-                    </select>
-                    <select className= "border rounded px-2 py-1 text-sm" onChange={(e) => setSelectedType(e.target.value)} value={selectedType}>
-                        <option value="ALL">ALL</option>
-                        {types.map((t) => (
-                            <option key={t.type_id} value={t.type_name}>{t.type_name}</option>
-                        ))}
-                    </select>
-                    <select className="border rounded px-2 py-1 text-sm" 
-                    onChange={(e) => {
-                        const Value = e.target.value
-                        setSelectedYear(Value)
-                        if (Value === 'ALL') {
-                            setShowComparisonMonthFilter(false)
-                        } else {
-                            setShowComparisonMonthFilter(true)
-                        }
-                    }}>
-                        <option value="ALL">ALL YEARS</option>
-                        {years.map((year) => (
-                            <option key={year}>{year}</option>
-                        ))}
-                    </select>
-                    {showComparisonMonthFilter && (
-                        <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setComparisonMonth(e.target.value)} value={comparisonMonth}>
-                            <option value="ALL">ALL MONTHS</option>
-                            {months.map((month) => (
-                                <option key={month.value} value={month.value}>{month.label}</option>
-                            ))}
-                        </select>
-                    )}
+                <div className="flex items-start justify-between flex-wrap gap-3 mb-1">
+                    <div className="flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-blue-600" />
+                        <p className="font-semibold text-gray-700">Side-by-side Comparison</p>
+                    </div>
+                    <div className="flex flex-wrap gap-3 items-end">
+                        <div className="flex flex-col">
+                            <span className="text-xs font-semibold text-gray-400 mb-1">FIRST ITEM</span>
+                            <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setMunicipality1(e.target.value)} value={municipality1}>
+                                {municipalities.map((m) =>  (
+                                    <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-xs font-semibold text-gray-400 mb-1">SECOND ITEM</span>
+                            <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setMunicipality2(e.target.value)} value={municipality2}>
+                                {municipalities.map((m) =>  (
+                                    <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-xs font-semibold text-gray-400 mb-1">ASSISTANCE TYPE</span>
+                            <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setSelectedType(e.target.value)} value={selectedType}>
+                                <option value="ALL">ALL</option>
+                                {types.map((t) => (
+                                    <option key={t.type_id} value={t.type_name}>{t.type_name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-xs font-semibold text-gray-400 mb-1">YEAR</span>
+                            <select className="border rounded px-2 py-1 text-sm"
+                            onChange={(e) => {
+                                const Value = e.target.value
+                                setSelectedYear(Value)
+                                if (Value === 'ALL') {
+                                    setShowComparisonMonthFilter(false)
+                                } else {
+                                    setShowComparisonMonthFilter(true)
+                                }
+                            }}>
+                                <option value="ALL">ALL YEARS</option>
+                                {years.map((year) => (
+                                    <option key={year}>{year}</option>
+                                ))}
+                            </select>
+                        </div>
+                        {showComparisonMonthFilter && (
+                            <div className="flex flex-col">
+                                <span className="text-xs font-semibold text-gray-400 mb-1">MONTH</span>
+                                <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setComparisonMonth(e.target.value)} value={comparisonMonth}>
+                                    <option value="ALL">ALL MONTHS</option>
+                                    {months.map((month) => (
+                                        <option key={month.value} value={month.value}>{month.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <ResponsiveContainer width="100%" height={800}>
-                    <BarChart data={comparisonData}  tabIndex={-1} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="type_name" angle={-45} textAnchor="end" interval={0} height={250}/>
-                        <YAxis  type="number" width={150} />
+                <p className="text-sm text-gray-400 mb-4">Compare two municipalities or assistance types</p>
+
+                <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={comparisonData}  tabIndex={-1} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="type_name" angle={-45} textAnchor="end" interval={0} height={100} tick={{ fontSize: 11 }} />
+                        <YAxis type="number" width={50} tick={{ fontSize: 11 }} />
                         <Tooltip />
-                        <Bar dataKey={municipality1} fill="#1e3a5f" stroke="none" tabIndex={-1} label ={{ position: 'top' }} label={{ position: 'top', fontSize: 14, fontWeight: 600 }}/>
-                        <Bar dataKey={municipality2} fill="#3b82f6" stroke="none" tabIndex={-1} label ={{ position: 'top' }} label={{ position: 'top', fontSize: 14, fontWeight: 600 }}/>
+                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Bar dataKey={municipality1} fill="#1e3a5f" stroke="none" tabIndex={-1} radius={[3, 3, 0, 0]} label={{ position: 'top', fontSize: 11, fontWeight: 600 }} />
+                        <Bar dataKey={municipality2} fill="#3b82f6" stroke="none" tabIndex={-1} radius={[3, 3, 0, 0]} label={{ position: 'top', fontSize: 11, fontWeight: 600 }} />
                     </BarChart>
                 </ResponsiveContainer>
             </div>
+
+            {/* MUNICIPALITY DRILL-DOWN */}
             <div className="bg-white shadow rounded p-4 mb-6">
-                <p className="font-semibold text-gray-700 mb-1">Municipality Drill-Down</p>
-                <p className="text-sm text-gray-400 mb-4">Breakdown by assistance type with mini stat cards</p>
-                <div className='flex gap-2 items-center mb-4'>
-                    <span className="text-sm font-semibold text-gray-500">SELECT MUNICIPALITY:</span>
-                    <select className= "border rounded px-2 py-1 text-sm" onChange={(e) => setDrillDownMunicipality(e.target.value)} value={drill_down_municipality}>
-                        {municipalities.map((m) =>  (
-                            <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
-                        ))}
-                    </select>
-                    <select className="border rounded px-2 py-1 text-sm" onChange={(e) =>     
-                         {
-                            const Value = e.target.value
-                            setDrillDownYear(Value)
-                            if (Value === 'ALL') {
-                                setShowDrilldownMonthFilter(false)
-                            } else {
-                                setShowDrilldownMonthFilter(true)
-                            }
-                         }} value={drill_down_year}>
-                        <option value="ALL">ALL YEARS</option>
-                        {years.map((year) => (
-                            <option key={year}>{year}</option>
-                        ))}
-                    </select>
-                    {showDrilldownMonthFilter && (
-                        <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setDrillDownMonth(e.target.value)} value={drill_down_month}>
-                            <option value="ALL">ALL MONTHS</option>
-                            {months.map((month) => (
-                                <option key={month.value} value={month.value}>{month.label}</option>
+                <div className="flex items-start justify-between flex-wrap gap-3 mb-1">
+                    <div className="flex items-center gap-2">
+                        <Search className="w-4 h-4 text-blue-600" />
+                        <p className="font-semibold text-gray-700">Municipality Drill-Down</p>
+                    </div>
+                    <div className='flex gap-2 items-center'>
+                        <select className= "border rounded px-2 py-1 text-sm" onChange={(e) => setDrillDownMunicipality(e.target.value)} value={drill_down_municipality}>
+                            {municipalities.map((m) =>  (
+                                <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
                             ))}
                         </select>
-                    )}
+                        <select className="border rounded px-2 py-1 text-sm" onChange={(e) =>     
+                             {
+                                const Value = e.target.value
+                                setDrillDownYear(Value)
+                                if (Value === 'ALL') {
+                                    setShowDrilldownMonthFilter(false)
+                                } else {
+                                    setShowDrilldownMonthFilter(true)
+                                }
+                             }} value={drill_down_year}>
+                            <option value="ALL">ALL YEARS</option>
+                            {years.map((year) => (
+                                <option key={year}>{year}</option>
+                            ))}
+                        </select>
+                        {showDrilldownMonthFilter && (
+                            <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setDrillDownMonth(e.target.value)} value={drill_down_month}>
+                                <option value="ALL">ALL MONTHS</option>
+                                {months.map((month) => (
+                                    <option key={month.value} value={month.value}>{month.label}</option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
                 </div>
+                <p className="text-sm text-gray-400 mb-4">Breakdown by assistance type with mini stat cards</p>
+
                 <div className="grid grid-cols-2 gap-3">
                     {drilldown_data.map((item) => (
                         <div key={item.type_name} className="bg-gray-100 rounded-lg p-4">
@@ -288,28 +319,35 @@ function Analytics() {
                     ))}
                 </div>
             </div>
+
+            {/* TOP N RANKINGS */}
             <div className="bg-white shadow rounded p-4 mb-6">
-                <p className="font-semibold text-gray-700 mb-1">Top N Rankings</p>
-                <p className="text-sm text-gray-400 mb-4">Ranked table with badges and inline bar indicators</p>
-                <div className='flex gap-2 items-center mb-4'>
-                    <span className="text-sm font-semibold text-gray-500">Filters:</span>
-                    <select className="border rounded px-2 py-1 text-sm" onChange={e => setTopN(Number(e.target.value))}>
-                        {[5, 10, 15, 20, 25, 30].map(n => <option key={n} value={n}>TOP {n} TYPES</option>)}
-                    </select>
-                    <select className= "border rounded px-2 py-1 text-sm" onChange={(e) => setSelectedMunicipalityRanking(e.target.value)} value={selectedMunicipalityRanking}>
-                        <option value="ALL">ALL MUNICIPALITIES</option>
-                        {municipalities.map((m) =>  (
-                            <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
-                        ))}
-                    </select>
-                    <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setRankingMonth(Number(e.target.value))} value={rankingMonth}>
-                        {availableMonths.map((m) => (
-                            <option key={`${m.year}-${m.month}`} value={m.month}>
-                                {months.find(mo => mo.value === m.month)?.label} {m.year}
-                            </option>
-                        ))}
-                    </select>
+                <div className="flex items-start justify-between flex-wrap gap-3 mb-1">
+                    <div className="flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-blue-600" />
+                        <p className="font-semibold text-gray-700">Top N Rankings</p>
+                    </div>
+                    <div className='flex gap-2 items-center'>
+                        <select className="border rounded px-2 py-1 text-sm" onChange={e => setTopN(Number(e.target.value))}>
+                            {[5, 10, 15, 20, 25, 30].map(n => <option key={n} value={n}>TOP {n} TYPES</option>)}
+                        </select>
+                        <select className= "border rounded px-2 py-1 text-sm" onChange={(e) => setSelectedMunicipalityRanking(e.target.value)} value={selectedMunicipalityRanking}>
+                            <option value="ALL">ALL MUNICIPALITIES</option>
+                            {municipalities.map((m) =>  (
+                                <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
+                            ))}
+                        </select>
+                        <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setRankingMonth(Number(e.target.value))} value={rankingMonth}>
+                            {availableMonths.map((m) => (
+                                <option key={`${m.year}-${m.month}`} value={m.month}>
+                                    {months.find(mo => mo.value === m.month)?.label} {m.year}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
+                <p className="text-sm text-gray-400 mb-4">Ranked table with badges and inline bar indicators</p>
+
                 <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead>
@@ -357,15 +395,20 @@ function Analytics() {
             </div>
             
             </div>
-            <div className="bg-white shadow rounded p-4 mb-6">
-                <p className="font-semibold text-gray-700 mb-1">Narrative Output</p>
+
+            {/* NARRATIVE OUTPUT */}
+            <div className="bg-white shadow rounded p-4 mb-6 border-l-4 border-yellow-500">
+                <div className="flex items-center gap-2 mb-1">
+                    <FileText className="w-4 h-4 text-yellow-600" />
+                    <p className="font-semibold text-gray-700">Narrative Output</p>
+                </div>
                 {!narrative && !narrativeLoading && (
                     <p className="text-sm text-gray-400 mb-4">
                         Click the button to generate an AI-powered narrative based on current dashboard data.
                     </p>
                 )}
                 {narrativeLoading && <p className="text-sm text-gray-400">Generating narrative...</p>}
-                {narrative && !narrativeLoading && <p className="text-sm text-gray-700 mb-4">{narrative}</p>}
+                {narrative && !narrativeLoading && <p className="text-sm text-gray-700 mb-4 leading-relaxed">{narrative}</p>}
                 <button
                     onClick={generateNarrative}
                     disabled={narrativeLoading}

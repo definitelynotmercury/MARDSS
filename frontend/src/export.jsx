@@ -9,6 +9,7 @@ import {
     PieChart, Pie, Cell,
     BarChart, Bar, LabelList
 } from 'recharts'
+import { TrendingUp, PieChart as PieChartIcon, BarChart2, Search, Trophy, FileText, BarChart3 } from 'lucide-react'
 
 const sectionLabels = {
     dashboardKpi: 'Dashboard Summary',
@@ -97,7 +98,7 @@ function Export() {
     const [selectedMonth, setSelectedMonth] = useState('ALL')
     const [showMonthFilter, setShowMonthFilter] = useState(false)
     // YoY Trends
-    const [selectedYoYTopN, setSelectedYoYTopN] = useState(10)
+    const [selectedYoYTopN, setSelectedYoYTopN] = useState(5)
     const [selectedYoYType, setSelectedYoYType] = useState('ALL')
     const [selectedYearForLine, setSelectedYearForLine] = useState('ALL')
     // Distribution by Assistance Type
@@ -177,6 +178,23 @@ function Export() {
         return (
             <text x={x - 35} y={y + 15} fill="#555" fontSize={14} textAnchor="start">
                 {value}
+            </text>
+        );
+    };
+
+    const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value }) => {
+        const total = pieChartData.reduce((sum, d) => sum + d.value, 0);
+        const RADIAN = Math.PI / 180;
+        const sliceAngle = (value / total) * 360;
+        if (sliceAngle < 20) return null;
+
+        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+        return (
+            <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
+                {value.toLocaleString()}
             </text>
         );
     };
@@ -545,23 +563,28 @@ function Export() {
     const ChartsPreviewContent = () => (
         <div className="flex flex-col gap-6">
             {sections.dashboardKpi && (
-                <div ref={chartRefs.dashboardKpi}>
-                    <p className="font-semibold text-gray-700 mb-2">Dashboard Summary</p>
+                <div ref={chartRefs.dashboardKpi} className="bg-white shadow rounded p-4">
+                    <p className="font-semibold text-gray-700 mb-3">Dashboard Summary</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-gray-50 border rounded p-4">
-                            <p className="text-sm text-gray-500">Total Requests</p>
-                            <h2 className="text-2xl font-bold text-gray-800">
+                        <div className="bg-white border rounded p-4 border-l-4 border-l-[#0B2E52]">
+                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Total Requests</p>
+                            <h2 className="text-2xl font-bold text-gray-800 mt-1">
                                 {kpiPreview ? kpiPreview.total_requests : 'Loading...'}
                             </h2>
+                            {kpiPreview?.growth_percent != null && (
+                                <span className="inline-block mt-2 bg-green-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                                    +{kpiPreview.growth_percent}%
+                                </span>
+                            )}
                         </div>
-                        <div className="bg-gray-50 border rounded p-4">
-                            <p className="text-sm text-gray-500">Top Request Type</p>
-                            <h2 className="text-lg font-bold text-gray-800">{kpiPreview?.top_type?.type_name ?? 'N/A'}</h2>
+                        <div className="bg-white border rounded p-4 border-l-4 border-l-[#A6790E]">
+                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Highest Volume Type</p>
+                            <h2 className="text-lg font-bold text-gray-800 mt-1">{kpiPreview?.top_type?.type_name ?? 'N/A'}</h2>
                             <p className="text-sm text-gray-400">{kpiPreview?.top_type?.total ? `${kpiPreview.top_type.total} requests` : ''}</p>
                         </div>
-                        <div className="bg-gray-50 border rounded p-4">
-                            <p className="text-sm text-gray-500">Top Municipality</p>
-                            <h2 className="text-lg font-bold text-gray-800">{kpiPreview?.top_municipality?.municipality_name ?? 'N/A'}</h2>
+                        <div className="bg-white border rounded p-4 border-l-4 border-l-[#2862DC]">
+                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Highest Volume Municipality</p>
+                            <h2 className="text-lg font-bold text-gray-800 mt-1">{kpiPreview?.top_municipality?.municipality_name ?? 'N/A'}</h2>
                             <p className="text-sm text-gray-400">{kpiPreview?.top_municipality?.total ? `${kpiPreview.top_municipality.total} requests` : ''}</p>
                         </div>
                     </div>
@@ -569,9 +592,13 @@ function Export() {
             )}
 
             {sections.yoyTrends && yoyTrendData.length > 0 && (
-                <div ref={chartRefs.yoyTrends}>
-                    <p className="font-semibold text-gray-700 mb-2">YoY Trend Analysis</p>
-                    <ResponsiveContainer width="100%" height={300}>
+                <div ref={chartRefs.yoyTrends} className="bg-white shadow rounded p-4">
+                    <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                        <TrendingUp size={16} className="text-blue-600" />
+                        Yearly Trend by Assistance Type
+                    </p>
+                    <p className="text-sm text-gray-400 mb-4">Request volume from 2023 to 2025</p>
+                    <ResponsiveContainer width="100%" height={400}>
                         <LineChart data={yoyTrendData}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey={yoyTrendData[0]?.month ? 'month' : 'year'} />
@@ -587,12 +614,15 @@ function Export() {
             )}
 
             {sections.distributionByAssistance && (
-                <div ref={chartRefs.distributionByAssistance}>
-                    <p className="font-semibold text-gray-700 mb-1">Distribution by Assistance Type</p>
+                <div ref={chartRefs.distributionByAssistance} className="bg-white shadow rounded p-4">
+                    <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                        <PieChartIcon size={16} className="text-blue-600" />
+                        Distribution by Assistance Type
+                    </p>
                     <p className="text-sm text-gray-400 mb-4">Percentage Breakdown</p>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={380}>
                         <PieChart>
-                            <Pie data={pieChartData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100}>
+                            <Pie data={pieChartData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100} label={renderCustomLabel} labelLine={false}>
                                 {pieChartData.map((_, index) => (
                                     <Cell key={index} fill={pieChartColors[index]} />
                                 ))}
@@ -605,10 +635,13 @@ function Export() {
             )}
 
             {sections.distributionByMunicipality && (
-                <div ref={chartRefs.distributionByMunicipality}>
-                    <p className="font-semibold text-gray-700 mb-1">Total Requests by Municipality/City</p>
+                <div ref={chartRefs.distributionByMunicipality} className="bg-white shadow rounded p-4">
+                    <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                        <BarChart2 size={16} className="text-blue-600" />
+                        Total Requests by Municipality/City
+                    </p>
                     <p className="text-sm text-gray-400 mb-4">Top Municipality/City by Volume</p>
-                    <ResponsiveContainer width="100%" height={800}>
+                    <ResponsiveContainer width="100%" height={Math.min(700, Math.max(320, barChartData.length * 34))}>
                         <BarChart data={barChartData} layout="vertical">
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis type="number" />
@@ -623,30 +656,36 @@ function Export() {
             )}
 
             {sections.comparisonChart && (
-                <div ref={chartRefs.comparisonChart}>
-                    <p className="font-semibold text-gray-700 mb-1">Side-by-side Comparison</p>
+                <div ref={chartRefs.comparisonChart} className="bg-white shadow rounded p-4">
+                    <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                        <BarChart3 size={16} className="text-blue-600" />
+                        Side-by-side Comparison
+                    </p>
                     <p className="text-sm text-gray-400 mb-4">
                         {compMunicipality1} vs {compMunicipality2}
                         {compType !== 'ALL' ? ` · ${compType}` : ''}
-                        {compYear !== 'ALL' ? ` · ${compYear}` : ''}
+                        {compYear !== 'ALL' ? ` · ${compYear}` : ' · All Years'}
                     </p>
                     <ResponsiveContainer width="100%" height={400}>
-                        <BarChart data={comparisonData} margin={{ top: 20, right: 20, left: 0, bottom: 120 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="type_name" angle={-45} textAnchor="end" interval={0} height={120} />
-                            <YAxis type="number" width={60} />
+                        <BarChart data={comparisonData} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="type_name" angle={-45} textAnchor="end" interval={0} height={100} tick={{ fontSize: 11 }} />
+                            <YAxis type="number" width={50} tick={{ fontSize: 11 }} />
                             <Tooltip />
-                            <Legend verticalAlign="top" />
-                            <Bar dataKey={compMunicipality1} fill="#1e3a5f" stroke="none" label={{ position: 'top', fontSize: 11, fontWeight: 600 }} />
-                            <Bar dataKey={compMunicipality2} fill="#3b82f6" stroke="none" label={{ position: 'top', fontSize: 11, fontWeight: 600 }} />
+                            <Legend wrapperStyle={{ fontSize: 12 }} />
+                            <Bar dataKey={compMunicipality1} fill="#1e3a5f" stroke="none" radius={[3, 3, 0, 0]} label={{ position: 'top', fontSize: 11, fontWeight: 600 }} />
+                            <Bar dataKey={compMunicipality2} fill="#3b82f6" stroke="none" radius={[3, 3, 0, 0]} label={{ position: 'top', fontSize: 11, fontWeight: 600 }} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
             )}
 
             {sections.municipalityDrilldown && (
-                <div ref={chartRefs.municipalityDrilldown}>
-                    <p className="font-semibold text-gray-700 mb-1">Municipality Drill-Down</p>
+                <div ref={chartRefs.municipalityDrilldown} className="bg-white shadow rounded p-4">
+                    <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                        <Search size={16} className="text-blue-600" />
+                        Municipality Drill-Down
+                    </p>
                     <p className="text-sm text-gray-400 mb-4">
                         {drilldownMunicipality}{drilldownYear !== 'ALL' ? ` · ${drilldownYear}` : ' · All Years'}
                     </p>
@@ -667,8 +706,11 @@ function Export() {
             )}
 
             {sections.topNRanking && (
-                <div ref={chartRefs.topNRanking}>
-                    <p className="font-semibold text-gray-700 mb-1">Top N Rankings</p>
+                <div ref={chartRefs.topNRanking} className="bg-white shadow rounded p-4">
+                    <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                        <Trophy size={16} className="text-blue-600" />
+                        Top N Rankings
+                    </p>
                     <p className="text-sm text-gray-400 mb-4">
                         Top {topN} municipalities by total requests
                         {selectedMunicipalityRanking !== 'ALL' ? ` · ${selectedMunicipalityRanking}` : ''}
@@ -722,10 +764,18 @@ function Export() {
             )}
 
             {sections.forecast && (
-                <div className="bg-white shadow rounded p-4 mb-6" ref={chartRefs.forecast}>
-                    <p className="font-semibold text-gray-700 mb-1">Demand Forecast</p>
-                    <p className="text-sm text-gray-400 mb-4">Historical data (solid line) and projections (dashed line) with confidence range</p>
-                    <ResponsiveContainer width="100%" height={600}>
+                <div className="bg-white shadow rounded p-4" ref={chartRefs.forecast}>
+                    <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                        <TrendingUp size={16} className="text-blue-600" />
+                        Demand Forecast
+                    </p>
+                    <p className="text-sm text-gray-400 mb-4">
+                        Historical data (solid line) and projections (dashed line) with confidence range
+                        {forecastMunicipality !== 'ALL' || forecastType !== 'ALL' ? (
+                            <> · {forecastMunicipality !== 'ALL' ? forecastMunicipality : 'All Municipalities'}{forecastType !== 'ALL' ? ` · ${forecastType}` : ''}</>
+                        ) : null}
+                    </p>
+                    <ResponsiveContainer width="100%" height={400}>
                         <LineChart data={chartData} margin={{ top: 30, right: 20, left: 0, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="label" />

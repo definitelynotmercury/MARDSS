@@ -1,7 +1,8 @@
 import Layout from "./Layout";
 import { getToken } from "./auth";
 import { useState, useEffect } from 'react'
-import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart } from 'recharts'
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts'
+import { TrendingUp, FileText } from 'lucide-react'
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -140,53 +141,55 @@ function Forecast() {
 
     return(
         <Layout>
-            <h1 className="text-xl font-bold text-gray-700">Forecasting</h1>
+            <div className="flex items-center justify-between mb-4">
+                <h1 className="text-xl font-bold text-gray-700">Forecasting</h1>
+                <div className="flex gap-3 items-center">
+                    <select className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white shadow-sm" value={selectedType} onChange={(e) => setSelectedType(e.target.value)}>
+                        <option value="ALL">All Types</option>
+                        {types.map((t) => (
+                                    <option key={t.type_id} value={t.type_name}>{t.type_name}</option>
+                            ))}
+                    </select>
 
-            <div className="flex gap-2 items-center mb-4">
-                <span className="text-sm font-semibold text-gray-500">FILTERS:</span>
-
-            <select className="border border-gray-300 rounded px-2 py-1 text-sm" value={selectedMunicipality} onChange={(e) => setSelectedMunicipality(e.target.value)}>
-                <option value="ALL">All Municipalities</option>
-                {municipalities.map((m) => (
-                    <option key={m.municipality_id} value={m.municipality_name}>
-                        {m.municipality_name}
-                    </option>
-                ))}
-            </select>
-
-            <select className="border border-gray-300 rounded px-2 py-1 text-sm" value={selectedType} onChange={(e) => setSelectedType(e.target.value)}>
-                <option value="ALL">All Assistance Types</option>
-                {types.map((t) => (
-                            <option key={t.type_id} value={t.type_name}>{t.type_name}</option>
-                    ))}
-            </select>
+                    <select className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white shadow-sm" value={selectedMunicipality} onChange={(e) => setSelectedMunicipality(e.target.value)}>
+                        <option value="ALL">All Municipalities/Cities</option>
+                        {municipalities.map((m) => (
+                            <option key={m.municipality_id} value={m.municipality_name}>
+                                {m.municipality_name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white shadow rounded p-4">
-                    <p className="text-sm text-gray-500">{forecastData.forecast[0]?.month} {forecastData.forecast[0]?.year} Requests</p>
-                    <h1 className="text-2xl font-bold text-gray-800">{forecastData.forecast[0]?.future_prediction}</h1>
-                    <p className="text-xs text-gray-500">Range: {forecastData.forecast[0]?.lower} - {forecastData.forecast[0]?.upper}</p>
+                <div className="bg-white shadow rounded p-4 border-l-4 border-blue-600">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{forecastData.forecast[0]?.month} {forecastData.forecast[0]?.year} Projection</p>
+                    <h1 className="text-2xl font-bold text-gray-800 mt-1">{forecastData.forecast[0]?.future_prediction}</h1>
+                    <p className="text-xs text-gray-400 mt-1">Range: {forecastData.forecast[0]?.lower} – {forecastData.forecast[0]?.upper}</p>
                 </div>
-                <div className="bg-white shadow rounded p-4">
-                    <p className="text-sm text-gray-500">{forecastData.forecast[1]?.month} {forecastData.forecast[1]?.year} Requests</p>
-                    <h1 className="text-2xl font-bold text-gray-800">{forecastData.forecast[1]?.future_prediction}</h1>
-                    <p className="text-xs text-gray-500">Range: {forecastData.forecast[1]?.lower} - {forecastData.forecast[1]?.upper}</p>
+                <div className="bg-white shadow rounded p-4 border-l-4 border-yellow-500">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{forecastData.forecast[1]?.month} {forecastData.forecast[1]?.year} Projection</p>
+                    <h1 className="text-2xl font-bold text-gray-800 mt-1">{forecastData.forecast[1]?.future_prediction}</h1>
+                    <p className="text-xs text-gray-400 mt-1">Range: {forecastData.forecast[1]?.lower} – {forecastData.forecast[1]?.upper}</p>
                 </div>
-                <div className="bg-white shadow rounded p-4">
-                    <p className="text-sm text-gray-500">{forecastData.forecast[2]?.month} {forecastData.forecast[2]?.year} Requests</p>
-                    <h1 className="text-2xl font-bold text-gray-800">{forecastData.forecast[2]?.future_prediction}</h1>
-                    <p className="text-xs text-gray-500">Range: {forecastData.forecast[3]?.lower} - {forecastData.forecast[3]?.upper}</p>
+                <div className="bg-white shadow rounded p-4 border-l-4 border-blue-600">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{forecastData.forecast[2]?.month} {forecastData.forecast[2]?.year} Projection</p>
+                    <h1 className="text-2xl font-bold text-gray-800 mt-1">{forecastData.forecast[2]?.future_prediction}</h1>
+                    <p className="text-xs text-gray-400 mt-1">Range: {forecastData.forecast[2]?.lower} – {forecastData.forecast[2]?.upper}</p>
                 </div>
-                <div className="bg-white shadow rounded p-4">
-                    <p className="text-sm text-gray-500">Avg. Annual Growth Rate</p>
-                    <h1 className="text-2xl font-bold text-gray-800">{forecastData.average_growth_rate.toFixed(2)}%</h1>
-                    <p className="text-xs text-gray-500">Based on historical data</p>
+                <div className="bg-white shadow rounded p-4 border-l-4 border-blue-800">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Avg. Annual Growth Rate</p>
+                    <h1 className="text-2xl font-bold text-gray-800 mt-1">+{forecastData.average_growth_rate.toFixed(2)}%</h1>
+                    <p className="text-xs text-gray-400 mt-1">Year-over-year</p>
                 </div>
             </div>
 
             <div className="bg-white shadow rounded p-4 mb-6">
-                <p className="font-semibold text-gray-700 mb-1">Demand Forecast</p>
+                <div className="flex items-center gap-2 mb-1">
+                    <TrendingUp className="w-4 h-4 text-blue-600" />
+                    <p className="font-semibold text-gray-700">Demand Forecast</p>
+                </div>
                 <p className="text-sm text-gray-400 mb-4">Historical data (solid line) and projections (dashed line) with confidence range</p>
                 <ResponsiveContainer width="100%" height={600}>
                     <LineChart data={chartData} margin={{ top: 30, right: 20, left: 0, bottom: 0 }}>
@@ -203,8 +206,11 @@ function Forecast() {
             </div>
 
             <div className="bg-white shadow rounded p-4">
-                <p className="font-semibold text-gray-700 mb-1">Forecast Details</p>
-                <p className="text-sm text-gray-600">Yearly breakdown with confidence intervals</p>
+                <div className="flex items-center gap-2 mb-1">
+                    <TrendingUp className="w-4 h-4 text-blue-600" />
+                    <p className="font-semibold text-gray-700">Forecast Data</p>
+                </div>
+                <p className="text-sm text-gray-400 mb-4">Yearly breakdown with confidence intervals</p>
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -221,27 +227,27 @@ function Forecast() {
                         <tbody>
                             {forecastData.timeline.map((item,i) => (
                                 <tr key={i} className="border-b">
-                                    <td className="px-4 py-2">{item.year}</td>
+                                    <td className="px-4 py-2 font-medium text-gray-700">{item.year}</td>
                                     <td className="px-4 py-2">{item.month}</td>
                                     <td className="px-4 py-2">{forecastData.timeline[i]?.total}</td>
-                                    <td className="px-4 py-2">-</td>
-                                    <td className="px-4 py-2">-</td>
+                                    <td className="px-4 py-2 text-gray-400">—</td>
+                                    <td className="px-4 py-2 text-gray-400">—</td>
                                     <td className="px-4 py-2">
-                                        <span className="bg-gray-200 text-gray-900 px-3 py-1 rounded-full text-sm font-medium">
+                                        <span className="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold uppercase">
                                             Historical
                                         </span>
                                     </td>
                                 </tr>
                             ))}
                             {forecastData.forecast.map((item, i) => (
-                                <tr key={i} className="border-b">
-                                    <td className="px-4 py-2">{item.year}</td>
+                                <tr key={i} className="border-b bg-yellow-50">
+                                    <td className="px-4 py-2 font-medium text-gray-700">{item.year}</td>
                                     <td className="px-4 py-2">{item.month}</td>
-                                    <td className="px-4 py-2">{forecastData.forecast[i]?.future_prediction}</td>
+                                    <td className="px-4 py-2 font-semibold text-gray-800">{forecastData.forecast[i]?.future_prediction}</td>
                                     <td className="px-4 py-2">{forecastData.forecast[i]?.lower}</td>
                                     <td className="px-4 py-2">{forecastData.forecast[i]?.upper}</td>
-                                    <td className="px-4 py-2" bg-blue-100 >
-                                        <span className="bg-blue-200 text-blue-900 px-3 py-1 rounded-full text-sm font-medium">
+                                    <td className="px-4 py-2">
+                                        <span className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-semibold uppercase">
                                             Projected
                                         </span>
                                     </td>
@@ -252,15 +258,19 @@ function Forecast() {
                 </div>
 
             </div>
-            <div className="bg-white shadow rounded p-4 mb-6">
-                <p className="font-semibold text-gray-700 mb-1">Narrative Output</p>
+
+            <div className="bg-white shadow rounded p-4 mt-6 border-l-4 border-yellow-500">
+                <div className="flex items-center gap-2 mb-1">
+                    <FileText className="w-4 h-4 text-yellow-600" />
+                    <p className="font-semibold text-gray-700">Narrative Output</p>
+                </div>
                 {!narrative && !narrativeLoading && (
                     <p className="text-sm text-gray-400 mb-4">
                         Click the button to generate an AI-powered narrative based on current dashboard data.
                     </p>
                 )}
                 {narrativeLoading && <p className="text-sm text-gray-400">Generating narrative...</p>}
-                {narrative && !narrativeLoading && <p className="text-sm text-gray-700 mb-4">{narrative}</p>}
+                {narrative && !narrativeLoading && <p className="text-sm text-gray-700 mb-4 leading-relaxed">{narrative}</p>}
                 <button
                     onClick={generateNarrative}
                     disabled={narrativeLoading}
