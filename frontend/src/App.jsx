@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Login from './Login'
-import Dashboard from './Dashboard'
-import Analytics from './Analytics'
+import Dashboard from './dashboard'
+import Analytics from './analytics'
 import Forecast from './forecast'
 import Export from './export'
 import Settings from "./settings";
