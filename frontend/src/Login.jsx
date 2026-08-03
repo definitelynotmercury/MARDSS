@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from 'react-router-dom'
 import LoginLayout from "./LoginLayout";
+import { BASE_URL } from './config';
 function Login() {
     const today = new Date()
     const formattedDate = today.toLocaleDateString('en-US', {
@@ -27,7 +28,7 @@ function Login() {
 
     setIsLoggingIn(true)
     try {
-        const response = await fetch('http://127.0.0.1:5000/api/login', {
+        const response = await fetch(`${BASE_URL}/api/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })

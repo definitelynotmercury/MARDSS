@@ -7,8 +7,7 @@ import {
     BarChart, Bar, LabelList
 } from 'recharts'
 import { TrendingUp, PieChart as PieChartIcon, BarChart2, FileText } from 'lucide-react'
-
-const BASE_URL = 'http://127.0.0.1:5000'
+import { BASE_URL } from './config';
 
 function Dashboard() {
     const generateColors = (count) =>

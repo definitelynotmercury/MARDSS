@@ -1,11 +1,11 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Users, Upload, LogOut } from 'lucide-react';
+import { BASE_URL } from './config';
 
 function AdminLayout({ children }) {
     const navigate = useNavigate()
     const location = useLocation()
     const user = JSON.parse(localStorage.getItem('user'))
-    const BASE_URL = 'http://127.0.0.1:5000'
     const today = new Date()
     const formattedDate = today.toLocaleDateString('en-US', {
         weekday: 'long',

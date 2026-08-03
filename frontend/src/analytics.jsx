@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { BarChart3, Search, Trophy, FileText } from 'lucide-react'
 import { useFetcher } from 'react-router-dom'
 import {getToken} from './auth'
+import { BASE_URL } from './config';
 
 function Analytics() {
 
@@ -39,7 +40,7 @@ function Analytics() {
             window.location.href = '/login'
         }
         const fetchdata = async() => {
-            const response1 = await fetch('http://127.0.0.1:5000/api/municipalities', {
+            const response1 = await fetch(`${BASE_URL}/api/municipalities`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -47,7 +48,7 @@ function Analytics() {
             const muni_data = await response1.json()
             setMunicipalities(muni_data)
 
-            const response2 = await fetch('http://127.0.0.1:5000/api/assistance_types', {
+            const response2 = await fetch(`${BASE_URL}/api/assistance_types`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -62,7 +63,7 @@ function Analytics() {
     // Function to fetch comparison data based on selected filters
     const fetchComparisonData = async () => {
     const token = getToken()
-    const response = await fetch(`http://127.0.0.1:5000/api/analytics/comparison?municipality_1=${municipality1}&municipality_2=${municipality2}&type=${selectedType}&year=${selectedYear}&month=${comparisonMonth}`, {
+    const response = await fetch(`${BASE_URL}/api/analytics/comparison?municipality_1=${municipality1}&municipality_2=${municipality2}&type=${selectedType}&year=${selectedYear}&month=${comparisonMonth}`, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -95,7 +96,7 @@ function Analytics() {
     useEffect(() => {
         const fetchDrilldownData = async () => {
             const token = getToken()
-            const response = await fetch(`http://127.0.0.1:5000/api/analytics/drill_down?municipality=${drill_down_municipality}&year=${drill_down_year}&month=${drill_down_month}`, {
+            const response = await fetch(`${BASE_URL}/api/analytics/drill_down?municipality=${drill_down_municipality}&year=${drill_down_year}&month=${drill_down_month}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -119,7 +120,7 @@ function Analytics() {
     useEffect(() => {
         const fetchRankings = async () => {
             const token = getToken()
-            const response = await fetch(`http://127.0.0.1:5000/api/analytics/n_rankings?topN=${topN}&selectedMunicipalityRanking=${selectedMunicipalityRanking}&month=${rankingMonth}`, {
+            const response = await fetch(`${BASE_URL}/api/analytics/n_rankings?topN=${topN}&selectedMunicipalityRanking=${selectedMunicipalityRanking}&month=${rankingMonth}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -133,7 +134,7 @@ function Analytics() {
     useEffect(() => {
         const fetchAvailableMonths = async () => {
             const token = getToken()
-            const response = await fetch('http://127.0.0.1:5000/api/analytics/available_months', {
+            const response = await fetch(`${BASE_URL}/api/analytics/available_months`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -147,7 +148,7 @@ function Analytics() {
     useEffect(() => {
         const fetchLatestMonth = async () => {
             const token = getToken()
-            const response = await fetch('http://127.0.0.1:5000/api/analytics/latest_month', {
+            const response = await fetch(`${BASE_URL}/api/analytics/latest_month`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -166,7 +167,7 @@ function Analytics() {
         const token = getToken()
         setNarrativeLoading(true)
         setNarrative('')
-        const res = await fetch(`http://127.0.0.1:5000/api/analytics/narrative`, {
+        const res = await fetch(`${BASE_URL}/api/analytics/narrative`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,

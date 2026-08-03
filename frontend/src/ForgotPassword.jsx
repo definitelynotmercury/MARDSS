@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from 'react-router-dom'
 import LoginLayout from "./LoginLayout"
-
+import { BASE_URL } from './config';
 function ForgotPassword (){
     const navigate = useNavigate() 
     const [email,setEmail] = useState('')
@@ -9,7 +9,7 @@ function ForgotPassword (){
     const sendEmail = async(e) => {
         e.preventDefault() 
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/forgot-password', {
+            const response = await fetch(`${BASE_URL}/api/forgot-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })

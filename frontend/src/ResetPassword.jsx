@@ -1,6 +1,7 @@
 import { useState } from "react"
 import LoginLayout from "./LoginLayout"
 import { useSearchParams,useNavigate } from 'react-router-dom';
+import { BASE_URL } from './config';
 function ResetPassword() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -34,7 +35,7 @@ function ResetPassword() {
     const sendPassword = async(e) => {
         e.preventDefault()
         try{
-            const response = await fetch('http://127.0.0.1:5000/api/password-reset',{
+            const response = await fetch(`${BASE_URL}/api/password-reset`,{
                 method :'POST',
                 headers : {'Content-Type': 'application/json'},
                 body : JSON.stringify({ email, code, newPassword })

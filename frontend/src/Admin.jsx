@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import AdminLayout from './AdminLayout'
 import { getToken } from './auth'
 import { Pencil, Trash2 } from 'lucide-react'
-const BASE_URL = 'http://127.0.0.1:5000'
+import { BASE_URL } from './config';
 
 function isValidEmail(email){
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;

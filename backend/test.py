@@ -1,0 +1,9 @@
+from config import DB_CONFIG
+import mysql.connector
+
+conn = mysql.connector.connect(**DB_CONFIG)
+print("Connected!")
+cursor = conn.cursor()
+cursor.execute("SELECT VERSION();")
+print(cursor.fetchone())
+conn.close()

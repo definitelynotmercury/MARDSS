@@ -3,14 +3,17 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
+    'host': os.environ.get("DB_HOST", "localhost"),
+    'port': int(os.environ.get("DB_PORT", 3306)),
+    'user': os.environ.get("DB_USER", "root"),
     'password': os.environ.get("DB_PASSWORD"),
-    'database': 'mardss'
+    'database': os.environ.get("DB_NAME", "mardss"),
+    'ssl_ca': os.environ.get("SSL_CA_PATH", "ca.pem"),
+    'ssl_verify_cert': True,
+    'ssl_disabled': False
 }
-
+SSL_CA_PATH = os.environ.get("SSL_CA_PATH", "ca.pem")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
 GMAIL = os.environ.get("GMAIL")

@@ -10,9 +10,8 @@ import {
   LogOut,
   Bell,
 } from 'lucide-react';
+import { BASE_URL } from './config';
 
-
-const BASE_URL = 'http://127.0.0.1:5000'
 
 function Layout({children}){
     const user = JSON.parse(localStorage.getItem('user'))

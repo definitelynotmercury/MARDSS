@@ -3,7 +3,7 @@ import { getToken } from "./auth";
 import { useState, useEffect } from 'react'
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts'
 import { TrendingUp, FileText } from 'lucide-react'
-
+import { BASE_URL } from './config';
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         const order = ['historical', 'upper', 'projected', 'lower']
@@ -60,7 +60,7 @@ function Forecast() {
     useEffect(() => {
         const token = getToken()
         const fetchdata = async() => {
-            const response1 = await fetch('http://127.0.0.1:5000/api/municipalities',{
+            const response1 = await fetch(`${BASE_URL}/api/municipalities`,{
                 'headers': {
                     'Authorization': `Bearer ${token}`
                 }
@@ -68,7 +68,7 @@ function Forecast() {
             const muni_data = await response1.json()
             setMunicipalities(muni_data)
 
-            const response2 = await fetch('http://127.0.0.1:5000/api/assistance_types',{
+            const response2 = await fetch(`${BASE_URL}/api/assistance_types`,{
                 'headers': {
                     'Authorization': `Bearer ${token}`
                 }
@@ -83,10 +83,11 @@ function Forecast() {
     useEffect(() => {
         const fetchForecastData = async() => {
             const token = getToken()
-            const response = await fetch(`http://127.0.0.1:5000/api/forecast/predict?municipality=${selectedMunicipality}&type=${selectedType}`,{ 
+            const response = await fetch(`${BASE_URL}/api/forecast/predict?municipality=${selectedMunicipality}&type=${selectedType}`,{
                 headers: {
-                'Authorization': `Bearer ${token}`
-            }})
+                    'Authorization': `Bearer ${token}`
+                }
+            })
             const data = await response.json()
             setForecastData(data)
         }
@@ -96,7 +97,7 @@ function Forecast() {
     const generateNarrative = async() => {
         const token = getToken()
         setNarrativeLoading(true)
-        const response = await fetch('http://127.0.0.1:5000/api/forecast/narrative', {
+        const response = await fetch(`${BASE_URL}/api/forecast/narrative`, {
             method: 'POST',
             headers:{ 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'},
             body: JSON.stringify({

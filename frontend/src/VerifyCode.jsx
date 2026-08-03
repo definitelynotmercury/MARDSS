@@ -2,6 +2,7 @@ import LoginLayout from "./LoginLayout"
 import { useState, useEffect } from "react"
 import { useRef } from "react"
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { BASE_URL } from './config';
 
 function VerifyCode() {
     const [searchParams] = useSearchParams();
@@ -27,7 +28,7 @@ function VerifyCode() {
         setIsResending(true)
         setError('')
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/forgot-password', {
+            const response = await fetch(`${BASE_URL}/api/forgot-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
@@ -62,7 +63,7 @@ function VerifyCode() {
 
         setIsVerifying(true)
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/is-valid-code', {
+            const response = await fetch(`${BASE_URL}/api/is-valid-code`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, flatCode })

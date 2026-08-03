@@ -10,7 +10,7 @@ import {
     BarChart, Bar, LabelList
 } from 'recharts'
 import { TrendingUp, PieChart as PieChartIcon, BarChart2, Search, Trophy, FileText, BarChart3 } from 'lucide-react'
-
+import { BASE_URL } from './config';
 const sectionLabels = {
     dashboardKpi: 'Dashboard Summary',
     yoyTrends: 'YoY Trend Analysis',
@@ -202,13 +202,13 @@ function Export() {
     useEffect(() => {
         const token = getToken()
         const fetchdata = async () => {
-            const response1 = await fetch('http://127.0.0.1:5000/api/municipalities',{
+            const response1 = await fetch(`${BASE_URL}/api/municipalities`,{
                 headers : {
                     'Authorization' : `Bearer ${token}`
                 }
             })
             setMunicipalities(await response1.json())
-            const response2 = await fetch('http://127.0.0.1:5000/api/assistance_types',{
+            const response2 = await fetch(`${BASE_URL}/api/assistance_types`,{
                 headers : {
                     'Authorization' : `Bearer ${token}`
                 }
@@ -223,7 +223,7 @@ function Export() {
         if (!sections.dashboardKpi) return
         const fetchKpi = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/dashboard/kpi?year=${selectedDashboardYear}&municipality=${selectedDashboardMunicipality}&type=${selectedDashboardType}&month=${selectedMonth}`,{
+                `${BASE_URL}/api/dashboard/kpi?year=${selectedDashboardYear}&municipality=${selectedDashboardMunicipality}&type=${selectedDashboardType}&month=${selectedMonth}`,{
                     headers : {
                         'Authorization' : `Bearer ${token}`
                     }
@@ -239,12 +239,12 @@ function Export() {
         if (!sections.yoyTrends) return
         const loadYoY = async () => {
             const [trendRes, typeTotalsRes] = await Promise.all([
-                fetch(`http://127.0.0.1:5000/api/dashboard/trend?year=${selectedYearForLine}`,{
+                fetch(`${BASE_URL}/api/dashboard/trend?year=${selectedYearForLine}`,{
                     headers : {
                         'Authorization' : `Bearer ${token}`
                     }
                 }),
-                fetch(`http://127.0.0.1:5000/api/dashboard/type-totals`,{
+                fetch(`${BASE_URL}/api/dashboard/type-totals`,{
                     headers : {
                         'Authorization' : `Bearer ${token}`
                     }})
@@ -259,7 +259,7 @@ function Export() {
         const token = getToken()
         const fetchPie = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/dashboard/pie?top_n=${selectedPieChartTopN}&type=${selectedPieChartType}&year=${selectedPieChartYear}&month=${selectedPieMonth}`,{
+                `${BASE_URL}/api/dashboard/pie?top_n=${selectedPieChartTopN}&type=${selectedPieChartType}&year=${selectedPieChartYear}&month=${selectedPieMonth}`,{
                     headers : {
                         'Authorization' : `Bearer ${token}`
                     }}
@@ -273,7 +273,7 @@ function Export() {
         const token = getToken()
         const fetchBar = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/dashboard/barchart?year=${selectedBarChartYear}&month=${selectedBarMonth}`,{
+                `${BASE_URL}/api/dashboard/barchart?year=${selectedBarChartYear}&month=${selectedBarMonth}`,{
                     headers : {
                         'Authorization' : `Bearer ${token}`
                     }}
@@ -288,7 +288,7 @@ function Export() {
         if (!sections.comparisonChart) return
         const fetchComparison = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/analytics/comparison?municipality_1=${compMunicipality1}&municipality_2=${compMunicipality2}&type=${compType}&year=${compYear}&month=${comparisonMonth}`,{
+                `${BASE_URL}/api/analytics/comparison?municipality_1=${compMunicipality1}&municipality_2=${compMunicipality2}&type=${compType}&year=${compYear}&month=${comparisonMonth}`,{
                     headers : {
                         'Authorization' : `Bearer ${token}`
                     }}
@@ -304,7 +304,7 @@ function Export() {
         if (!sections.municipalityDrilldown) return
         const fetchDrilldown = async () => {
             const res = await fetch(
-                `http://127.0.0.1:5000/api/analytics/drill_down?municipality=${drilldownMunicipality}&year=${drilldownYear}&month=${drill_down_month}`,{
+                `${BASE_URL}/api/analytics/drill_down?municipality=${drilldownMunicipality}&year=${drilldownYear}&month=${drill_down_month}`,{
                     headers : {
                         'Authorization' : `Bearer ${token}`
                     }}
@@ -317,7 +317,7 @@ function Export() {
     useEffect(() => {
         const token = getToken()
         const fetchRankings = async () => {
-           const response = await fetch(`http://127.0.0.1:5000/api/analytics/n_rankings?topN=${topN}&selectedMunicipalityRanking=${selectedMunicipalityRanking}&month=${rankingMonth}`,{
+           const response = await fetch(`${BASE_URL}/api/analytics/n_rankings?topN=${topN}&selectedMunicipalityRanking=${selectedMunicipalityRanking}&month=${rankingMonth}`,{
                     headers : {
                         'Authorization' : `Bearer ${token}`
                     }})
@@ -332,7 +332,7 @@ function Export() {
     useEffect(() => {
         const token = getToken()
         const fetchForecastData = async() => {
-            const response = await fetch(`http://127.0.0.1:5000/api/forecast/predict?municipality=${forecastMunicipality}&type=${forecastType}`,{
+            const response = await fetch(`${BASE_URL}/api/forecast/predict?municipality=${forecastMunicipality}&type=${forecastType}`,{
                     headers : {
                         'Authorization' : `Bearer ${token}`
                     }})
@@ -345,7 +345,7 @@ function Export() {
     useEffect(() => {
         const token = getToken()
         const fetchAvailableMonths = async () => {
-            const response = await fetch('http://127.0.0.1:5000/api/analytics/available_months',{
+            const response = await fetch(`${BASE_URL}/api/analytics/available_months`,{
                     headers : {
                         'Authorization' : `Bearer ${token}`
                     }})
@@ -358,7 +358,7 @@ function Export() {
     useEffect(() => {
         const token = getToken()
         const fetchLatestMonth = async () => {
-            const response = await fetch('http://127.0.0.1:5000/api/analytics/latest_month',{
+            const response = await fetch(`${BASE_URL}/api/analytics/latest_month`,{
                     headers : {
                         'Authorization' : `Bearer ${token}`
                     }})
@@ -379,7 +379,7 @@ function Export() {
                 type: selectedType,
                 month: selectedDatasetMonth,
             })
-            const res = await fetch(`http://127.0.0.1:5000/api/export/dataset?${params}`,{
+            const res = await fetch(`${BASE_URL}/api/export/dataset?${params}`,{
                     headers : {
                         'Authorization' : `Bearer ${token}`
                     }})
@@ -439,7 +439,7 @@ function Export() {
                 },
             }
         }
-        fetch('http://127.0.0.1:5000/api/export/charts/excel', {
+        fetch(`${BASE_URL}/api/export/charts/excel`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization' : `Bearer ${token}` },
             body: JSON.stringify(payload)
@@ -500,7 +500,7 @@ function Export() {
             type: selectedType,
             month: selectedDatasetMonth,
         })
-        window.open(`http://127.0.0.1:5000/api/export/dataset/excel?${params}`, '_blank',{
+        window.open(`${BASE_URL}/api/export/dataset/excel?${params}`, '_blank',{
                     headers : {
                         'Authorization' : `Bearer ${token}`
                     }})
@@ -515,7 +515,7 @@ function Export() {
             type: selectedType,
             month: selectedDatasetMonth,
         })
-        window.open(`http://127.0.0.1:5000/api/export/dataset/pdf?${params}`, '_blank',{
+        window.open(`${BASE_URL}/api/export/dataset/pdf?${params}`, '_blank',{
                     headers : {
                         'Authorization' : `Bearer ${token}`
                     }})
