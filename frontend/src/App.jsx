@@ -4,7 +4,7 @@ import Dashboard from './Dashboard'
 import Analytics from './Analytics'
 import Forecast from './forecast'
 import Export from './export'
-import Settings from './Settings'
+import Settings from "./settings";
 import Admin from './Admin'
 import AdminUploadReport from './AdminUploadReport'
 import ProtectedRoute from './ProtectedRoute'
