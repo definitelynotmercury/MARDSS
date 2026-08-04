@@ -492,6 +492,29 @@ function Export() {
     }
 
     const handleExcelExport = () => {
+    const token = getToken()
+    const params = new URLSearchParams({
+        year_from: selectedYearFrom,
+        year_to: selectedYearTo,
+        municipality: selectedMunicipality,
+        type: selectedType,
+        month: selectedDatasetMonth,
+    })
+    fetch(`${BASE_URL}/api/export/dataset/excel?${params}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+        .then(res => res.blob())
+        .then(blob => {
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'MARDSS_Dataset.xlsx'
+            a.click()
+            URL.revokeObjectURL(url)
+        })
+}
+
+    const handlePdfExport = () => {
         const token = getToken()
         const params = new URLSearchParams({
             year_from: selectedYearFrom,
@@ -500,10 +523,18 @@ function Export() {
             type: selectedType,
             month: selectedDatasetMonth,
         })
-        window.open(`${BASE_URL}/api/export/dataset/excel?${params}`, '_blank',{
-                    headers : {
-                        'Authorization' : `Bearer ${token}`
-                    }})
+        fetch(`${BASE_URL}/api/export/dataset/pdf?${params}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(res => res.blob())
+            .then(blob => {
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = 'MARDSS_Dataset.pdf'
+                a.click()
+                URL.revokeObjectURL(url)
+            })
     }
 
     const handlePdfExport = () => {
@@ -515,22 +546,19 @@ function Export() {
             type: selectedType,
             month: selectedDatasetMonth,
         })
-        window.open(`${BASE_URL}/api/export/dataset/pdf?${params}`, '_blank',{
-                    headers : {
-                        'Authorization' : `Bearer ${token}`
-                    }})
+        fetch(`${BASE_URL}/api/export/dataset/pdf?${params}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(res => res.blob())
+            .then(blob => {
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = 'MARDSS_Dataset.pdf'
+                a.click()
+                URL.revokeObjectURL(url)
+            })
     }
-
-    const renderEndLabel = (dataKey) => ({ x, y, value }) => {
-        if (value == null) return null;
-        const colors = { historical: '#8884d8', projected: '#82ca9d', upper: '#ff7300', lower: '#ff7300' }
-        const offsets = { historical: -10, projected: -10, upper: -20, lower: 5 }
-        return (
-            <text x={x} y={y + offsets[dataKey]} fontSize={11} fontWeight={600} textAnchor="middle" fill={colors[dataKey]}>
-                {value.toLocaleString()}
-            </text>
-        );
-    };
 
     // ── Reusable inner tab bar ──
     const InnerTabBar = ({ active, onChange }) => (
