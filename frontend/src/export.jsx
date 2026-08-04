@@ -492,29 +492,6 @@ function Export() {
     }
 
     const handleExcelExport = () => {
-    const token = getToken()
-    const params = new URLSearchParams({
-        year_from: selectedYearFrom,
-        year_to: selectedYearTo,
-        municipality: selectedMunicipality,
-        type: selectedType,
-        month: selectedDatasetMonth,
-    })
-    fetch(`${BASE_URL}/api/export/dataset/excel?${params}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    })
-        .then(res => res.blob())
-        .then(blob => {
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = 'MARDSS_Dataset.xlsx'
-            a.click()
-            URL.revokeObjectURL(url)
-        })
-}
-
-    const handlePdfExport = () => {
         const token = getToken()
         const params = new URLSearchParams({
             year_from: selectedYearFrom,
@@ -523,7 +500,7 @@ function Export() {
             type: selectedType,
             month: selectedDatasetMonth,
         })
-        fetch(`${BASE_URL}/api/export/dataset/pdf?${params}`, {
+        fetch(`${BASE_URL}/api/export/dataset/excel?${params}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(res => res.blob())
@@ -531,7 +508,7 @@ function Export() {
                 const url = URL.createObjectURL(blob)
                 const a = document.createElement('a')
                 a.href = url
-                a.download = 'MARDSS_Dataset.pdf'
+                a.download = 'MARDSS_Dataset.xlsx'
                 a.click()
                 URL.revokeObjectURL(url)
             })
