@@ -11,6 +11,9 @@ import {
 } from 'recharts'
 import { TrendingUp, PieChart as PieChartIcon, BarChart2, Search, Trophy, FileText, BarChart3 } from 'lucide-react'
 import { BASE_URL } from './config';
+
+const monthlyGrids = buildMonthlyGrids(previewData, municipalities, types)
+
 const sectionLabels = {
     dashboardKpi: 'Dashboard Summary',
     yoyTrends: 'YoY Trend Analysis',
@@ -389,6 +392,32 @@ function Export() {
         }
         fetchPreview()
     }, [selectedYearFrom, selectedYearTo, selectedMunicipality, selectedType, selectedDatasetMonth])
+
+    const buildMonthlyGrids = (data, municipalities, types) => {
+        const grouped = {}
+        data.forEach(row => {
+            const key = `${row.year}-${row.month}`
+            if (!grouped[key]) {
+                grouped[key] = { year: row.year, month: row.month, lookup: {} }
+            }
+            grouped[key].lookup[`${row.municipality_name}|${row.type_name}`] = row.request_count
+        })
+
+        return Object.values(grouped)
+            .sort((a, b) => a.year - b.year || a.month - b.month)
+            .map(({ year, month, lookup }) => {
+                const rows = municipalities.map(m => {
+                    const cells = types.map(t => lookup[`${m.municipality_name}|${t.type_name}`] ?? 0)
+                    const total = cells.reduce((sum, v) => sum + v, 0)
+                    return { municipality: m.municipality_name, cells, total }
+                })
+                const columnTotals = types.map((_, colIdx) =>
+                    rows.reduce((sum, r) => sum + r.cells[colIdx], 0)
+                )
+                const grandTotal = columnTotals.reduce((sum, v) => sum + v, 0)
+                return { year, month, rows, columnTotals, grandTotal }
+            })
+    }
 
     const handleChartExcelExport = () => {
         const token = getToken()
@@ -885,32 +914,46 @@ function Export() {
                         </div>
                         {previewLoading ? (
                             <p className="text-sm text-gray-400 text-center py-6">Loading...</p>
-                        ) : previewData.length === 0 ? (
+                        ) : monthlyGrids.length === 0 ? (
                             <p className="text-sm text-gray-400 text-center py-6">No data found for selected filters.</p>
                         ) : (
-                            <div className="overflow-auto max-h-96 border rounded">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="bg-gray-100 sticky top-0">
-                                        <tr>
-                                            <th className="px-3 py-2 text-gray-600">Year</th>
-                                            <th className="px-3 py-2 text-gray-600">Month</th>
-                                            <th className="px-3 py-2 text-gray-600">Municipality</th>
-                                            <th className="px-3 py-2 text-gray-600">Assistance Type</th>
-                                            <th className="px-3 py-2 text-gray-600 text-right">Requests</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {previewData.map((row, i) => (
-                                            <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                                <td className="px-3 py-2">{row.year}</td>
-                                                <td className="px-3 py-2">{months.find(m => m.value === Number(row.month))?.label ?? row.month}</td>
-                                                <td className="px-3 py-2">{row.municipality_name}</td>
-                                                <td className="px-3 py-2">{row.type_name}</td>
-                                                <td className="px-3 py-2 text-right">{row.request_count}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                            <div className="overflow-auto max-h-96 space-y-6">
+                                {monthlyGrids.map(grid => (
+                                    <div key={`${grid.year}-${grid.month}`}>
+                                        <p className="font-semibold text-gray-700 mb-2">
+                                            {months.find(m => m.value === grid.month)?.label} {grid.year}
+                                        </p>
+                                        <table className="text-sm border-collapse">
+                                            <thead>
+                                                <tr className="bg-gray-100">
+                                                    <th className="border px-2 py-1 text-left sticky left-0 bg-gray-100">Municipality</th>
+                                                    {types.map(t => (
+                                                        <th key={t.type_id} className="border px-2 py-1 whitespace-nowrap">{t.type_name}</th>
+                                                    ))}
+                                                    <th className="border px-2 py-1 font-bold">TOTAL</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {grid.rows.map((row, i) => (
+                                                    <tr key={row.municipality} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                                        <td className="border px-2 py-1 font-medium sticky left-0 bg-inherit">{row.municipality}</td>
+                                                        {row.cells.map((val, idx) => (
+                                                            <td key={idx} className="border px-2 py-1 text-right">{val}</td>
+                                                        ))}
+                                                        <td className="border px-2 py-1 text-right font-semibold">{row.total}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="bg-gray-200 font-bold">
+                                                    <td className="border px-2 py-1 sticky left-0 bg-gray-200">TOTAL</td>
+                                                    {grid.columnTotals.map((val, idx) => (
+                                                        <td key={idx} className="border px-2 py-1 text-right">{val}</td>
+                                                    ))}
+                                                    <td className="border px-2 py-1 text-right">{grid.grandTotal}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>
