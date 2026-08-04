@@ -221,11 +221,13 @@ def export_dataset_excel():
         cell.alignment = Alignment(horizontal='center')
 
     # Data rows
+    row_num = 6  # data starts at row 6 (rows 1–4 are title/header info, row 5 is column headers)
     for i, row in enumerate(data):
         ws.append([row['year'], row['municipality_name'], row['type_name'], row['request_count']])
         if i % 2 == 0:
-            for cell in ws[ws.max_row]:
-                cell.fill = PatternFill("solid", fgColor="EFF6FF")  # light blue stripe
+            for col in range(1, 5):  # 4 columns: Year, Municipality, Type, Request Count
+                ws.cell(row=row_num, column=col).fill = PatternFill("solid", fgColor="EFF6FF")
+    row_num += 1
 
     # Column widths
     ws.column_dimensions['A'].width = 10
