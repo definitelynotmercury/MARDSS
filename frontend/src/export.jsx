@@ -623,7 +623,7 @@ function Export() {
                     <ResponsiveContainer width="100%" height={400}>
                         <BarChart data={comparisonData} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                            <XAxis dataKey="type_name" angle={-45} textAnchor="end" interval={0} height={100} tick={{ fontSize: 11 }} />
+                            <XAxis dataKey="type_name" angle={-45} textAnchor="end" interval={0} height={225} tick={{ fontSize: 11 }} />
                             <YAxis type="number" width={50} tick={{ fontSize: 11 }} />
                             <Tooltip />
                             <Legend wrapperStyle={{ fontSize: 12 }} />
