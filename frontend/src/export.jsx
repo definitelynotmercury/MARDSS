@@ -60,7 +60,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 function Export() {
-    const monthlyGrids = buildMonthlyGrids(previewData, municipalities, types)
+    
     const [activeTab, setActiveTab] = useState('dataset')
     const [activeChartTab, setActiveChartTab] = useState('filters')
 
@@ -104,6 +104,7 @@ function Export() {
     const [selectedYoYTopN, setSelectedYoYTopN] = useState(5)
     const [selectedYoYType, setSelectedYoYType] = useState('ALL')
     const [selectedYearForLine, setSelectedYearForLine] = useState('ALL')
+    
     // Distribution by Assistance Type
     const [selectedPieChartTopN, setSelectedPieChartTopN] = useState(5)
     const [selectedPieChartType, setSelectedPieChartType] = useState('ALL')
@@ -170,6 +171,7 @@ function Export() {
     const yoyVisibleTypes = selectedYoYType !== 'ALL'
         ? yoyTypeTotals.filter(t => t.name === selectedYoYType)
         : yoyTypeTotals.slice(0, selectedYoYTopN)
+
 
     const yoyColors = generateColors(yoyVisibleTypes.length)
     const pieChartColors = generateColors(pieChartData.length)
@@ -584,6 +586,8 @@ function Export() {
             ))}
         </div>
     )
+
+    const monthlyGrids = buildMonthlyGrids(previewData, municipalities, types)
 
     // ── Reusable export buttons ──
     const ChartExportButtons = () => (
