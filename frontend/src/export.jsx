@@ -428,71 +428,6 @@ function Export() {
             })
     }
 
-    const handleChartExcelExport = () => {
-        const token = getToken()
-        const payload = {
-            sections: Object.keys(sections).filter(k => sections[k]),
-            filters: {
-                dashboardKpi: {
-                    year: selectedDashboardYear,
-                    municipality: selectedDashboardMunicipality,
-                    type: selectedDashboardType,
-                    month: selectedMonth,
-                },
-                yoyTrends: {
-                    top_n: selectedYoYTopN,
-                    type: selectedYoYType,
-                    year: selectedYearForLine,
-                },
-                distributionByAssistance: {
-                    top_n: selectedPieChartTopN,
-                    type: selectedPieChartType,
-                    year: selectedPieChartYear,
-                    month: selectedPieMonth,
-                },
-                distributionByMunicipality: {
-                    year: selectedBarChartYear,
-                    month: selectedBarMonth,
-                },
-                comparisonChart: {
-                    municipality_1: compMunicipality1,
-                    municipality_2: compMunicipality2,
-                    type: compType,
-                    year: compYear,
-                    month: comparisonMonth,
-                },
-                municipalityDrilldown: {
-                    municipality: drilldownMunicipality,
-                    year: drilldownYear,
-                    month: drill_down_month,
-                },
-                topNRanking: {
-                    top_n: topN,
-                    municipality: selectedMunicipalityRanking,
-                    month: rankingMonth,
-                },
-                forecast: {
-                    municipality: forecastMunicipality,
-                    type: forecastType,
-                },
-            }
-        }
-        fetch(`${BASE_URL}/api/export/charts/excel`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization' : `Bearer ${token}` },
-            body: JSON.stringify(payload)
-        })
-        .then(res => res.blob())
-        .then(blob => {
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = 'MARDSS_Charts.xlsx'
-            a.click()
-            URL.revokeObjectURL(url)
-        })
-    }
-
     const chartData = [
         ...forecastData.timeline.map((row, i) => ({
             label: row.label,
@@ -573,9 +508,8 @@ function Export() {
 
     // ── Reusable export buttons ──
     const ChartExportButtons = () => (
-        <div className="grid grid-cols-2 gap-4 mt-4">
+        <div className="mt-4">
             <button onClick={handleChartImageExport} className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Export Images</button>
-            <button onClick={handleChartExcelExport} className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">Export Excel</button>
         </div>
     )
 
