@@ -67,8 +67,6 @@ function Export() {
     // Dataset export filters
     const [selectedYearFrom, setSelectedYearFrom] = useState(2023)
     const [selectedYearTo, setSelectedYearTo] = useState(2023)
-    const [selectedType, setSelectedType] = useState('ALL')
-    const [selectedMunicipality, setSelectedMunicipality] = useState('ALL')
     const [selectedDatasetMonth, setSelectedDatasetMonth] = useState('ALL')
 
     // Chart export filters
@@ -347,6 +345,17 @@ function Export() {
         fetchForecastData()
     }, [forecastMunicipality, forecastType])
 
+    const renderEndLabel = (dataKey) => ({ x, y, value }) => {
+        if (value == null) return null;
+        const colors = { historical: '#8884d8', projected: '#82ca9d', upper: '#ff7300', lower: '#ff7300' }
+        const offsets = { historical: -10, projected: -10, upper: -20, lower: 5 }
+        return (
+            <text x={x} y={y + offsets[dataKey]} fontSize={11} fontWeight={600} textAnchor="middle" fill={colors[dataKey]}>
+                {value.toLocaleString()}
+            </text>
+        );
+    };
+
     useEffect(() => {
         const token = getToken()
         const fetchAvailableMonths = async () => {
@@ -391,7 +400,7 @@ function Export() {
             setPreviewLoading(false)
         }
         fetchPreview()
-    }, [selectedYearFrom, selectedYearTo, selectedMunicipality, selectedType, selectedDatasetMonth])
+    }, [selectedYearFrom, selectedYearTo, selectedDatasetMonth])
 
     const buildMonthlyGrids = (data, municipalities, types) => {
         const grouped = {}
@@ -866,8 +875,6 @@ function Export() {
                             <p className="text-sm text-gray-500">Medical Assistance Request Decision Support System</p>
                             <p className="text-sm text-gray-500">Province of Bulacan - PSWDO</p>
                             <p className="text-sm text-gray-500">Period: {selectedYearFrom} – {selectedYearTo}</p>
-                            <p className="text-sm text-gray-500">Municipality: {selectedMunicipality === 'ALL' ? 'All Municipalities' : selectedMunicipality}</p>
-                            <p className="text-sm text-gray-500">Assistance Type: {selectedType === 'ALL' ? 'All Types' : selectedType}</p>
                             <p className="text-sm text-gray-500">Month: {selectedDatasetMonth === 'ALL' ? 'All Months' : months.find(m => m.value === Number(selectedDatasetMonth))?.label}</p>
                         </div>
                         {previewLoading ? (

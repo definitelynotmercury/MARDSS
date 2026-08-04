@@ -156,8 +156,6 @@ def get_dataset():
 def export_dataset_excel():
     year_from = request.args.get('year_from', 'ALL')
     year_to = request.args.get('year_to', 'ALL')
-    municipality = request.args.get('municipality', 'ALL')
-    type_ = request.args.get('type', 'ALL')
     month = request.args.get('month', 'ALL')
 
     filters = []
@@ -166,12 +164,6 @@ def export_dataset_excel():
     if year_from != 'ALL' and year_to != 'ALL':
         filters.append("r.year BETWEEN %s AND %s")
         params.extend([year_from, year_to])
-    if municipality != 'ALL':
-        filters.append("m.municipality_name = %s")
-        params.append(municipality)
-    if type_ != 'ALL':
-        filters.append("a.type_name = %s")
-        params.append(type_)
     if month != 'ALL':
         filters.append("r.month = %s")
         params.append(month)
@@ -270,165 +262,6 @@ def export_dataset_excel():
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         as_attachment=True,
         download_name='MARDSS_Dataset.xlsx'
-    )
-
-@export_bp.route('/api/export/dataset/pdf')
-@token_required
-def export_dataset_pdf():
-    year_from = request.args.get('year_from', 'ALL')
-    year_to = request.args.get('year_to', 'ALL')
-    municipality = request.args.get('municipality', 'ALL')
-    type_ = request.args.get('type', 'ALL')
-
-    filters = []
-    params = []
-
-    if year_from != 'ALL' and year_to != 'ALL':
-        filters.append("r.year BETWEEN %s AND %s")
-        params.extend([year_from, year_to])
-    if municipality != 'ALL':
-        filters.append("m.municipality_name = %s")
-        params.append(municipality)
-    if type_ != 'ALL':
-        filters.append("a.type_name = %s")
-        params.append(type_)
-
-    where_clause = "WHERE " + " AND ".join(filters) if filters else ""
-
-    conn = get_db()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute(f"""
-        SELECT r.year, m.municipality_name, a.type_name, r.request_count
-        FROM assistance_records r
-        JOIN assistance_types a ON r.assistance_type_id = a.type_id
-        JOIN municipalities m ON r.municipality_id = m.municipality_id
-        {where_clause}
-        ORDER BY r.year, m.municipality_name, a.type_name
-    """, params)
-    data = cursor.fetchall()
-    cursor.close()
-    conn.close()
-
-    muni_label = 'All Municipalities' if municipality == 'ALL' else municipality
-    type_label = 'All Types' if type_ == 'ALL' else type_
-
-    # Setup
-    output = BytesIO()
-    doc = SimpleDocTemplate(
-        output,
-        pagesize=landscape(A4),
-        rightMargin=1.5*cm,
-        leftMargin=1.5*cm,
-        topMargin=1.5*cm,
-        bottomMargin=1.5*cm
-    )
-
-    styles = getSampleStyleSheet()
-    blue = colors.HexColor('#1D4ED8')
-    light_blue = colors.HexColor('#EFF6FF')
-    white = colors.white
-
-    title_style = ParagraphStyle(
-        'Title',
-        parent=styles['Normal'],
-        fontSize=15,
-        fontName='Helvetica-Bold',
-        textColor=white,
-        alignment=TA_CENTER,
-        spaceAfter=2
-    )
-    subtitle_style = ParagraphStyle(
-        'Subtitle',
-        parent=styles['Normal'],
-        fontSize=9,
-        fontName='Helvetica',
-        textColor=white,
-        alignment=TA_CENTER,
-        spaceAfter=2
-    )
-
-    elements = []
-
-    # Header banner
-    header_data = [[
-        Paragraph("MARDSS REPORT", title_style),
-    ]]
-    header_table = Table(header_data, colWidths=[26*cm])
-    header_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), blue),
-        ('TOPPADDING', (0,0), (-1,-1), 12),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-        ('ROUNDEDCORNERS', [6, 6, 6, 6]),
-    ]))
-    elements.append(header_table)
-
-    # Subtitle banner
-    sub_data = [[
-        Paragraph("Medical Assistance Request Decision Support System", subtitle_style),
-    ],[
-        Paragraph(f"Province of Bulacan - PSWDO | Period: {year_from} – {year_to}", subtitle_style),
-    ],[
-        Paragraph(f"Municipality: {muni_label} | Assistance Type: {type_label}", subtitle_style),
-    ]]
-    sub_table = Table(sub_data, colWidths=[26*cm])
-    sub_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), blue),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-        ('TOPPADDING', (0,0), (-1,-1), 0),
-    ]))
-    elements.append(sub_table)
-    elements.append(Spacer(1, 0.5*cm))
-
-    # Table header + data
-    col_headers = ['Year', 'Municipality', 'Assistance Type', 'Request Count']
-    table_data = [col_headers] + [
-        [row['year'], row['municipality_name'], row['type_name'], row['request_count']]
-        for row in data
-    ]
-
-    col_widths = [4*cm, 8*cm, 10*cm, 4*cm]
-    main_table = Table(table_data, colWidths=col_widths, repeatRows=1)
-
-    row_count = len(table_data)
-    style_commands = [
-        # Header row
-        ('BACKGROUND', (0,0), (-1,0), blue),
-        ('TEXTCOLOR', (0,0), (-1,0), white),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,0), 10),
-        ('ALIGN', (0,0), (-1,0), 'CENTER'),
-        ('BOTTOMPADDING', (0,0), (-1,0), 8),
-        ('TOPPADDING', (0,0), (-1,0), 8),
-        # Data rows
-        ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
-        ('FONTSIZE', (0,1), (-1,-1), 9),
-        ('ALIGN', (3,1), (3,-1), 'RIGHT'),
-        ('TOPPADDING', (0,1), (-1,-1), 5),
-        ('BOTTOMPADDING', (0,1), (-1,-1), 5),
-        # Borders
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#BFDBFE')),
-        ('LINEBELOW', (0,0), (-1,0), 1.5, blue),
-    ]
-
-    # Alternating row colors
-    for i in range(1, row_count):
-        if i % 2 == 0:
-            style_commands.append(('BACKGROUND', (0,i), (-1,i), light_blue))
-        else:
-            style_commands.append(('BACKGROUND', (0,i), (-1,i), white))
-
-    main_table.setStyle(TableStyle(style_commands))
-    elements.append(main_table)
-
-    doc.build(elements)
-    output.seek(0)
-
-    filename = f"MARDSS_{year_from}-{year_to}_{muni_label}_{type_label}.pdf"
-    return send_file(
-        output,
-        mimetype='application/pdf',
-        as_attachment=True,
-        download_name=filename
     )
 
 @export_bp.route('/api/export/charts/excel', methods=['POST'])
