@@ -12,7 +12,6 @@ import {
 import { TrendingUp, PieChart as PieChartIcon, BarChart2, Search, Trophy, FileText, BarChart3 } from 'lucide-react'
 import { BASE_URL } from './config';
 
-const monthlyGrids = buildMonthlyGrids(previewData, municipalities, types)
 
 const sectionLabels = {
     dashboardKpi: 'Dashboard Summary',
@@ -61,6 +60,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 function Export() {
+    const monthlyGrids = buildMonthlyGrids(previewData, municipalities, types)
     const [activeTab, setActiveTab] = useState('dataset')
     const [activeChartTab, setActiveChartTab] = useState('filters')
 
