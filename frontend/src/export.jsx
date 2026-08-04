@@ -380,8 +380,6 @@ function Export() {
             const params = new URLSearchParams({
                 year_from: selectedYearFrom,
                 year_to: selectedYearTo,
-                municipality: selectedMunicipality,
-                type: selectedType,
                 month: selectedDatasetMonth,
             })
             const res = await fetch(`${BASE_URL}/api/export/dataset?${params}`,{
@@ -527,8 +525,6 @@ function Export() {
         const params = new URLSearchParams({
             year_from: selectedYearFrom,
             year_to: selectedYearTo,
-            municipality: selectedMunicipality,
-            type: selectedType,
             month: selectedDatasetMonth,
         })
         fetch(`${BASE_URL}/api/export/dataset/excel?${params}`, {
@@ -540,29 +536,6 @@ function Export() {
                 const a = document.createElement('a')
                 a.href = url
                 a.download = 'MARDSS_Dataset.xlsx'
-                a.click()
-                URL.revokeObjectURL(url)
-            })
-    }
-
-    const handlePdfExport = () => {
-        const token = getToken()
-        const params = new URLSearchParams({
-            year_from: selectedYearFrom,
-            year_to: selectedYearTo,
-            municipality: selectedMunicipality,
-            type: selectedType,
-            month: selectedDatasetMonth,
-        })
-        fetch(`${BASE_URL}/api/export/dataset/pdf?${params}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        })
-            .then(res => res.blob())
-            .then(blob => {
-                const url = URL.createObjectURL(blob)
-                const a = document.createElement('a')
-                a.href = url
-                a.download = 'MARDSS_Dataset.pdf'
                 a.click()
                 URL.revokeObjectURL(url)
             })
@@ -874,33 +847,14 @@ function Export() {
                                 </select>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <p className="font-semibold text-gray-700 mb-1">Assistance Type</p>
-                                <select className="w-full border border-gray-300 rounded p-2" onChange={e => setSelectedType(e.target.value)} value={selectedType}>
-                                    <option value="ALL">ALL</option>
-                                    {types.map(type => <option key={type.type_id} value={type.type_name}>{type.type_name}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <p className="font-semibold text-gray-700 mb-1">Municipality/City</p>
-                                <select className="w-full border border-gray-300 rounded p-2" onChange={e => setSelectedMunicipality(e.target.value)} value={selectedMunicipality}>
-                                    <option value="ALL">ALL</option>
-                                    {municipalities.map(m => <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>)}
-                                </select>
-                            </div>
-                            <div className="mb-4">
-                                <p className="font-semibold text-gray-700 mb-1">Month</p>
-                                <select className="w-full border border-gray-300 rounded p-2" onChange={e => setSelectedDatasetMonth(e.target.value)} value={selectedDatasetMonth}>
-                                    <option value="ALL">ALL MONTHS</option>
-                                    {months.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}
-                                </select>
-                            </div>
+                        <div className="mb-4">
+                            <p className="font-semibold text-gray-700 mb-1">Month</p>
+                            <select className="w-full border border-gray-300 rounded p-2" onChange={e => setSelectedDatasetMonth(e.target.value)} value={selectedDatasetMonth}>
+                                <option value="ALL">ALL MONTHS</option>
+                                {months.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}
+                            </select>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <button onClick={handlePdfExport} className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Export PDF</button>
-                            <button onClick={handleExcelExport} className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">Export Excel</button>
-                        </div>
+                        <button onClick={handleExcelExport} className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">Export Excel</button>
                     </div>
 
                     {/* Right — preview */}
