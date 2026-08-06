@@ -301,8 +301,10 @@ function Dashboard() {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey={trendData[0]?.month ? 'month' : 'year'} />
                         <YAxis />
-                        <Tooltip formatter={(value) => Number(value).toLocaleString()} />
-                        <Tooltip wrapperStyle={{ zIndex: 1000, top: 0 }} />
+                        <Tooltip
+                            formatter={(value) => Number(value).toLocaleString()}
+                            wrapperStyle={{ zIndex: 1000, top: 0 }}
+                        />
                         <Legend />
                         {visibleTypes.map((t, index) => (
                             <Line key={t.name} type="monotone" dataKey={t.name} stroke={lineChartColors[index]} strokeWidth={3} label={renderLabel} />
