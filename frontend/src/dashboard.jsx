@@ -33,7 +33,6 @@ function Dashboard() {
     const [selectedLineType, setSelectedLineType] = useState('ALL')
     const [selectedYearForLine, setSelectedYearForLine] = useState('ALL')
 
-    const [topNPie, setTopNPie] = useState(5)
     const [selectedPieAssistanceType, setSelectedPieAssistanceType] = useState('ALL')
     const [selectedPieYear, setSelectedPieYear] = useState('ALL')
     const [showPieMonthFilter, setShowPieMonthFilter] = useState(false)
@@ -84,14 +83,16 @@ function Dashboard() {
     useEffect(() => {
         const fetchPie = async () => {
             const token = getToken()
+            // Always fetch all types (999) so we can group them ourselves
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/pie?top_n=${topNPie}&type=${selectedPieAssistanceType}&year=${selectedPieYear}&month=${selectedPieMonth}`,
+                `${BASE_URL}/api/dashboard/pie?top_n=999&type=${selectedPieAssistanceType}&year=${selectedPieYear}&month=${selectedPieMonth}`,
                 { headers: { 'Authorization': `Bearer ${token}` } }
             )
             setPieData(await res.json())
+            setShowOthersPie(false) // reset drill-down when filters change
         }
         fetchPie()
-    }, [topNPie, selectedPieAssistanceType, selectedPieYear, selectedPieMonth])
+    }, [selectedPieAssistanceType, selectedPieYear, selectedPieMonth])
 
     useEffect(() => {
         const fetchBar = async () => {
@@ -137,7 +138,7 @@ function Dashboard() {
                     year: selectedYear, municipality: selectedMunicipality, type: selectedType,
                     month: selectedMonth,
                     lineType: selectedLineType, topN, lineYear: selectedYearForLine,
-                    pieYear: selectedPieYear, pieType: selectedPieAssistanceType, topNPie, pieMonth: selectedPieMonth,
+                    pieYear: selectedPieYear, pieType: selectedPieAssistanceType, pieMonth: selectedPieMonth,
                     barYear: selectedBarYear, barMonth: selectedBarMonth,
                 }
             })
@@ -177,42 +178,37 @@ function Dashboard() {
         );
     };
 
-    const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value }) => {
-        const total = pieData.reduce((sum, d) => sum + d.value, 0);
+    const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, percent }) => {
+        if (percent < 0.05) return null; // hide labels on tiny slices
         const RADIAN = Math.PI / 180;
-        const sliceAngle = (value / total) * 360;
-        if (sliceAngle < 20) return null;
-
         const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
         const x = cx + radius * Math.cos(-midAngle * RADIAN);
         const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
         return (
             <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
-                {value.toLocaleString()}
+                {Number(value).toLocaleString()}
             </text>
         );
     };
 
     const pillSelect = "border px-3 py-1 text-sm bg-white"
 
-    const MAIN_PIE_LIMIT = 7  // show top 7 slices, rest go to Others
-
+    // Group pieData: top 7 in main pie, rest collapsed into "Others"
+    const MAIN_PIE_LIMIT = 7
     const sortedPie = [...pieData].sort((a, b) => b.value - a.value)
     const mainSlices = sortedPie.slice(0, MAIN_PIE_LIMIT)
     const smallSlices = sortedPie.slice(MAIN_PIE_LIMIT)
-
     const othersTotal = smallSlices.reduce((sum, d) => sum + d.value, 0)
-
     const mainPieData = othersTotal > 0
-        ? [...mainSlices, { name: 'Others', value: othersTotal }]
+        ? [...mainSlices, { name: `Others (${smallSlices.length} types)`, value: othersTotal }]
         : mainSlices
 
-    const pieChartColors = generateColors(mainPieData.length)
+    const mainPieColors = generateColors(mainPieData.length)
+    const othersPieColors = generateColors(smallSlices.length)
 
     return (
         <Layout>
-            {/* ── Header row: title left, filters right ── */}
+            {/* ── Header row ── */}
             <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
                 <div>
                     <h1 className="text-xl font-bold text-gray-700">Dashboard</h1>
@@ -286,7 +282,6 @@ function Dashboard() {
                 </div>
             </div>
 
-
             {/* ── Line Chart ── */}
             <div className="bg-white shadow rounded p-4 mb-6">
                 <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
@@ -311,7 +306,7 @@ function Dashboard() {
                         </select>
                     </div>
                 </div>
-                <ResponsiveContainer width="100%" height={600} margin={{ top: 30, right: 30, left: 30, bottom: 30 }}>
+                <ResponsiveContainer width="100%" height={600}>
                     <LineChart data={trendData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey={trendData[0]?.month ? 'month' : 'year'} />
@@ -336,12 +331,11 @@ function Dashboard() {
                             <PieChartIcon size={16} className="text-blue-600" />
                             Distribution by Assistance Type
                         </p>
-                        <p className="text-sm text-gray-400">Percentage Breakdown</p>
+                        <p className="text-sm text-gray-400">
+                            Percentage Breakdown — click <strong>Others</strong> to drill down
+                        </p>
                     </div>
                     <div className="flex gap-2 items-center flex-wrap">
-                        <select className={pillSelect} onChange={e => setTopNPie(Number(e.target.value))}>
-                            {[5, 10, 15, 20, 25, 30].map(n => <option key={n} value={n}>TOP {n} TYPES</option>)}
-                        </select>
                         <select className={pillSelect} onChange={e => setSelectedPieAssistanceType(e.target.value)}>
                             <option value="ALL">ALL TYPES</option>
                             {types.map(t => <option value={t.type_name} key={t.type_id}>{t.type_name}</option>)}
@@ -364,18 +358,24 @@ function Dashboard() {
                         )}
                     </div>
                 </div>
-                <ResponsiveContainer width="100%" height={350}>
+
+                {/* Main pie */}
+                <p className="text-xs text-center text-gray-400 mb-1">
+                    Top {Math.min(MAIN_PIE_LIMIT, pieData.length)} types · {smallSlices.length > 0 ? `click "Others" to see ${smallSlices.length} more` : 'showing all types'}
+                </p>
+                <ResponsiveContainer width="100%" height={380}>
                     <PieChart>
                         <Pie
                             data={mainPieData}
                             dataKey="value"
                             nameKey="name"
-                            innerRadius={60}
-                            outerRadius={100}
+                            innerRadius={70}
+                            outerRadius={130}
                             label={renderCustomLabel}
                             labelLine={false}
+                            cursor={smallSlices.length > 0 ? 'pointer' : 'default'}
                             onClick={(entry) => {
-                                if (entry.name === 'Others') {
+                                if (entry.name.startsWith('Others')) {
                                     setOthersSlices(smallSlices)
                                     setShowOthersPie(true)
                                 } else {
@@ -384,43 +384,47 @@ function Dashboard() {
                             }}
                         >
                             {mainPieData.map((_, index) => (
-                                <Cell key={index} fill={pieChartColors[index]} />
+                                <Cell key={index} fill={mainPieColors[index]} />
                             ))}
                         </Pie>
-                        <Tooltip />
+                        <Tooltip formatter={(value) => Number(value).toLocaleString()} />
                         <Legend />
                     </PieChart>
                 </ResponsiveContainer>
+
+                {/* Others drill-down pie */}
                 {showOthersPie && (
-                    <div className="mt-6 border-t pt-4">
-                        <p className="text-sm font-semibold text-gray-600 mb-2">
-                            🔍 "Others" Breakdown ({othersSlices.length} types)
-                        </p>
-                        <ResponsiveContainer width="100%" height={350}>
+                    <div className="mt-4 border-t pt-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm font-semibold text-gray-600">
+                                🔍 Others Breakdown — {othersSlices.length} remaining types
+                            </p>
+                            <button
+                                onClick={() => setShowOthersPie(false)}
+                                className="text-xs text-gray-400 hover:text-gray-700 border px-2 py-1 rounded"
+                            >
+                                ✕ Close
+                            </button>
+                        </div>
+                        <ResponsiveContainer width="100%" height={380}>
                             <PieChart>
                                 <Pie
                                     data={othersSlices}
                                     dataKey="value"
                                     nameKey="name"
-                                    innerRadius={60}
-                                    outerRadius={100}
+                                    innerRadius={70}
+                                    outerRadius={130}
                                     label={renderCustomLabel}
                                     labelLine={false}
                                 >
                                     {othersSlices.map((_, index) => (
-                                        <Cell key={index} fill={generateColors(othersSlices.length)[index]} />
+                                        <Cell key={index} fill={othersPieColors[index]} />
                                     ))}
                                 </Pie>
-                                <Tooltip />
+                                <Tooltip formatter={(value) => Number(value).toLocaleString()} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
-                        <button
-                            onClick={() => setShowOthersPie(false)}
-                            className="text-xs text-gray-400 hover:text-gray-600 mt-2"
-                        >
-                            ✕ Close breakdown
-                        </button>
                     </div>
                 )}
             </div>
