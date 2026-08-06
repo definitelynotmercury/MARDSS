@@ -301,6 +301,7 @@ function Dashboard() {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey={trendData[0]?.month ? 'month' : 'year'} />
                         <YAxis />
+                        <Tooltip formatter={(value) => Number(value).toLocaleString()} />
                         <Tooltip wrapperStyle={{ zIndex: 1000, top: 0 }} />
                         <Legend />
                         {visibleTypes.map((t, index) => (
@@ -398,6 +399,7 @@ function Dashboard() {
                             <LabelList
                                 dataKey="total"
                                 position="insideRight"
+                                formatter={(value) => Number(value).toLocaleString()}
                                 style={{ fill: '#ffffff', fontSize: 12, fontWeight: 600 }}
                             />
                         </Bar>
