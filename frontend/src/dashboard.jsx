@@ -32,7 +32,6 @@ function Dashboard() {
     const [selectedLineType, setSelectedLineType] = useState('ALL')
     const [selectedYearForLine, setSelectedYearForLine] = useState('ALL')
 
-    const [topNPie, setTopNPie] = useState(5)
     const [selectedPieAssistanceType, setSelectedPieAssistanceType] = useState('ALL')
     const [selectedPieYear, setSelectedPieYear] = useState('ALL')
     const [showPieMonthFilter, setShowPieMonthFilter] = useState(false)
@@ -82,13 +81,13 @@ function Dashboard() {
         const fetchPie = async () => {
             const token = getToken()
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/pie?top_n=${topNPie}&type=${selectedPieAssistanceType}&year=${selectedPieYear}&month=${selectedPieMonth}`,
+                `${BASE_URL}/api/dashboard/pie?type=${selectedPieAssistanceType}&year=${selectedPieYear}&month=${selectedPieMonth}`,
                 { headers: { 'Authorization': `Bearer ${token}` } }
             )
             setPieData(await res.json())
         }
         fetchPie()
-    }, [topNPie, selectedPieAssistanceType, selectedPieYear, selectedPieMonth])
+    }, [selectedPieAssistanceType, selectedPieYear, selectedPieMonth])
 
     useEffect(() => {
         const fetchBar = async () => {
@@ -134,7 +133,7 @@ function Dashboard() {
                     year: selectedYear, municipality: selectedMunicipality, type: selectedType,
                     month: selectedMonth,
                     lineType: selectedLineType, topN, lineYear: selectedYearForLine,
-                    pieYear: selectedPieYear, pieType: selectedPieAssistanceType, topNPie, pieMonth: selectedPieMonth,
+                    pieYear: selectedPieYear, pieType: selectedPieAssistanceType, pieMonth: selectedPieMonth,
                     barYear: selectedBarYear, barMonth: selectedBarMonth,
                 }
             })
@@ -306,9 +305,6 @@ function Dashboard() {
                         <p className="text-sm text-gray-400">Request volume by type</p>
                     </div>
                     <div className="flex gap-2 items-center flex-wrap">
-                        <select className={pillSelect} onChange={e => setTopNPie(Number(e.target.value))}>
-                            {[5, 10, 15, 20, 25, 30].map(n => <option key={n} value={n}>TOP {n} TYPES</option>)}
-                        </select>
                         <select className={pillSelect} onChange={e => setSelectedPieAssistanceType(e.target.value)}>
                             <option value="ALL">ALL TYPES</option>
                             {types.map(t => <option value={t.type_name} key={t.type_id}>{t.type_name}</option>)}
