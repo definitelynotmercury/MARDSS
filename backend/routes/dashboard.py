@@ -390,7 +390,7 @@ def get_municipalities():
     conn = get_db()
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM municipalities")
+        cursor.execute("SELECT * FROM municipalities ORDER BY municipality_name ASC")
         data = cursor.fetchall()
         cursor.close()
     finally:
@@ -404,7 +404,7 @@ def get_assistance_types():
     conn = get_db()
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM assistance_types")
+        cursor.execute("SELECT * FROM assistance_types ORDER BY type_name ASC")
         data = cursor.fetchall()
         cursor.close()
     finally:
