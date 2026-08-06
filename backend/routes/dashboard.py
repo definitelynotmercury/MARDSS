@@ -260,7 +260,7 @@ def generate_narrative():
     kpi = data.get("kpi", {})
     irregularities = data.get("irregularities", [])
     trend = data.get("trend", [])
-    pie_data = data.get("pieData", [])
+    distribution_data = data.get("distributionData", [])
     bar_data = data.get("barData", [])
     filters = data.get("filters", {})
 
@@ -274,10 +274,9 @@ def generate_narrative():
     line_type = filters.get("lineType", "ALL")
     top_n = filters.get("topN", 10)
     line_year = filters.get("lineYear", "ALL")
-    pie_year = filters.get("pieYear", "ALL")
-    top_n_pie = filters.get("topNPie", 5)
-    pie_type = filters.get("pieType", "ALL")
-    pie_month = filters.get("pieMonth", "ALL")
+    distribution_year = filters.get("distributionYear", "ALL")
+    distribution_type = filters.get("distributionType", "ALL")
+    distribution_month = filters.get("distributionMonth", "ALL")
     bar_year = filters.get("barYear", "ALL")
     bar_month = filters.get("barMonth", "ALL")
 
@@ -319,7 +318,7 @@ def generate_narrative():
         top_line_types = sorted(type_totals.items(), key=lambda x: x[1], reverse=True)[:top_n]
         line_summary = [{"type": k, "total": v} for k, v in top_line_types]
 
-    pie_summary = [{"type": p["name"], "value": p["value"]} for p in pie_data]
+    distribution_summary = [{"type": p["name"], "value": p["value"]} for p in distribution_data]
     bar_summary = [{"municipality": b["municipality_name"], "total": b["total"]} for b in bar_data[:5]]
 
     irregularity_messages = [i['message'] for i in irregularities] if irregularities else ["None detected"]
@@ -335,7 +334,7 @@ def generate_narrative():
     active_filters = (
         f"Global — Year: {year}, Month: {month_name or 'ALL'}, Municipality: {municipality}, Type: {type_} | "
         f"Line Chart — Type: {line_type}, Year: {line_year}, Top N: {top_n} | "
-        f"Pie Chart — Year: {pie_year}, Month: {pie_month}, Type: {pie_type}, Top N: {top_n_pie} | "
+        f"Distribution Chart — Year: {distribution_year}, Month: {distribution_month}, Type: {distribution_type} | "
         f"Bar Chart — Year: {bar_year}, Month: {bar_month}"
     )
 
@@ -365,8 +364,8 @@ def generate_narrative():
         - Visible types: {line_summary}
         if there is a specific lineType filter, mention only that type's trend instead of the overall trend.
 
-        [Type Distribution - Pie Chart]
-        - Breakdown: {pie_summary}
+        [Type Distribution - Bar Chart]
+        - Breakdown: {distribution_summary}
 
         [Top Municipalities - Bar Chart]
         - {bar_summary}
@@ -432,13 +431,12 @@ def get_type_totals():
     return jsonify([{"name": row["type_name"], "total": int(row["total"])} for row in data])
 
 
-@dashboard_bp.route("/api/dashboard/pie")
+@dashboard_bp.route("/api/dashboard/distribution")
 @token_required
-def get_pie_data():
+def get_distribution_data():
     selected_type = request.args.get("type", "ALL")
     year = request.args.get("year", "ALL")
     month = request.args.get("month", "ALL")
-
 
     filters = []
     params = []
@@ -461,7 +459,6 @@ def get_pie_data():
     try:
         cursor = conn.cursor(dictionary=True)
 
-
         cursor.execute(f"""
             SELECT a.type_name, SUM(r.request_count) AS total
             FROM assistance_records r
@@ -478,8 +475,6 @@ def get_pie_data():
     all_types = [{"name": row["type_name"], "value": int(row["total"])} for row in data]
 
     if selected_type != "ALL":
-        result = [item for item in all_types if item["name"] == selected_type]
-        return jsonify(result)
+        return jsonify([item for item in all_types if item["name"] == selected_type])
 
-    # Show every type — no Top N slicing, no "Others" grouping.
     return jsonify(all_types)

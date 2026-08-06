@@ -26,16 +26,16 @@ function Dashboard() {
     const [trendData, setTrendData] = useState([])
     const [barData, setBarData] = useState([])
     const [typeTotals, setTypeTotals] = useState([])
-    const [pieData, setPieData] = useState([])
+    const [distributionData, setDistributionData] = useState([])
 
     const [topN, setTopN] = useState(5)
     const [selectedLineType, setSelectedLineType] = useState('ALL')
     const [selectedYearForLine, setSelectedYearForLine] = useState('ALL')
 
-    const [selectedPieAssistanceType, setSelectedPieAssistanceType] = useState('ALL')
-    const [selectedPieYear, setSelectedPieYear] = useState('ALL')
-    const [showPieMonthFilter, setShowPieMonthFilter] = useState(false)
-    const [selectedPieMonth, setSelectedPieMonth] = useState('ALL')
+    const [selectedDistributionType, setSelectedDistributionType] = useState('ALL')
+    const [selectedDistributionYear, setSelectedDistributionYear] = useState('ALL')
+    const [showDistributionMonthFilter, setShowDistributionMonthFilter] = useState(false)
+    const [selectedDistributionMonth, setSelectedDistributionMonth] = useState('ALL')
 
     const [selectedBarYear, setSelectedBarYear] = useState('ALL')
     const [showBarMonthFilter, setShowBarMonthFilter] = useState(false)
@@ -78,16 +78,16 @@ function Dashboard() {
     }, [selectedYearForLine])
 
     useEffect(() => {
-        const fetchPie = async () => {
+        const fetchDistribution = async () => {
             const token = getToken()
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/pie?type=${selectedPieAssistanceType}&year=${selectedPieYear}&month=${selectedPieMonth}`,
+                `${BASE_URL}/api/dashboard/distribution?type=${selectedDistributionType}&year=${selectedDistributionYear}&month=${selectedDistributionMonth}`,
                 { headers: { 'Authorization': `Bearer ${token}` } }
             )
-            setPieData(await res.json())
+            setDistributionData(await res.json())
         }
-        fetchPie()
-    }, [selectedPieAssistanceType, selectedPieYear, selectedPieMonth])
+        fetchDistribution()
+    }, [selectedDistributionType, selectedDistributionYear, selectedDistributionMonth])
 
     useEffect(() => {
         const fetchBar = async () => {
@@ -127,13 +127,13 @@ function Dashboard() {
                 kpi,
                 irregularities,
                 trend: trendData,
-                pieData,
+                distributionData,
                 barData,
                 filters: {
                     year: selectedYear, municipality: selectedMunicipality, type: selectedType,
                     month: selectedMonth,
                     lineType: selectedLineType, topN, lineYear: selectedYearForLine,
-                    pieYear: selectedPieYear, pieType: selectedPieAssistanceType, pieMonth: selectedPieMonth,
+                    distributionYear: selectedDistributionYear, distributionType: selectedDistributionType, distributionMonth: selectedDistributionMonth,
                     barYear: selectedBarYear, barMonth: selectedBarMonth,
                 }
             })
@@ -163,7 +163,7 @@ function Dashboard() {
         : typeTotals.slice(0, topN)
 
     const lineChartColors = generateColors(visibleTypes.length)
-    const pieChartColors = generateColors(pieData.length)
+    const distributionColors = generateColors(distributionData.length)
 
     const renderLabel = ({ x, y, value, index }) => {
         if (index !== trendData.length - 1) return null;
@@ -305,43 +305,43 @@ function Dashboard() {
                         <p className="text-sm text-gray-400">Request volume by type</p>
                     </div>
                     <div className="flex gap-2 items-center flex-wrap">
-                        <select className={pillSelect} onChange={e => setSelectedPieAssistanceType(e.target.value)}>
+                        <select className={pillSelect} onChange={e => setSelectedDistributionType(e.target.value)}>
                             <option value="ALL">ALL TYPES</option>
                             {types.map(t => <option value={t.type_name} key={t.type_id}>{t.type_name}</option>)}
                         </select>
                         <select className={pillSelect}
                             onChange={e => {
                                 const value = e.target.value
-                                setSelectedPieYear(value)
-                                setShowPieMonthFilter(value !== 'ALL')
-                                if (value === 'ALL') setSelectedPieMonth('ALL')
+                                setSelectedDistributionYear(value)
+                                setShowDistributionMonthFilter(value !== 'ALL')
+                                if (value === 'ALL') setSelectedDistributionMonth('ALL')
                             }}>
                             <option value="ALL">ALL YEARS</option>
                             {years.map(year => <option key={year}>{year}</option>)}
                         </select>
-                        {showPieMonthFilter && (
-                            <select className={pillSelect} onChange={e => setSelectedPieMonth(e.target.value)}>
+                        {showDistributionMonthFilter && (
+                            <select className={pillSelect} onChange={e => setSelectedDistributionMonth(e.target.value)}>
                                 <option value="ALL">ALL MONTHS</option>
                                 {months.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}
                             </select>
                         )}
                     </div>
                 </div>
-                <ResponsiveContainer width="100%" height={Math.max(300, pieData.length * 40)}>
-                    <BarChart data={pieData} layout="vertical" tabIndex={-1}>
+                <ResponsiveContainer width="100%" height={Math.max(300, distributionData.length * 40)}>
+                    <BarChart data={distributionData} layout="vertical" tabIndex={-1} margin={{ top: 5, right: 60, left: 5, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis type="number" />
                         <YAxis dataKey="name" type="category" width={150} />
                         <Tooltip formatter={(value) => Number(value).toLocaleString()} />
                         <Bar dataKey="value" stroke="none" tabIndex={-1}>
-                            {pieData.map((_, index) => (
-                                <Cell key={index} fill={pieChartColors[index]} />
+                            {distributionData.map((_, index) => (
+                                <Cell key={index} fill={distributionColors[index]} />
                             ))}
                             <LabelList
                                 dataKey="value"
-                                position="insideRight"
+                                position="right"
                                 formatter={(value) => Number(value).toLocaleString()}
-                                style={{ fill: '#ffffff', fontSize: 12, fontWeight: 600 }}
+                                style={{ fill: '#374151', fontSize: 12, fontWeight: 600 }}
                             />
                         </Bar>
                     </BarChart>
