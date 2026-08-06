@@ -383,7 +383,7 @@ function Dashboard() {
                                 }
                             }}
                         >
-                            {pieData.map((_, index) => (
+                            {mainPieData.map((_, index) => (
                                 <Cell key={index} fill={pieChartColors[index]} />
                             ))}
                         </Pie>
