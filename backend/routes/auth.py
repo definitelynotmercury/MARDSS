@@ -11,7 +11,7 @@ from flask_mail import Message
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 auth_bp = Blueprint('auth', __name__)
-mail = Mail()
+import config
 
 def get_db():
     return mysql.connector.connect(**DB_CONFIG)
@@ -109,7 +109,7 @@ def forgot_password():
 
 def send_reset_code(to_email, code):
     configuration = sib_api_v3_sdk.Configuration()
-    configuration.api_key['api-key'] = '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'
+    configuration.api_key['api-key'] = config.BREVO_API_KEY
 
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
 

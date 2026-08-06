@@ -1,6 +1,7 @@
 from google import genai
 from dotenv import load_dotenv
 import os
+import os
 
 load_dotenv()
 DB_CONFIG = {
@@ -18,6 +19,7 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
 GMAIL = os.environ.get("GMAIL")
 GMAILPASS = os.environ.get("GMAILPASS")
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY')
 
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found — check your .env file")
