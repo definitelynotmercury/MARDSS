@@ -3,16 +3,12 @@ import Layout from './Layout'
 import { getToken } from './auth'
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    PieChart, Pie, Cell,
     BarChart, Bar, LabelList
 } from 'recharts'
-import { TrendingUp, PieChart as PieChartIcon, BarChart2, FileText } from 'lucide-react'
+import { TrendingUp, BarChart2, FileText } from 'lucide-react'
 import { BASE_URL } from './config';
 
 function Dashboard() {
-    const generateColors = (count) =>
-        Array.from({ length: count }, (_, i) => `hsl(${(i * 360) / count}, 55%, 60%)`)
-
     const [municipalities, setMunicipalities] = useState([])
     const [types, setTypes] = useState([])
 
@@ -27,7 +23,7 @@ function Dashboard() {
     const [trendData, setTrendData] = useState([])
     const [barData, setBarData] = useState([])
     const [typeTotals, setTypeTotals] = useState([])
-    const [pieData, setPieData] = useState([])
+    const [typeBarData, setTypeBarData] = useState([])
 
     const [topN, setTopN] = useState(5)
     const [selectedLineType, setSelectedLineType] = useState('ALL')
@@ -37,8 +33,6 @@ function Dashboard() {
     const [selectedPieYear, setSelectedPieYear] = useState('ALL')
     const [showPieMonthFilter, setShowPieMonthFilter] = useState(false)
     const [selectedPieMonth, setSelectedPieMonth] = useState('ALL')
-    const [othersSlices, setOthersSlices] = useState([])
-    const [showOthersPie, setShowOthersPie] = useState(false)
 
     const [selectedBarYear, setSelectedBarYear] = useState('ALL')
     const [showBarMonthFilter, setShowBarMonthFilter] = useState(false)
@@ -81,17 +75,16 @@ function Dashboard() {
     }, [selectedYearForLine])
 
     useEffect(() => {
-        const fetchPie = async () => {
+        const fetchTypeBar = async () => {
             const token = getToken()
-            // Always fetch all types (999) so we can group them ourselves
             const res = await fetch(
                 `${BASE_URL}/api/dashboard/pie?top_n=999&type=${selectedPieAssistanceType}&year=${selectedPieYear}&month=${selectedPieMonth}`,
                 { headers: { 'Authorization': `Bearer ${token}` } }
             )
-            setPieData(await res.json())
-            setShowOthersPie(false) // reset drill-down when filters change
+            const data = await res.json()
+            setTypeBarData([...data].sort((a, b) => b.value - a.value))
         }
-        fetchPie()
+        fetchTypeBar()
     }, [selectedPieAssistanceType, selectedPieYear, selectedPieMonth])
 
     useEffect(() => {
@@ -132,7 +125,7 @@ function Dashboard() {
                 kpi,
                 irregularities,
                 trend: trendData,
-                pieData,
+                typeBarData,
                 barData,
                 filters: {
                     year: selectedYear, municipality: selectedMunicipality, type: selectedType,
@@ -163,6 +156,9 @@ function Dashboard() {
         { label: 'Oct', value: 10 }, { label: 'Nov', value: 11 }, { label: 'Dec', value: 12 },
     ]
 
+    const generateColors = (count) =>
+        Array.from({ length: count }, (_, i) => `hsl(${(i * 360) / count}, 55%, 60%)`)
+
     const visibleTypes = selectedLineType !== 'ALL'
         ? typeTotals.filter(t => t.name === selectedLineType)
         : typeTotals.slice(0, topN)
@@ -178,43 +174,19 @@ function Dashboard() {
         );
     };
 
-    const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, percent }) => {
-        if (percent < 0.05) return null; // hide labels on tiny slices
-        const RADIAN = Math.PI / 180;
-        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-        const x = cx + radius * Math.cos(-midAngle * RADIAN);
-        const y = cy + radius * Math.sin(-midAngle * RADIAN);
-        return (
-            <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
-                {Number(value).toLocaleString()}
-            </text>
-        );
-    };
+    // 40px per bar so labels never overlap
+    const typeBarHeight = Math.max(400, typeBarData.length * 40)
 
     const pillSelect = "border px-3 py-1 text-sm bg-white"
 
-    // Group pieData: top 7 in main pie, rest collapsed into "Others"
-    const MAIN_PIE_LIMIT = 7
-    const sortedPie = [...pieData].sort((a, b) => b.value - a.value)
-    const mainSlices = sortedPie.slice(0, MAIN_PIE_LIMIT)
-    const smallSlices = sortedPie.slice(MAIN_PIE_LIMIT)
-    const othersTotal = smallSlices.reduce((sum, d) => sum + d.value, 0)
-    const mainPieData = othersTotal > 0
-        ? [...mainSlices, { name: `Others (${smallSlices.length} types)`, value: othersTotal }]
-        : mainSlices
-
-    const mainPieColors = generateColors(mainPieData.length)
-    const othersPieColors = generateColors(smallSlices.length)
-
     return (
         <Layout>
-            {/* ── Header row ── */}
+            {/* ── Header ── */}
             <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
                 <div>
                     <h1 className="text-xl font-bold text-gray-700">Dashboard</h1>
                     <p className="text-sm text-gray-500">Medical Assistance Request Overview</p>
                 </div>
-
                 <div className="flex gap-2 items-center flex-wrap">
                     <select className={pillSelect}
                         onChange={e => {
@@ -323,17 +295,15 @@ function Dashboard() {
                 </ResponsiveContainer>
             </div>
 
-            {/* ── Pie Chart ── */}
+            {/* ── Distribution by Assistance Type — Horizontal Bar ── */}
             <div className="bg-white shadow rounded p-4 mb-6">
                 <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
                     <div>
                         <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
-                            <PieChartIcon size={16} className="text-blue-600" />
+                            <BarChart2 size={16} className="text-blue-600" />
                             Distribution by Assistance Type
                         </p>
-                        <p className="text-sm text-gray-400">
-                            Percentage Breakdown — click <strong>Others</strong> to drill down
-                        </p>
+                        <p className="text-sm text-gray-400">Total Requests per Type</p>
                     </div>
                     <div className="flex gap-2 items-center flex-wrap">
                         <select className={pillSelect} onChange={e => setSelectedPieAssistanceType(e.target.value)}>
@@ -358,78 +328,25 @@ function Dashboard() {
                         )}
                     </div>
                 </div>
-
-                {/* Main pie */}
-                <p className="text-xs text-center text-gray-400 mb-1">
-                    Top {Math.min(MAIN_PIE_LIMIT, pieData.length)} types · {smallSlices.length > 0 ? `click "Others" to see ${smallSlices.length} more` : 'showing all types'}
-                </p>
-                <ResponsiveContainer width="100%" height={380}>
-                    <PieChart>
-                        <Pie
-                            data={mainPieData}
-                            dataKey="value"
-                            nameKey="name"
-                            innerRadius={70}
-                            outerRadius={130}
-                            label={renderCustomLabel}
-                            labelLine={false}
-                            cursor={smallSlices.length > 0 ? 'pointer' : 'default'}
-                            onClick={(entry) => {
-                                if (entry.name.startsWith('Others')) {
-                                    setOthersSlices(smallSlices)
-                                    setShowOthersPie(true)
-                                } else {
-                                    setShowOthersPie(false)
-                                }
-                            }}
-                        >
-                            {mainPieData.map((_, index) => (
-                                <Cell key={index} fill={mainPieColors[index]} />
-                            ))}
-                        </Pie>
+                <ResponsiveContainer width="100%" height={typeBarHeight}>
+                    <BarChart data={typeBarData} layout="vertical" tabIndex={-1}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" tickFormatter={(v) => Number(v).toLocaleString()} />
+                        <YAxis dataKey="name" type="category" width={200} tick={{ fontSize: 12 }} />
                         <Tooltip formatter={(value) => Number(value).toLocaleString()} />
-                        <Legend />
-                    </PieChart>
+                        <Bar dataKey="value" fill="#2862DC" stroke="none" tabIndex={-1}>
+                            <LabelList
+                                dataKey="value"
+                                position="insideRight"
+                                formatter={(value) => Number(value).toLocaleString()}
+                                style={{ fill: '#ffffff', fontSize: 12, fontWeight: 600 }}
+                            />
+                        </Bar>
+                    </BarChart>
                 </ResponsiveContainer>
-
-                {/* Others drill-down pie */}
-                {showOthersPie && (
-                    <div className="mt-4 border-t pt-4">
-                        <div className="flex items-center justify-between mb-2">
-                            <p className="text-sm font-semibold text-gray-600">
-                                🔍 Others Breakdown — {othersSlices.length} remaining types
-                            </p>
-                            <button
-                                onClick={() => setShowOthersPie(false)}
-                                className="text-xs text-gray-400 hover:text-gray-700 border px-2 py-1 rounded"
-                            >
-                                ✕ Close
-                            </button>
-                        </div>
-                        <ResponsiveContainer width="100%" height={380}>
-                            <PieChart>
-                                <Pie
-                                    data={othersSlices}
-                                    dataKey="value"
-                                    nameKey="name"
-                                    innerRadius={70}
-                                    outerRadius={130}
-                                    label={renderCustomLabel}
-                                    labelLine={false}
-                                >
-                                    {othersSlices.map((_, index) => (
-                                        <Cell key={index} fill={othersPieColors[index]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(value) => Number(value).toLocaleString()} />
-                                <Legend />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                )}
             </div>
 
-            {/* ── Bar Chart ── */}
+            {/* ── Bar Chart by Municipality ── */}
             <div className="bg-white shadow rounded p-4 mb-6">
                 <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
                     <div>
