@@ -8,6 +8,8 @@ import string
 from datetime import datetime,timedelta,timezone
 from flask_mail import Mail
 from flask_mail import Message
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
 auth_bp = Blueprint('auth', __name__)
 mail = Mail()
 
@@ -106,33 +108,35 @@ def forgot_password():
 
 
 def send_reset_code(to_email, code):
-    subject = "MARDDS Password Reset Code"
+    configuration = sib_api_v3_sdk.Configuration()
+    configuration.api_key['api-key'] = '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'
 
-    text_body = f"Your MARDDS password reset code is: {code}\nThis code expires in 10 minutes."
+    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
 
-    html_body = f"""
-    <html>
-      <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
-        <div style="max-width: 480px; margin: auto; background: #ffffff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
-          <h2 style="color: #1a3c6e; margin-top: 0;">Password Reset Request</h2>
-          <p>Hello,</p>
-          <p>We received a request to reset your MARDDS account password. Use the code below to proceed:</p>
-          <div style="text-align: center; margin: 25px 0;">
-            <span style="font-size: 28px; letter-spacing: 4px; font-weight: bold; background: #eef2f8; padding: 12px 24px; border-radius: 6px; display: inline-block;">
-              {code}
-            </span>
-          </div>
-          <p>This code will expire in <strong>10 minutes</strong>.</p>
-          <p style="color: #888; font-size: 13px;">If you did not request this, you can safely ignore this email. Do not share this code with anyone.</p>
-        </div>
-      </body>
-    </html>
-    """
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+        to=[{"email": to_email}],
+        sender={"name": "MARDSS", "email": "manuelkrispin9@gmail.com"},
+        subject="MARDSS Password Reset Code",
+        html_content=f"""
+        <html>
+          <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+            <div style="max-width: 480px; margin: auto; background: #ffffff; border-radius: 8px; padding: 30px;">
+              <h2 style="color: #1a3c6e;">Password Reset Request</h2>
+              <p>Use the code below to reset your MARDSS password:</p>
+              <div style="text-align: center; margin: 25px 0;">
+                <span style="font-size: 28px; font-weight: bold; background: #eef2f8; padding: 12px 24px; border-radius: 6px;">
+                  {code}
+                </span>
+              </div>
+              <p>This code expires in <strong>10 minutes</strong>.</p>
+              <p style="color: #888; font-size: 13px;">If you did not request this, ignore this email.</p>
+            </div>
+          </body>
+        </html>
+        """
+    )
 
-    msg = Message(subject=subject, recipients=[to_email])
-    msg.body = text_body
-    msg.html = html_body
-    mail.send(msg)
+    api_instance.send_transac_email(send_smtp_email)
 
 
 @auth_bp.route('/api/is-valid-code', methods=['POST'])

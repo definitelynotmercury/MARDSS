@@ -13,15 +13,6 @@ from routes.auth import auth_bp, mail
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]}})
 
-app.config['MAIL_SERVER'] = config.MAIL_SERVER
-app.config['MAIL_PORT'] = config.MAIL_PORT
-app.config['MAIL_USE_TLS'] = config.MAIL_USE_TLS
-app.config['MAIL_USERNAME'] = config.MAIL_USERNAME
-app.config['MAIL_PASSWORD'] = config.MAIL_PASSWORD
-app.config['MAIL_DEFAULT_SENDER'] = config.MAIL_DEFAULT_SENDER
-
-mail.init_app(app)
-
 app.register_blueprint(auth_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(analytics_bp)
