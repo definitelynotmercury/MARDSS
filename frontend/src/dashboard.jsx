@@ -3,10 +3,9 @@ import Layout from './Layout'
 import { getToken } from './auth'
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    PieChart, Pie, Cell,
-    BarChart, Bar, LabelList
+    BarChart, Bar, Cell, LabelList
 } from 'recharts'
-import { TrendingUp, PieChart as PieChartIcon, BarChart2, FileText } from 'lucide-react'
+import { TrendingUp, BarChart2, FileText } from 'lucide-react'
 import { BASE_URL } from './config';
 
 function Dashboard() {
@@ -176,23 +175,6 @@ function Dashboard() {
         );
     };
 
-    const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value }) => {
-        const total = pieData.reduce((sum, d) => sum + d.value, 0);
-        const RADIAN = Math.PI / 180;
-        const sliceAngle = (value / total) * 360;
-        if (sliceAngle < 20) return null;
-
-        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-        const x = cx + radius * Math.cos(-midAngle * RADIAN);
-        const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-        return (
-            <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
-                {value.toLocaleString()}
-            </text>
-        );
-    };
-
     const pillSelect = "border px-3 py-1 text-sm bg-white"
 
     return (
@@ -313,15 +295,15 @@ function Dashboard() {
                 </ResponsiveContainer>
             </div>
 
-            {/* ── Pie Chart ── */}
+            {/* ── Distribution Bar Chart (was Pie Chart) ── */}
             <div className="bg-white shadow rounded p-4 mb-6">
                 <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
                     <div>
                         <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
-                            <PieChartIcon size={16} className="text-blue-600" />
+                            <BarChart2 size={16} className="text-blue-600" />
                             Distribution by Assistance Type
                         </p>
-                        <p className="text-sm text-gray-400">Percentage Breakdown</p>
+                        <p className="text-sm text-gray-400">Request volume by type</p>
                     </div>
                     <div className="flex gap-2 items-center flex-wrap">
                         <select className={pillSelect} onChange={e => setTopNPie(Number(e.target.value))}>
@@ -349,16 +331,24 @@ function Dashboard() {
                         )}
                     </div>
                 </div>
-                <ResponsiveContainer width="100%" height={350}>
-                    <PieChart>
-                        <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100} label={renderCustomLabel} labelLine={false}>
+                <ResponsiveContainer width="100%" height={Math.max(300, pieData.length * 40)}>
+                    <BarChart data={pieData} layout="vertical" tabIndex={-1}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="name" type="category" width={150} />
+                        <Tooltip formatter={(value) => Number(value).toLocaleString()} />
+                        <Bar dataKey="value" stroke="none" tabIndex={-1}>
                             {pieData.map((_, index) => (
                                 <Cell key={index} fill={pieChartColors[index]} />
                             ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                    </PieChart>
+                            <LabelList
+                                dataKey="value"
+                                position="insideRight"
+                                formatter={(value) => Number(value).toLocaleString()}
+                                style={{ fill: '#ffffff', fontSize: 12, fontWeight: 600 }}
+                            />
+                        </Bar>
+                    </BarChart>
                 </ResponsiveContainer>
             </div>
 

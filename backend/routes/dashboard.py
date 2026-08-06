@@ -439,30 +439,30 @@ def get_pie_data():
     selected_type = request.args.get("type", "ALL")
     year = request.args.get("year", "ALL")
     month = request.args.get("month", "ALL")
-
-
+ 
+ 
     filters = []
     params = []
-
+ 
     if year != "ALL":
         filters.append("r.year = %s")
         params.append(int(year))
-
+ 
     if selected_type != "ALL":
         filters.append("a.type_name = %s")
         params.append(selected_type)
-
+ 
     if month != "ALL":
         filters.append("r.month = %s")
         params.append(month)
-
+ 
     where_clause = "WHERE " + " AND ".join(filters) if filters else ""
-
+ 
     conn = get_db()
     try:
         cursor = conn.cursor(dictionary=True)
-
-
+ 
+ 
         cursor.execute(f"""
             SELECT a.type_name, SUM(r.request_count) AS total
             FROM assistance_records r
@@ -475,17 +475,12 @@ def get_pie_data():
         cursor.close()
     finally:
         conn.close()
-
+ 
     all_types = [{"name": row["type_name"], "value": int(row["total"])} for row in data]
-
+ 
     if selected_type != "ALL":
         result = [item for item in all_types if item["name"] == selected_type]
         return jsonify(result)
-
-    top = all_types[:top_n]
-    others_total = sum(item["value"] for item in all_types[top_n:])
-
-    if others_total > 0:
-        top.append({"name": "Others", "value": others_total})
-
-    return jsonify(top)
+ 
+    # No more "Others" grouping — just return the top N types as-is.
+    return jsonify(all_types[:top_n])
