@@ -12,8 +12,8 @@ def get_db():
 @analytics_bp.route('/api/analytics/comparison')
 @token_required
 def comparison():
-    municipality_1 = request.args.get('municipality_1', 'BULAKAN')
-    municipality_2 = request.args.get('municipality_2', 'HAGONOY')
+    municipality_1 = request.args.get('municipality_1', 'ANGAT')
+    municipality_2 = request.args.get('municipality_2', 'BALAGTAS')
     type_ = request.args.get('type', 'ALL')
     year = request.args.get('year', 'ALL')
     month = request.args.get('month', 'ALL')
@@ -66,7 +66,7 @@ def comparison():
 @analytics_bp.route('/api/analytics/drill_down')
 @token_required
 def drill_down():
-    municipality = request.args.get('municipality', 'BULAKAN')
+    municipality = request.args.get('municipality', 'ANGAT')
     selected_year = request.args.get('year', 'ALL')
     month = request.args.get('month', 'ALL')
     
@@ -106,7 +106,8 @@ def drill_down():
 def n_rankings():
     top_n = int(request.args.get("topN", 5))
     selected_municipality = request.args.get("selectedMunicipalityRanking", "ALL")
-    month = int(request.args.get("month", date.today().month))
+    month_param = request.args.get("month", "ALL")
+    month = None if month_param == "ALL" else int(month_param)
 
     current_year = date.today().year
     previous_year = current_year - 1

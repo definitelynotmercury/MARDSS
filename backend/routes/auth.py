@@ -280,3 +280,12 @@ def password_reset():
     conn.close()
     
     return jsonify({'message': 'valid'}), 200
+
+
+@auth_bp.route('/api/test-mail', methods=['GET'])
+def test_mail():
+    try:
+        send_reset_code("your_own_email@gmail.com", "123456")
+        return jsonify({'message': 'Email sent successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
