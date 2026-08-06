@@ -32,7 +32,6 @@ function Dashboard() {
     const [selectedLineType, setSelectedLineType] = useState('ALL')
     const [selectedYearForLine, setSelectedYearForLine] = useState('ALL')
 
-    const [selectedDistributionType, setSelectedDistributionType] = useState('ALL')
     const [selectedDistributionYear, setSelectedDistributionYear] = useState('ALL')
     const [showDistributionMonthFilter, setShowDistributionMonthFilter] = useState(false)
     const [selectedDistributionMonth, setSelectedDistributionMonth] = useState('ALL')
@@ -81,13 +80,13 @@ function Dashboard() {
         const fetchDistribution = async () => {
             const token = getToken()
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/distribution?type=${selectedDistributionType}&year=${selectedDistributionYear}&month=${selectedDistributionMonth}`,
+                `${BASE_URL}/api/dashboard/distribution?year=${selectedDistributionYear}&month=${selectedDistributionMonth}`,
                 { headers: { 'Authorization': `Bearer ${token}` } }
             )
             setDistributionData(await res.json())
         }
         fetchDistribution()
-    }, [selectedDistributionType, selectedDistributionYear, selectedDistributionMonth])
+    }, [selectedDistributionYear, selectedDistributionMonth])
 
     useEffect(() => {
         const fetchBar = async () => {
@@ -133,7 +132,7 @@ function Dashboard() {
                     year: selectedYear, municipality: selectedMunicipality, type: selectedType,
                     month: selectedMonth,
                     lineType: selectedLineType, topN, lineYear: selectedYearForLine,
-                    distributionYear: selectedDistributionYear, distributionType: selectedDistributionType, distributionMonth: selectedDistributionMonth,
+                    distributionYear: selectedDistributionYear, distributionMonth: selectedDistributionMonth,
                     barYear: selectedBarYear, barMonth: selectedBarMonth,
                 }
             })
@@ -294,7 +293,7 @@ function Dashboard() {
                 </ResponsiveContainer>
             </div>
 
-            {/* ── Distribution Bar Chart (was Pie Chart) ── */}
+            {/* ── Distribution Bar Chart ── */}
             <div className="bg-white shadow rounded p-4 mb-6">
                 <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
                     <div>
@@ -305,10 +304,6 @@ function Dashboard() {
                         <p className="text-sm text-gray-400">Request volume by type</p>
                     </div>
                     <div className="flex gap-2 items-center flex-wrap">
-                        <select className={pillSelect} onChange={e => setSelectedDistributionType(e.target.value)}>
-                            <option value="ALL">ALL TYPES</option>
-                            {types.map(t => <option value={t.type_name} key={t.type_id}>{t.type_name}</option>)}
-                        </select>
                         <select className={pillSelect}
                             onChange={e => {
                                 const value = e.target.value
