@@ -197,7 +197,7 @@ function Dashboard() {
             <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
                 <div>
                     <h1 className="text-xl font-bold text-gray-700">Dashboard</h1>
-                    <p className="text-sm text-gray-500">Medical assistance request overview – 2023–2026</p>
+                    <p className="text-sm text-gray-500">Medical Assistance Request Overview</p>
                 </div>
 
                 <div className="flex gap-2 items-center flex-wrap">
@@ -237,7 +237,7 @@ function Dashboard() {
             {/* ── KPI Cards ── */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="bg-white shadow rounded p-4 border-l-4 border-[#0B2E52]">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Total Requests (2023-2025)</p>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Total Requests</p>
                     <h1 className="text-2xl font-bold text-gray-800 mt-1">
                         {kpi ? kpi.total_requests : 'Loading...'}
                     </h1>
