@@ -167,7 +167,6 @@ function Dashboard() {
         : typeTotals.slice(0, topN)
 
     const lineChartColors = generateColors(visibleTypes.length)
-    const pieChartColors = generateColors(mainPieData.length)
 
     const renderLabel = ({ x, y, value, index }) => {
         if (index !== trendData.length - 1) return null;
@@ -208,6 +207,8 @@ function Dashboard() {
     const mainPieData = othersTotal > 0
         ? [...mainSlices, { name: 'Others', value: othersTotal }]
         : mainSlices
+
+    const pieChartColors = generateColors(mainPieData.length)
 
     return (
         <Layout>
