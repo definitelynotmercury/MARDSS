@@ -145,6 +145,10 @@ function Dashboard() {
         setNarrativeLoading(false)
     }
 
+    useEffect(() => {
+        console.log('kpi:', kpi)
+    }, [kpi])
+
     const years = []
     let y = 2023
     while (y <= new Date().getFullYear()) years.push(y++)
