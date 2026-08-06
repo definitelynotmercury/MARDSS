@@ -38,6 +38,8 @@ function Dashboard() {
     const [selectedPieYear, setSelectedPieYear] = useState('ALL')
     const [showPieMonthFilter, setShowPieMonthFilter] = useState(false)
     const [selectedPieMonth, setSelectedPieMonth] = useState('ALL')
+    const [othersSlices, setOthersSlices] = useState([])
+    const [showOthersPie, setShowOthersPie] = useState(false)
 
     const [selectedBarYear, setSelectedBarYear] = useState('ALL')
     const [showBarMonthFilter, setShowBarMonthFilter] = useState(false)
@@ -165,7 +167,7 @@ function Dashboard() {
         : typeTotals.slice(0, topN)
 
     const lineChartColors = generateColors(visibleTypes.length)
-    const pieChartColors = generateColors(pieData.length)
+    const pieChartColors = generateColors(mainPieData.length)
 
     const renderLabel = ({ x, y, value, index }) => {
         if (index !== trendData.length - 1) return null;
@@ -194,6 +196,18 @@ function Dashboard() {
     };
 
     const pillSelect = "border px-3 py-1 text-sm bg-white"
+
+    const MAIN_PIE_LIMIT = 7  // show top 7 slices, rest go to Others
+
+    const sortedPie = [...pieData].sort((a, b) => b.value - a.value)
+    const mainSlices = sortedPie.slice(0, MAIN_PIE_LIMIT)
+    const smallSlices = sortedPie.slice(MAIN_PIE_LIMIT)
+
+    const othersTotal = smallSlices.reduce((sum, d) => sum + d.value, 0)
+
+    const mainPieData = othersTotal > 0
+        ? [...mainSlices, { name: 'Others', value: othersTotal }]
+        : mainSlices
 
     return (
         <Layout>
@@ -351,7 +365,23 @@ function Dashboard() {
                 </div>
                 <ResponsiveContainer width="100%" height={350}>
                     <PieChart>
-                        <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100} label={renderCustomLabel} labelLine={false}>
+                        <Pie
+                            data={mainPieData}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={60}
+                            outerRadius={100}
+                            label={renderCustomLabel}
+                            labelLine={false}
+                            onClick={(entry) => {
+                                if (entry.name === 'Others') {
+                                    setOthersSlices(smallSlices)
+                                    setShowOthersPie(true)
+                                } else {
+                                    setShowOthersPie(false)
+                                }
+                            }}
+                        >
                             {pieData.map((_, index) => (
                                 <Cell key={index} fill={pieChartColors[index]} />
                             ))}
@@ -360,6 +390,38 @@ function Dashboard() {
                         <Legend />
                     </PieChart>
                 </ResponsiveContainer>
+                {showOthersPie && (
+                    <div className="mt-6 border-t pt-4">
+                        <p className="text-sm font-semibold text-gray-600 mb-2">
+                            🔍 "Others" Breakdown ({othersSlices.length} types)
+                        </p>
+                        <ResponsiveContainer width="100%" height={350}>
+                            <PieChart>
+                                <Pie
+                                    data={othersSlices}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    innerRadius={60}
+                                    outerRadius={100}
+                                    label={renderCustomLabel}
+                                    labelLine={false}
+                                >
+                                    {othersSlices.map((_, index) => (
+                                        <Cell key={index} fill={generateColors(othersSlices.length)[index]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                        <button
+                            onClick={() => setShowOthersPie(false)}
+                            className="text-xs text-gray-400 hover:text-gray-600 mt-2"
+                        >
+                            ✕ Close breakdown
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* ── Bar Chart ── */}
