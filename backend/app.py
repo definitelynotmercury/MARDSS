@@ -9,7 +9,7 @@ from routes.setting import setting_bp
 from routes.admin import admin_bp
 from routes.upload_routes import upload_bp
 import config
-from routes.auth import auth_bp, mail
+from routes.auth import auth_bp
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]}})
 
