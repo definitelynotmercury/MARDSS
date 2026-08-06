@@ -243,7 +243,7 @@ function Dashboard() {
                 <div className="bg-white shadow rounded p-4 border-l-4 border-[#0B2E52]">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Total Requests</p>
                     <h1 className="text-2xl font-bold text-gray-800 mt-1">
-                        {kpi ? kpi.total_requests.toLocaleString() : 'Loading...'}
+                        {kpi ? Number(kpi.total_requests).toLocaleString() : 'Loading...'}
                     </h1>
                     {kpi?.growth_percent && (
                         <span className="inline-block mt-2 bg-green-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
@@ -257,7 +257,7 @@ function Dashboard() {
                         {kpi?.top_type?.type_name ?? 'N/A'}
                     </h1>
                     <p className="text-sm text-gray-400">
-                        {kpi?.top_type?.total ? `${kpi.top_type.total.toLocaleString()} requests` : ''}
+                        {kpi?.top_type?.total ? `${Number(kpi.top_type.total).toLocaleString()} requests` : ''}
                     </p>
                 </div>
                 <div className="bg-white shadow rounded p-4 border-l-4 border-[#2862DC]">
@@ -266,7 +266,7 @@ function Dashboard() {
                         {kpi?.top_municipality?.municipality_name ?? 'N/A'}
                     </h1>
                     <p className="text-sm text-gray-400">
-                        {kpi?.top_municipality?.total ? `${kpi.top_municipality.total.toLocaleString()} requests` : ''}
+                        {kpi?.top_municipality?.total ? `${Number(kpi.top_municipality.total).toLocaleString()} requests` : ''}
                     </p>
                 </div>
             </div>
