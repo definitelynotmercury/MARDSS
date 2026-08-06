@@ -3,12 +3,16 @@ import Layout from './Layout'
 import { getToken } from './auth'
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+    PieChart, Pie, Cell,
     BarChart, Bar, LabelList
 } from 'recharts'
-import { TrendingUp, BarChart2, FileText } from 'lucide-react'
+import { TrendingUp, PieChart as PieChartIcon, BarChart2, FileText } from 'lucide-react'
 import { BASE_URL } from './config';
 
 function Dashboard() {
+    const generateColors = (count) =>
+        Array.from({ length: count }, (_, i) => `hsl(${(i * 360) / count}, 55%, 60%)`)
+
     const [municipalities, setMunicipalities] = useState([])
     const [types, setTypes] = useState([])
 
@@ -23,12 +27,13 @@ function Dashboard() {
     const [trendData, setTrendData] = useState([])
     const [barData, setBarData] = useState([])
     const [typeTotals, setTypeTotals] = useState([])
-    const [typeBarData, setTypeBarData] = useState([])
+    const [pieData, setPieData] = useState([])
 
     const [topN, setTopN] = useState(5)
     const [selectedLineType, setSelectedLineType] = useState('ALL')
     const [selectedYearForLine, setSelectedYearForLine] = useState('ALL')
 
+    const [topNPie, setTopNPie] = useState(5)
     const [selectedPieAssistanceType, setSelectedPieAssistanceType] = useState('ALL')
     const [selectedPieYear, setSelectedPieYear] = useState('ALL')
     const [showPieMonthFilter, setShowPieMonthFilter] = useState(false)
@@ -75,17 +80,16 @@ function Dashboard() {
     }, [selectedYearForLine])
 
     useEffect(() => {
-        const fetchTypeBar = async () => {
+        const fetchPie = async () => {
             const token = getToken()
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/pie?top_n=999&type=${selectedPieAssistanceType}&year=${selectedPieYear}&month=${selectedPieMonth}`,
+                `${BASE_URL}/api/dashboard/pie?top_n=${topNPie}&type=${selectedPieAssistanceType}&year=${selectedPieYear}&month=${selectedPieMonth}`,
                 { headers: { 'Authorization': `Bearer ${token}` } }
             )
-            const data = await res.json()
-            setTypeBarData([...data].sort((a, b) => b.value - a.value))
+            setPieData(await res.json())
         }
-        fetchTypeBar()
-    }, [selectedPieAssistanceType, selectedPieYear, selectedPieMonth])
+        fetchPie()
+    }, [topNPie, selectedPieAssistanceType, selectedPieYear, selectedPieMonth])
 
     useEffect(() => {
         const fetchBar = async () => {
@@ -125,13 +129,13 @@ function Dashboard() {
                 kpi,
                 irregularities,
                 trend: trendData,
-                typeBarData,
+                pieData,
                 barData,
                 filters: {
                     year: selectedYear, municipality: selectedMunicipality, type: selectedType,
                     month: selectedMonth,
                     lineType: selectedLineType, topN, lineYear: selectedYearForLine,
-                    pieYear: selectedPieYear, pieType: selectedPieAssistanceType, pieMonth: selectedPieMonth,
+                    pieYear: selectedPieYear, pieType: selectedPieAssistanceType, topNPie, pieMonth: selectedPieMonth,
                     barYear: selectedBarYear, barMonth: selectedBarMonth,
                 }
             })
@@ -156,14 +160,12 @@ function Dashboard() {
         { label: 'Oct', value: 10 }, { label: 'Nov', value: 11 }, { label: 'Dec', value: 12 },
     ]
 
-    const generateColors = (count) =>
-        Array.from({ length: count }, (_, i) => `hsl(${(i * 360) / count}, 55%, 60%)`)
-
     const visibleTypes = selectedLineType !== 'ALL'
         ? typeTotals.filter(t => t.name === selectedLineType)
         : typeTotals.slice(0, topN)
 
     const lineChartColors = generateColors(visibleTypes.length)
+    const pieChartColors = generateColors(pieData.length)
 
     const renderLabel = ({ x, y, value, index }) => {
         if (index !== trendData.length - 1) return null;
@@ -174,19 +176,34 @@ function Dashboard() {
         );
     };
 
-    // 40px per bar so labels never overlap
-    const typeBarHeight = Math.max(400, typeBarData.length * 40)
+    const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value }) => {
+        const total = pieData.reduce((sum, d) => sum + d.value, 0);
+        const RADIAN = Math.PI / 180;
+        const sliceAngle = (value / total) * 360;
+        if (sliceAngle < 20) return null;
+
+        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+        return (
+            <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
+                {value.toLocaleString()}
+            </text>
+        );
+    };
 
     const pillSelect = "border px-3 py-1 text-sm bg-white"
 
     return (
         <Layout>
-            {/* ── Header ── */}
+            {/* ── Header row: title left, filters right ── */}
             <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
                 <div>
                     <h1 className="text-xl font-bold text-gray-700">Dashboard</h1>
                     <p className="text-sm text-gray-500">Medical Assistance Request Overview</p>
                 </div>
+
                 <div className="flex gap-2 items-center flex-wrap">
                     <select className={pillSelect}
                         onChange={e => {
@@ -254,6 +271,7 @@ function Dashboard() {
                 </div>
             </div>
 
+
             {/* ── Line Chart ── */}
             <div className="bg-white shadow rounded p-4 mb-6">
                 <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
@@ -278,7 +296,7 @@ function Dashboard() {
                         </select>
                     </div>
                 </div>
-                <ResponsiveContainer width="100%" height={600}>
+                <ResponsiveContainer width="100%" height={600} margin={{ top: 30, right: 30, left: 30, bottom: 30 }}>
                     <LineChart data={trendData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey={trendData[0]?.month ? 'month' : 'year'} />
@@ -295,17 +313,20 @@ function Dashboard() {
                 </ResponsiveContainer>
             </div>
 
-            {/* ── Distribution by Assistance Type — Horizontal Bar ── */}
+            {/* ── Pie Chart ── */}
             <div className="bg-white shadow rounded p-4 mb-6">
                 <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
                     <div>
                         <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
-                            <BarChart2 size={16} className="text-blue-600" />
+                            <PieChartIcon size={16} className="text-blue-600" />
                             Distribution by Assistance Type
                         </p>
-                        <p className="text-sm text-gray-400">Total Requests per Type</p>
+                        <p className="text-sm text-gray-400">Percentage Breakdown</p>
                     </div>
                     <div className="flex gap-2 items-center flex-wrap">
+                        <select className={pillSelect} onChange={e => setTopNPie(Number(e.target.value))}>
+                            {[5, 10, 15, 20, 25, 30].map(n => <option key={n} value={n}>TOP {n} TYPES</option>)}
+                        </select>
                         <select className={pillSelect} onChange={e => setSelectedPieAssistanceType(e.target.value)}>
                             <option value="ALL">ALL TYPES</option>
                             {types.map(t => <option value={t.type_name} key={t.type_id}>{t.type_name}</option>)}
@@ -328,25 +349,20 @@ function Dashboard() {
                         )}
                     </div>
                 </div>
-                <ResponsiveContainer width="100%" height={typeBarHeight}>
-                    <BarChart data={typeBarData} layout="vertical" tabIndex={-1}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" tickFormatter={(v) => Number(v).toLocaleString()} />
-                        <YAxis dataKey="name" type="category" width={200} tick={{ fontSize: 12 }} />
-                        <Tooltip formatter={(value) => Number(value).toLocaleString()} />
-                        <Bar dataKey="value" fill="#2862DC" stroke="none" tabIndex={-1}>
-                            <LabelList
-                                dataKey="value"
-                                position="insideRight"
-                                formatter={(value) => Number(value).toLocaleString()}
-                                style={{ fill: '#ffffff', fontSize: 12, fontWeight: 600 }}
-                            />
-                        </Bar>
-                    </BarChart>
+                <ResponsiveContainer width="100%" height={350}>
+                    <PieChart>
+                        <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100} label={renderCustomLabel} labelLine={false}>
+                            {pieData.map((_, index) => (
+                                <Cell key={index} fill={pieChartColors[index]} />
+                            ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                    </PieChart>
                 </ResponsiveContainer>
             </div>
 
-            {/* ── Bar Chart by Municipality ── */}
+            {/* ── Bar Chart ── */}
             <div className="bg-white shadow rounded p-4 mb-6">
                 <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
                     <div>
