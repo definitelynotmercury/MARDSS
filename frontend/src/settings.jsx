@@ -281,12 +281,12 @@ function Settings() {
                         </div>
                     </div>
 
-                {/* Buttons */}
+            </div>
+            {/* Buttons */}
                 <div className="flex justify-end gap-3">
                     <button onClick={() => window.history.back()} className="px-6 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-100">Cancel</button>
                     <button onClick={handleSave} className="px-6 py-2 rounded bg-blue-800 text-white hover:bg-blue-700">Save</button>
                 </div>
-            </div>
             </div>
         </Layout>
     )
