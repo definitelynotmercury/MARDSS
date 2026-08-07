@@ -444,7 +444,6 @@ function Admin() {
                                 <td className="py-2">{u.full_name}</td>
                                 <td className="py-2">{u.email}</td>
                                 <td className="py-2 capitalize">{u.role}</td>
-                                <td className="py-2 capitalize">{u.role}</td>
                                 <td className="py-2 text-xs text-gray-500">
                                     <div>{formatDateTime(u.created_at)}</div>
                                     {u.created_by_name && <div className="text-gray-400">by {u.created_by_name}</div>}
