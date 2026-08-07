@@ -195,17 +195,21 @@ function Analytics() {
                         <div className="flex flex-col">
                             <span className="text-xs font-semibold text-gray-400 mb-1">FIRST ITEM</span>
                             <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setMunicipality1(e.target.value)} value={municipality1}>
-                                {municipalities.map((m) =>  (
-                                    <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
-                                ))}
+                                {municipalities
+                                    .filter((m) => m.municipality_name !== municipality2)
+                                    .map((m) => (
+                                        <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
+                                    ))}
                             </select>
                         </div>
                         <div className="flex flex-col">
                             <span className="text-xs font-semibold text-gray-400 mb-1">SECOND ITEM</span>
                             <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setMunicipality2(e.target.value)} value={municipality2}>
-                                {municipalities.map((m) =>  (
-                                    <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
-                                ))}
+                                {municipalities
+                                    .filter((m) => m.municipality_name !== municipality1)
+                                    .map((m) => (
+                                        <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
+                                    ))}
                             </select>
                         </div>
                         <div className="flex flex-col">
