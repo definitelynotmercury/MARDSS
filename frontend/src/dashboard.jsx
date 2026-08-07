@@ -28,7 +28,6 @@ function Dashboard() {
     const [typeTotals, setTypeTotals] = useState([])
     const [distributionData, setDistributionData] = useState([])
 
-    const [topN, setTopN] = useState(5)
     const [selectedLineType, setSelectedLineType] = useState('ALL')
     const [selectedYearForLine, setSelectedYearForLine] = useState('ALL')
 
@@ -68,13 +67,14 @@ function Dashboard() {
     useEffect(() => {
         const fetchTrend = async () => {
             const token = getToken()
-            const res = await fetch(`${BASE_URL}/api/dashboard/trend?year=${selectedYearForLine}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
+            const res = await fetch(
+                `${BASE_URL}/api/dashboard/trend?year=${selectedYearForLine}&type=${selectedLineType}`,
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            )
             setTrendData(await res.json())
         }
         fetchTrend()
-    }, [selectedYearForLine])
+    }, [selectedYearForLine, selectedLineType])
 
     useEffect(() => {
         const fetchDistribution = async () => {
@@ -131,7 +131,7 @@ function Dashboard() {
                 filters: {
                     year: selectedYear, municipality: selectedMunicipality, type: selectedType,
                     month: selectedMonth,
-                    lineType: selectedLineType, topN, lineYear: selectedYearForLine,
+                    lineType: selectedLineType, lineYear: selectedYearForLine,
                     distributionYear: selectedDistributionYear, distributionMonth: selectedDistributionMonth,
                     barYear: selectedBarYear, barMonth: selectedBarMonth,
                 }
@@ -156,13 +156,6 @@ function Dashboard() {
         { label: 'Jul', value: 7 }, { label: 'Aug', value: 8 }, { label: 'Sep', value: 9 },
         { label: 'Oct', value: 10 }, { label: 'Nov', value: 11 }, { label: 'Dec', value: 12 },
     ]
-
-    const visibleTypes = selectedLineType !== 'ALL'
-        ? typeTotals.filter(t => t.name === selectedLineType)
-        : typeTotals.slice(0, topN)
-
-    const lineChartColors = generateColors(visibleTypes.length)
-    const distributionColors = generateColors(distributionData.length)
 
     const renderLabel = ({ x, y, value, index }) => {
         if (index !== trendData.length - 1) return null;
@@ -263,9 +256,6 @@ function Dashboard() {
                         <p className="text-sm text-gray-400">Request volume from 2023 to 2025</p>
                     </div>
                     <div className="flex gap-2 items-center flex-wrap">
-                        <select className={pillSelect} onChange={e => setTopN(Number(e.target.value))}>
-                            {[5, 10, 15, 20, 25, 30].map(n => <option key={n} value={n}>TOP {n} TYPES</option>)}
-                        </select>
                         <select className={pillSelect} onChange={e => setSelectedLineType(e.target.value)}>
                             <option value="ALL">ALL TYPES</option>
                             {types.map(t => <option value={t.type_name} key={t.type_id}>{t.type_name}</option>)}
@@ -286,9 +276,14 @@ function Dashboard() {
                             wrapperStyle={{ zIndex: 1000, top: 0 }}
                         />
                         <Legend />
-                        {visibleTypes.map((t, index) => (
-                            <Line key={t.name} type="monotone" dataKey={t.name} stroke={lineChartColors[index]} strokeWidth={3} label={renderLabel} />
-                        ))}
+                        <Line
+                            type="monotone"
+                            dataKey="total"
+                            name={selectedLineType !== 'ALL' ? selectedLineType : 'Total Requests'}
+                            stroke="#2862DC"
+                            strokeWidth={3}
+                            label={renderLabel}
+                        />
                     </LineChart>
                 </ResponsiveContainer>
             </div>

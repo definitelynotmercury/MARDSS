@@ -90,46 +90,53 @@ def get_kpi():
 def get_dashboard_trend():
     conn = get_db()
     year = request.args.get("year", "ALL")
+    type_ = request.args.get("type", "ALL")
+
+    filters = []
+    params = []
+    if type_ != "ALL":
+        filters.append("a.type_name = %s")
+        params.append(type_)
 
     try:
         cursor = conn.cursor(dictionary=True)
 
         if year == "ALL":
-            
-            cursor.execute("""
-                SELECT r.year, a.type_name, SUM(r.request_count) AS total
+            where_clause = "WHERE " + " AND ".join(filters) if filters else ""
+            cursor.execute(f"""
+                SELECT r.year, SUM(r.request_count) AS total
                 FROM assistance_records r
                 JOIN assistance_types a ON r.assistance_type_id = a.type_id
-                GROUP BY r.year, r.assistance_type_id
+                {where_clause}
+                GROUP BY r.year
                 ORDER BY r.year
-            """)
+            """, params)
         else:
-            cursor.execute("""
-                SELECT r.month, a.type_name, SUM(r.request_count) AS total
+            filters.append("r.year = %s")
+            params.append(int(year))
+            where_clause = "WHERE " + " AND ".join(filters)
+            cursor.execute(f"""
+                SELECT r.month, SUM(r.request_count) AS total
                 FROM assistance_records r
                 JOIN assistance_types a ON r.assistance_type_id = a.type_id
-                WHERE r.year = %s
-                GROUP BY r.month, r.assistance_type_id
+                {where_clause}
+                GROUP BY r.month
                 ORDER BY r.month
-                           """,(int(year),))
+            """, params)
         data = cursor.fetchall()
         cursor.close()
     finally:
         conn.close()
 
-    result = {}
     key_field = 'year' if year == "ALL" else 'month'
-
+    result = []
     for row in data:
         key = row[key_field]
-
         if key_field == 'month':
             key = MONTH_NAMES[int(key) - 1]
-        if key not in result:
-            result[key] = {key_field: key}
-        result[key][row['type_name']] = int(row['total'])
+        result.append({key_field: key, "total": int(row['total'] or 0)})
 
-    return jsonify(list(result.values()))
+    return jsonify(result)
 
 
 @dashboard_bp.route("/api/dashboard/barchart")
@@ -264,15 +271,14 @@ def generate_narrative():
     bar_data = data.get("barData", [])
     filters = data.get("filters", {})
 
-    # KPI filters
+    # --- Global KPI filters ---
     year = filters.get("year", "ALL")
     municipality = filters.get("municipality", "ALL")
     type_ = filters.get("type", "ALL")
     month = filters.get("month", "ALL")
 
-    # Chart-level filters
+    # --- Per-chart filters ---
     line_type = filters.get("lineType", "ALL")
-    top_n = filters.get("topN", 10)
     line_year = filters.get("lineYear", "ALL")
     distribution_year = filters.get("distributionYear", "ALL")
     distribution_type = filters.get("distributionType", "ALL")
@@ -280,49 +286,24 @@ def generate_narrative():
     bar_year = filters.get("barYear", "ALL")
     bar_month = filters.get("barMonth", "ALL")
 
-    # Summarize trend — rows are keyed by 'year' when line_year == 'ALL',
-    # or by 'month' when a specific year is selected
+    # --- Line chart: now a flat totals-only series ({year|month, total}) ---
     trend_granularity = "month" if line_year != "ALL" else "year"
-    trend_by_year = {}
-
-    for row in trend:
-        key = row.get(trend_granularity)
-        if key is None:
-            continue
-
-        if line_type != "ALL":
-            total = row.get(line_type, 0)
-        else:
-            total = sum(v for k, v in row.items() if k not in ("year", "month"))
-
-        trend_by_year[key] = trend_by_year.get(key, 0) + total
-
-    if trend_granularity == "year":
-        sorted_trend = sorted(trend_by_year.items())
-    else:
-        sorted_trend = sorted(trend_by_year.items(), key=lambda kv: MONTH_NAMES.index(kv[0]))
-
     trend_summary_str = ", ".join(
-        [f"{k}: {t} total requests" for k, t in sorted_trend]
+        f"{row.get(trend_granularity)}: {row.get('total')} total requests"
+        for row in trend
+    )
+    line_summary = (
+        f"Showing only: {line_type}"
+        if line_type != "ALL"
+        else "Showing total requests across all assistance types"
     )
 
-    # Line chart visible types (respect lineType filter)
-    if line_type != "ALL":
-        line_summary = f"Showing only: {line_type}"
-    else:
-        type_totals = {}
-        for row in trend:
-            for k, v in row.items():
-                if k not in ("year", "month"):
-                    type_totals[k] = type_totals.get(k, 0) + v
-        top_line_types = sorted(type_totals.items(), key=lambda x: x[1], reverse=True)[:top_n]
-        line_summary = [{"type": k, "total": v} for k, v in top_line_types]
-
+    # --- Other chart summaries ---
     distribution_summary = [{"type": p["name"], "value": p["value"]} for p in distribution_data]
     bar_summary = [{"municipality": b["municipality_name"], "total": b["total"]} for b in bar_data[:5]]
+    irregularity_messages = [i["message"] for i in irregularities] if irregularities else ["None detected"]
 
-    irregularity_messages = [i['message'] for i in irregularities] if irregularities else ["None detected"]
-
+    # --- KPI period label ---
     month_name = MONTH_NAMES[int(month) - 1] if month != "ALL" else None
     if month_name and year != "ALL":
         kpi_period = f"{month_name} {year}"
@@ -333,7 +314,7 @@ def generate_narrative():
 
     active_filters = (
         f"Global — Year: {year}, Month: {month_name or 'ALL'}, Municipality: {municipality}, Type: {type_} | "
-        f"Line Chart — Type: {line_type}, Year: {line_year}, Top N: {top_n} | "
+        f"Line Chart — Type: {line_type}, Year: {line_year} | "
         f"Distribution Chart — Year: {distribution_year}, Month: {distribution_month}, Type: {distribution_type} | "
         f"Bar Chart — Year: {bar_year}, Month: {bar_month}"
     )
@@ -361,8 +342,7 @@ def generate_narrative():
 
         [{trend_granularity.capitalize()}ly Trend - Line Chart]
         - Totals per {trend_granularity}: {trend_summary_str}
-        - Visible types: {line_summary}
-        if there is a specific lineType filter, mention only that type's trend instead of the overall trend.
+        - {line_summary}
 
         [Type Distribution - Bar Chart]
         - Breakdown: {distribution_summary}
