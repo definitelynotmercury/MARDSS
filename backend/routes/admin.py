@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, g
 import mysql.connector
 from config import DB_CONFIG
 import bcrypt
@@ -32,7 +32,17 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def get_users():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT user_id, username, full_name, email, role, profile_picture FROM users")
+    cursor.execute("""
+        SELECT 
+            u.user_id, u.username, u.full_name, u.email, u.role, u.profile_picture,
+            u.created_at, u.updated_at,
+            creator.full_name AS created_by_name,
+            editor.full_name AS updated_by_name
+        FROM users u
+        LEFT JOIN users creator ON u.created_by = creator.user_id
+        LEFT JOIN users editor ON u.updated_by = editor.user_id
+        ORDER BY u.user_id
+    """)
     users = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -73,9 +83,9 @@ def create_user():
     password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
     cursor.execute("""
-        INSERT INTO users (username, full_name, email, role, password_hash)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (username, full_name, email, role, password_hash))
+        INSERT INTO users (username, full_name, email, role, password_hash, created_by)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (username, full_name, email, role, password_hash, g.user_id))
     conn.commit()
     cursor.close()
     conn.close()
@@ -121,9 +131,9 @@ def update_user(user_id):
 
     cursor.execute("""
         UPDATE users
-        SET username = %s, full_name = %s, email = %s, role = %s
+        SET username = %s, full_name = %s, email = %s, role = %s, updated_by = %s
         WHERE user_id = %s
-    """, (username, full_name, email, role, user_id))
+    """, (username, full_name, email, role, g.user_id, user_id))
     conn.commit()
     cursor.close()
     conn.close()
@@ -151,7 +161,10 @@ def upload_user_picture(user_id):
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
 
-    cursor.execute("UPDATE users SET profile_picture = %s WHERE user_id = %s", (filepath, user_id))
+    cursor.execute(
+        "UPDATE users SET profile_picture = %s, updated_by = %s WHERE user_id = %s",
+        (filepath, g.user_id, user_id)
+    )
     conn.commit()
     cursor.close()
     conn.close()

@@ -80,6 +80,14 @@ function Admin() {
         fetchUsers()
     }, [])
 
+    const formatDateTime = (dateStr) => {
+        if (!dateStr) return null
+        return new Date(dateStr).toLocaleString('en-PH', {
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        })
+    }
+
     const handleCreate = async () => {
         const token = getToken()
 
@@ -408,6 +416,8 @@ function Admin() {
                             <th className="py-2">Full Name</th>
                             <th className="py-2">Email</th>
                             <th className="py-2">Role</th>
+                            <th className="py-2">Created</th>
+                            <th className="py-2">Last Edited</th>
                             <th className="py-2">Action</th>
                         </tr>
                     </thead>
@@ -434,6 +444,22 @@ function Admin() {
                                 <td className="py-2">{u.full_name}</td>
                                 <td className="py-2">{u.email}</td>
                                 <td className="py-2 capitalize">{u.role}</td>
+                                <td className="py-2">{u.role}</td>
+                                <td className="py-2 text-xs text-gray-500">
+                                    <div>{formatDateTime(u.created_at)}</div>
+                                    {u.created_by_name && <div className="text-gray-400">by {u.created_by_name}</div>}
+                                </td>
+                                <td className="py-2 text-xs text-gray-500">
+                                    {u.updated_by_name ? (
+                                        <>
+                                            <div>{formatDateTime(u.updated_at)}</div>
+                                            <div className="text-gray-400">by {u.updated_by_name}</div>
+                                        </>
+                                    ) : (
+                                        <span className="text-gray-300">—</span>
+                                    )}
+                                </td>
+                                <td className="py-2"></td>
                                 <td className="py-2" >
                                     <div className="flex">
                                         <button
