@@ -14,6 +14,7 @@ function Dashboard() {
 
     const [municipalities, setMunicipalities] = useState([])
     const [types, setTypes] = useState([])
+    
 
     const [selectedYear, setSelectedYear] = useState('ALL')
     const [selectedMunicipality, setSelectedMunicipality] = useState('ALL')
@@ -22,6 +23,8 @@ function Dashboard() {
     const [showMonthFilter, setShowMonthFilter] = useState(false)
 
     const [kpi, setKpi] = useState(null)
+
+    const DEFAULT_LINE_COLOR = '#0E7C86'
 
     const [trendData, setTrendData] = useState([])
     const [barData, setBarData] = useState([])
@@ -168,6 +171,17 @@ function Dashboard() {
 
     const pillSelect = "border px-3 py-1 text-sm bg-white"
 
+    const typeColorMap = useMemo(() => {
+    const colors = generateColors(types.length)
+    const map = {}
+    types.forEach((t, i) => { map[t.type_name] = colors[i] })
+        return map
+    }, [types])
+
+    const lineColor = selectedLineType !== 'ALL'
+        ? (typeColorMap[selectedLineType] || DEFAULT_LINE_COLOR)
+    : DEFAULT_LINE_COLOR
+
     return (
         <Layout>
             {/* ── Header row: title left, filters right ── */}
@@ -280,7 +294,7 @@ function Dashboard() {
                             type="monotone"
                             dataKey="total"
                             name={selectedLineType !== 'ALL' ? selectedLineType : 'Total Requests'}
-                            stroke="#2862DC"
+                            stroke={lineColor}
                             strokeWidth={3}
                             label={renderLabel}
                         />
