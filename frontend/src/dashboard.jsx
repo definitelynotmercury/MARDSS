@@ -25,7 +25,6 @@ function Dashboard() {
 
     const [trendData, setTrendData] = useState([])
     const [barData, setBarData] = useState([])
-    const [typeTotals, setTypeTotals] = useState([])
     const [distributionData, setDistributionData] = useState([])
 
     const [selectedLineType, setSelectedLineType] = useState('ALL')
@@ -156,6 +155,7 @@ function Dashboard() {
         { label: 'Jul', value: 7 }, { label: 'Aug', value: 8 }, { label: 'Sep', value: 9 },
         { label: 'Oct', value: 10 }, { label: 'Nov', value: 11 }, { label: 'Dec', value: 12 },
     ]
+    const distributionColors = generateColors(distributionData.length)
 
     const renderLabel = ({ x, y, value, index }) => {
         if (index !== trendData.length - 1) return null;
