@@ -24,8 +24,8 @@ function Analytics() {
     ]
 
     // State variables for filters and data for the comparison chart
-    const [municipality1, setMunicipality1] = useState('BULAKAN')
-    const [municipality2, setMunicipality2] = useState('CALUMPIT')
+    const [municipality1, setMunicipality1] = useState('ANGAT')
+    const [municipality2, setMunicipality2] = useState('BALAGTAS')
     const [selectedType, setSelectedType] = useState('ALL')
     const [selectedYear, setSelectedYear] = useState('ALL')
     const [comparisonData, setComparisonData] = useState([])
