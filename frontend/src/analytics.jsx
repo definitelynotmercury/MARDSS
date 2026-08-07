@@ -189,7 +189,7 @@ function Analytics() {
                 <div className="flex items-start justify-between flex-wrap gap-3 mb-1">
                     <div className="flex items-center gap-2">
                         <BarChart3 className="w-4 h-4 text-blue-600" />
-                        <p className="font-semibold text-gray-700">Side-by-side Comparison</p>
+                        <p className="font-semibold text-gray-700">Municipality Comparison</p>
                     </div>
                     <div className="flex flex-wrap gap-3 items-end">
                         <div className="flex flex-col">
@@ -272,7 +272,7 @@ function Analytics() {
                 <div className="flex items-start justify-between flex-wrap gap-3 mb-1">
                     <div className="flex items-center gap-2">
                         <Search className="w-4 h-4 text-blue-600" />
-                        <p className="font-semibold text-gray-700">Municipality Drill-Down</p>
+                        <p className="font-semibold text-gray-700">Municipality Breakdown</p>
                     </div>
                     <div className='flex gap-2 items-center'>
                         <select className= "border rounded px-2 py-1 text-sm" onChange={(e) => setDrillDownMunicipality(e.target.value)} value={drill_down_municipality}>
@@ -330,7 +330,7 @@ function Analytics() {
                 <div className="flex items-start justify-between flex-wrap gap-3 mb-1">
                     <div className="flex items-center gap-2">
                         <Trophy className="w-4 h-4 text-blue-600" />
-                        <p className="font-semibold text-gray-700">Top N Rankings</p>
+                        <p className="font-semibold text-gray-700">Municipality Rankings</p>
                     </div>
                     <div className='flex gap-2 items-center'>
                         <select className="border rounded px-2 py-1 text-sm" onChange={e => setTopN(Number(e.target.value))}>

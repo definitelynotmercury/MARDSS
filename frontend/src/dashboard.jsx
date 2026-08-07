@@ -267,7 +267,7 @@ function Dashboard() {
                             <TrendingUp size={16} className="text-blue-600" />
                             Yearly Trend by Assistance Type
                         </p>
-                        <p className="text-sm text-gray-400">Request volume from 2023 to 2025</p>
+                        <p className="text-sm text-gray-400">Request volume over time</p>
                     </div>
                     <div className="flex gap-2 items-center flex-wrap">
                         <select className={pillSelect} onChange={e => setSelectedLineType(e.target.value)}>
