@@ -83,9 +83,9 @@ function AdminLayout({ children }) {
                         )}
                     </nav>
                     <button
-                        onClick={() => navigate('/settings')}
+                        onClick={() => navigate('/admin/settings')}
                         className={`flex items-center gap-3 text-left px-4 py-2 rounded text-sm border-l-4 ${
-                            location.pathname === '/settings'
+                            location.pathname === '/admin/settings'
                                 ? 'bg-blue-950/60 border-amber-500 text-white'
                                 : 'border-transparent text-gray-300 hover:bg-gray-700'
                         }`}

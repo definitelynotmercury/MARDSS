@@ -31,6 +31,7 @@ function App() {
                 <Route path="/resetpassword"element={<ResetPassword/>}/>
                 <Route path="/passwordresetsuccess"element={<PasswordResetSuccess/>}/>
                 <Route path="/passwordreseterror"element={<PasswordResetError/>}/>
+                <Route path="/admin/settings" element={<AdminSettings />} />
             </Routes>
         </BrowserRouter>
     )
