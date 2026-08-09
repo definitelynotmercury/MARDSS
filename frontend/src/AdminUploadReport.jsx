@@ -113,12 +113,13 @@ function AdminUploadReport() {
                         </p>
                         <div className="mt-auto">
                             
+                                <a
                                 href="/format-template.xlsx"
                                 download
                                 className="inline-block bg-white border border-blue-800 text-blue-800 px-4 py-2 rounded hover:bg-blue-50 font-medium"
-                            >
-                                Download Template (.xlsx)
-                            </a>
+                                >
+                                    Download Template (.xlsx)
+                                </a>
                         </div>
                     </div>
                 </div>
