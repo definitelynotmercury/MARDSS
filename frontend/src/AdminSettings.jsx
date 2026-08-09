@@ -224,6 +224,7 @@ function AdminSettings() {
                                 className="w-full border border-gray-300 rounded px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 value={currentPassword}
                                 onChange={(e) => setCurrentPassword(e.target.value)}
+                                disabled
                             />
                             <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
