@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getToken } from './auth'
 import { BASE_URL } from './config'
-
+import AdminLayout from './AdminLayout'
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'

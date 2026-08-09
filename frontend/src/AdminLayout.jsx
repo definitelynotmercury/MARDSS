@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Users, Upload, LogOut, UserCircle } from 'lucide-react';
 import { BASE_URL } from './config';
-import AdminLayout from './AdminLayout'
+
 function AdminLayout({ children }) {
     const navigate = useNavigate()
     const location = useLocation()
