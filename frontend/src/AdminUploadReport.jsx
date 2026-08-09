@@ -2,6 +2,7 @@ import { useState } from 'react'
 import AdminLayout from './AdminLayout'
 import { getToken } from './auth'
 import { BASE_URL } from './config';
+import AdminManualEntry from './AdminManualEntry'
 
 function AdminUploadReport() {
     const [file, setFile] = useState(null)
