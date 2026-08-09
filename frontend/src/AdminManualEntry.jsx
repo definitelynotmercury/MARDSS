@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getToken } from './auth'
 import { BASE_URL } from './config'
-import AdminLayout from './AdminLayout'
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
@@ -112,7 +111,6 @@ function AdminManualEntry() {
     }
 
   return (
-    <AdminLayout>
         <div className="bg-white rounded-xl shadow p-6">
         <h1 className="text-xl font-bold text-gray-700 mb-4">Manual Data Entry</h1>
 
@@ -211,7 +209,6 @@ function AdminManualEntry() {
         </div>
         )}
     </div>
-    </AdminLayout>
   )
 }
 
