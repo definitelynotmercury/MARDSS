@@ -14,6 +14,7 @@ import VerifyCode from './VerifyCode'
 import ResetPassword from"./ResetPassword"
 import PasswordResetSuccess from './PasswordResetSuccess'
 import PasswordResetError from './PasswordResetError'
+import AdminSettings from './AdminSettings'
 function App() {
     return (
         <BrowserRouter>
