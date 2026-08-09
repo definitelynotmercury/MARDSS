@@ -15,6 +15,7 @@ import ResetPassword from"./ResetPassword"
 import PasswordResetSuccess from './PasswordResetSuccess'
 import PasswordResetError from './PasswordResetError'
 import AdminSettings from './AdminSettings'
+import AdminManualEntry from './AdminManualEntry'
 function App() {
     return (
         <BrowserRouter>

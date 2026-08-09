@@ -63,3 +63,74 @@ def upload_monthly_report():
         "months_replaced": [f"{y}-{m:02d}" for y, m in year_months],
         "warnings": warnings,
     }), 200
+
+@upload_bp.route('/api/admin/monthly-data', methods=['GET'])
+@admin_required
+def get_monthly_data():
+    year = request.args.get('year', type=int)
+    month = request.args.get('month', type=int)
+
+    if not year or not month:
+        return jsonify({"error": "year and month are required"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT assistance_type_id, municipality_id, request_count
+            FROM assistance_records
+            WHERE year = %s AND month = %s
+        """, (year, month))
+        rows = cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+    return jsonify(rows), 200
+
+@upload_bp.route('/api/admin/manual-entry', methods=['POST'])
+@admin_required
+def manual_entry():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "No data received"}), 400
+
+    year = data.get('year')
+    month = data.get('month')
+    entries = data.get('entries')
+
+    if not year or not month:
+        return jsonify({"error": "year and month are required"}), 400
+    if not entries or not isinstance(entries, list):
+        return jsonify({"error": "entries must be a list"}), 400
+
+    rows = [
+        (e['assistance_type_id'], e['municipality_id'], year, month, e['request_count'])
+        for e in entries
+    ]
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "DELETE FROM assistance_records WHERE year = %s AND month = %s",
+            (year, month)
+        )
+        cursor.executemany("""
+            INSERT INTO assistance_records
+                (assistance_type_id, municipality_id, year, month, request_count)
+            VALUES (%s, %s, %s, %s, %s)
+        """, rows)
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+    return jsonify({
+        "message": "Entry saved successfully",
+        "rows_inserted": len(rows)
+    }), 200
