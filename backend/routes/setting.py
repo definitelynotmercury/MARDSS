@@ -56,9 +56,9 @@ def update_profile():
     
     cursor.execute("""
         UPDATE users
-        SET full_name = %s, email = %s, username = %s
+        SET full_name = %s, email = %s, username = %s, updated_by = %s
         WHERE user_id = %s
-    """, (full_name, email, username, user_id))
+    """, (full_name, email, username, user_id, user_id))
 
     conn.commit()
     cursor.close()
