@@ -60,7 +60,7 @@ def upload_monthly_report():
     conn.close()
 
     for year, month in year_months:
-            detect_and_store_irregularities(year, month, g.user_id)
+            detect_and_store_irregularities(year, month)
 
     return jsonify({
         "message": "Upload successful",
@@ -135,7 +135,7 @@ def manual_entry():
         cursor.close()
         conn.close()
 
-    detect_and_store_irregularities(year, month, g.user_id)
+    detect_and_store_irregularities(year, month)
 
     return jsonify({
         "message": "Entry saved successfully",

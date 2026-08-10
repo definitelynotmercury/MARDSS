@@ -1,12 +1,3 @@
-from flask import Blueprint, jsonify, g
-import mysql.connector
-from config import DB_CONFIG
-from auth_utils import token_required
-
-notification_bp = Blueprint('notification', __name__)
-def get_db():
-    return mysql.connector.connect(**DB_CONFIG)
-
 @notification_bp.route('/api/notifications', methods=['GET'])
 @token_required
 def get_notifications():
@@ -14,12 +5,11 @@ def get_notifications():
     try:
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
-            SELECT notification_id, alert_type, type_name, message, 
+            SELECT notification_id, alert_type, type_name, message,
                    generated_date, is_read
             FROM notifications
-            WHERE user_id = %s
             ORDER BY generated_date DESC
-        """, (g.user_id,))
+        """)
         rows = cursor.fetchall()
         cursor.close()
     finally:
@@ -58,8 +48,8 @@ def mark_notifications_read():
         cursor.execute("""
             UPDATE notifications
             SET is_read = 1
-            WHERE user_id = %s AND is_read = 0
-        """, (g.user_id,))
+            WHERE is_read = 0
+        """)
         conn.commit()
         updated = cursor.rowcount
         cursor.close()

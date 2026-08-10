@@ -11,7 +11,7 @@ def get_prev_month(year, month):
         return year - 1, 12
     return year, month - 1
 
-def detect_and_store_irregularities(year, month, user_id):
+def detect_and_store_irregularities(year, month):
     prev_year, prev_month = get_prev_month(year, month)
     conn = get_db()
     try:
@@ -92,13 +92,12 @@ def detect_and_store_irregularities(year, month, user_id):
 
         # Store alerts — skip duplicates via UNIQUE KEY
         insert_sql = """
-            INSERT IGNORE INTO notifications
-                (user_id, alert_key, alert_type, type_name, message)
-            VALUES (%s, %s, %s, %s, %s)
-        """
+        INSERT IGNORE INTO notifications
+            (alert_key, alert_type, type_name, message)
+        VALUES (%s, %s, %s, %s)
+    """
         for alert in alerts:
             cursor.execute(insert_sql, (
-                user_id,
                 alert['alert_key'],
                 alert['alert_type'],
                 alert['type_name'],
