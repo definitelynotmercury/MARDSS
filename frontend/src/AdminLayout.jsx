@@ -25,8 +25,8 @@ function AdminLayout({ children }) {
     }
 
     return (
-        <div className="flex flex-col h-screen bg-gray-100">
-            <div className="flex items-center gap-3 bg-gradient-to-r from-[#0B2E52] to-[#1967B8] shadow px-6 py-4 text-white">
+        <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
+            <div className="flex items-center gap-3 bg-gradient-to-r from-[#0B2E52] to-[#1967B8] shadow px-6 py-4 text-white shrink-0">
                     <img src="/pswdologo.jpg" alt="MARDSS logo" className="h-14 w-14 rounded-full border-2 border-solid border-amber-500" />
                     <div className="flex flex-col gap-1">
                         <div>
@@ -58,9 +58,9 @@ function AdminLayout({ children }) {
                     </div>
                 </div>
             {/* Main content */}
-            <div className="flex-1 flex">
+            <div className="flex-1 flex min-h-0">
                 {/* Sidebar */}
-                <div className="w-48 bg-[#0B2E52] text-white flex flex-col">
+                <div className="w-48 bg-[#0B2E52] text-white flex flex-col h-full shrink-0">
                     <nav className="flex flex-col flex-1 px-2 gap-1 mt-2">
                         {navItems.map((item) => {
                             const Icon = item.icon;
@@ -102,7 +102,7 @@ function AdminLayout({ children }) {
                     </button>
                 </div>
                 
-                <div className="p-6 flex-1 overflow-y-auto">
+                <div className="p-6 flex-1 overflow-y-auto min-h-0">
                     {children}
                 </div>
             </div>
