@@ -8,7 +8,7 @@ const MONTHS = [
 
 function AdminManualEntry() {
   const currentYear = new Date().getFullYear()
-
+  const START_YEAR = 2023
   const [year, setYear] = useState(currentYear)
   const [month, setMonth] = useState(1)
   const [municipalities, setMunicipalities] = useState([])
@@ -172,6 +172,15 @@ function AdminManualEntry() {
         }
     }
 
+        const yearOptions = (() => {
+            const upperBound = maxAllowed ? maxAllowed.year : new Date().getFullYear()
+            const years = []
+            for (let y = START_YEAR; y <= upperBound; y++) {
+                years.push(y)
+            }
+            return years
+        })()
+
   return (
         <div className="bg-white rounded-xl shadow p-6">
         <h1 className="text-xl font-bold text-gray-700 mb-4">Manual Data Entry</h1>
@@ -180,16 +189,8 @@ function AdminManualEntry() {
         <div className="flex items-center gap-4 mb-6">
         <div>
             <label className="text-sm text-gray-500 block mb-1">Year</label>
-            <select
-            value={year}
-            onChange={e => setYear(parseInt(e.target.value, 10))}
-            className="border rounded px-3 py-2 text-sm"
-            >
-            {[2023, 2024, 2025, 2026]
-                .filter(y => !maxAllowed || y <= maxAllowed.year)
-                .map(y => (
-                <option key={y} value={y}>{y}</option>
-                ))}
+            <select value={year} onChange={e => setYear(parseInt(e.target.value, 10))} className="border rounded px-3 py-2 text-sm">
+            {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
         </div>
 
