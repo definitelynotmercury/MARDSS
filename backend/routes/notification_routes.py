@@ -1,3 +1,12 @@
+from flask import Blueprint, jsonify, g
+import mysql.connector
+from config import DB_CONFIG
+from auth_utils import token_required
+
+notification_bp = Blueprint('notification', __name__)
+def get_db():
+    return mysql.connector.connect(**DB_CONFIG)
+
 @notification_bp.route('/api/notifications', methods=['GET'])
 @token_required
 def get_notifications():
