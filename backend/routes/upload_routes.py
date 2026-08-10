@@ -3,6 +3,8 @@ import mysql.connector
 from config import DB_CONFIG
 from routes.monthly_import import parse_monthly_excel, ParseError
 from auth_utils import token_required, admin_required
+from flask import Blueprint, jsonify, request, g
+from routes.irregularity_detector import detect_and_store_irregularities
 
 upload_bp = Blueprint('upload', __name__)
 
@@ -56,6 +58,9 @@ def upload_monthly_report():
 
     cursor.close()
     conn.close()
+
+    for year, month in year_months:
+            detect_and_store_irregularities(year, month, g.user_id)
 
     return jsonify({
         "message": "Upload successful",
@@ -129,6 +134,8 @@ def manual_entry():
     finally:
         cursor.close()
         conn.close()
+
+    detect_and_store_irregularities(year, month, g.user_id)
 
     return jsonify({
         "message": "Entry saved successfully",

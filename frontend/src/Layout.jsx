@@ -32,19 +32,22 @@ function Layout({children}){
         { label: 'Export', path: '/export', icon: FileOutput },
     ];
 
-    const [irregularities, setIrregularities] = useState([])
+    const [notifications, setNotifications] = useState({ new: [], old: [], unread_count: 0 })
     const [showNotifications, setShowNotifications] = useState(false)
+    const [activeTab, setActiveTab] = useState('new')
 
+
+    const fetchNotifications = async () => {
+        const token = getToken()
+        const res = await fetch(`${BASE_URL}/api/notifications`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await res.json()
+        setNotifications(data)
+    }
 
     useEffect(() => {
-        const fetchIrregularities = async () => {
-            const token = getToken()
-            const res = await fetch(`${BASE_URL}/api/dashboard/irregularities`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-            setIrregularities(await res.json())
-        }
-        fetchIrregularities()
+        fetchNotifications()
     }, [])
     return (
         <div className="flex flex-col h-screen bg-gray-100">
@@ -67,29 +70,88 @@ function Layout({children}){
                         </div>
                         <div className="relative">
                             <button
-                                onClick={() => setShowNotifications(prev => !prev)}
+                                onClick={async () => {
+                                    setShowNotifications(prev => !prev)
+                                    if (!showNotifications && notifications.unread_count > 0) {
+                                        const token = getToken()
+                                        await fetch(`${BASE_URL}/api/notifications/mark-read`, {
+                                            method: 'PUT',
+                                            headers: { 'Authorization': `Bearer ${token}` }
+                                        })
+                                        fetchNotifications()
+                                    }
+                                }}
                                 className="border border-white/40 rounded-full p-2 hover:bg-white/10"
                             >
                                 <Bell size={18} />
-                                {irregularities.length > 0 && (
+                                {notifications.unread_count > 0 && (
                                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
-                                        {irregularities.length}
+                                        {notifications.unread_count}
                                     </span>
                                 )}
                             </button>
+
                             {showNotifications && (
-                                <div className="absolute right-0 mt-2 w-80 bg-white rounded shadow-lg text-gray-700 z-50 max-h-96 overflow-y-auto">
-                                    <div className="px-4 py-2 border-b font-semibold text-sm">Irregularities Detected</div>
-                                    {irregularities.length === 0 ? (
-                                        <p className="px-4 py-3 text-sm text-gray-400">No irregularities found.</p>
-                                    ) : (
-                                        irregularities.map((m, index) => (
-                                            <div key={index} className="border-l-4 border-yellow-400 bg-yellow-50 px-4 py-3">
-                                                <p className="font-semibold text-yellow-800 text-sm">{m.type_name}</p>
-                                                <p className="text-yellow-700 text-xs mt-1">{m.message}</p>
-                                            </div>
-                                        ))
-                                    )}
+                                <div className="absolute right-0 mt-2 w-80 bg-white rounded shadow-lg text-gray-700 z-50">
+                                    
+                                    {/* Header */}
+                                    <div className="px-4 py-2 border-b font-semibold text-sm">
+                                        Irregularities Detected
+                                    </div>
+
+                                    {/* Tabs */}
+                                    <div className="flex border-b">
+                                        <button
+                                            onClick={() => setActiveTab('new')}
+                                            className={`flex-1 py-2 text-xs font-medium ${
+                                                activeTab === 'new'
+                                                    ? 'border-b-2 border-blue-800 text-blue-800'
+                                                    : 'text-gray-400 hover:text-gray-600'
+                                            }`}
+                                        >
+                                            New {notifications.new.length > 0 && `(${notifications.new.length})`}
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('old')}
+                                            className={`flex-1 py-2 text-xs font-medium ${
+                                                activeTab === 'old'
+                                                    ? 'border-b-2 border-blue-800 text-blue-800'
+                                                    : 'text-gray-400 hover:text-gray-600'
+                                            }`}
+                                        >
+                                            Earlier {notifications.old.length > 0 && `(${notifications.old.length})`}
+                                        </button>
+                                    </div>
+
+                                    {/* Notification list */}
+                                    <div className="max-h-80 overflow-y-auto">
+                                        {activeTab === 'new' && (
+                                            notifications.new.length === 0 ? (
+                                                <p className="px-4 py-3 text-sm text-gray-400">No new irregularities.</p>
+                                            ) : (
+                                                notifications.new.map((n) => (
+                                                    <div key={n.notification_id} className="border-l-4 border-yellow-400 bg-yellow-50 px-4 py-3">
+                                                        <p className="font-semibold text-yellow-800 text-sm">{n.type_name}</p>
+                                                        <p className="text-yellow-700 text-xs mt-1">{n.message}</p>
+                                                        <p className="text-gray-400 text-xs mt-1">{n.generated_date}</p>
+                                                    </div>
+                                                ))
+                                            )
+                                        )}
+                                        {activeTab === 'old' && (
+                                            notifications.old.length === 0 ? (
+                                                <p className="px-4 py-3 text-sm text-gray-400">No earlier irregularities.</p>
+                                            ) : (
+                                                notifications.old.map((n) => (
+                                                    <div key={n.notification_id} className="border-l-4 border-gray-300 bg-gray-50 px-4 py-3">
+                                                        <p className="font-semibold text-gray-700 text-sm">{n.type_name}</p>
+                                                        <p className="text-gray-500 text-xs mt-1">{n.message}</p>
+                                                        <p className="text-gray-400 text-xs mt-1">{n.generated_date}</p>
+                                                    </div>
+                                                ))
+                                            )
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
