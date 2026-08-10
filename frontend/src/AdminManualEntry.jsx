@@ -72,6 +72,41 @@ function AdminManualEntry() {
     }))
     }
 
+    const [latest, setLatest] = useState(null) // { year, month }
+
+    useEffect(() => {
+    const token = getToken()
+    fetch(`${BASE_URL}/api/analytics/latest_month`, {
+        headers: { Authorization: `Bearer ${token}` }
+    })
+        .then(r => r.json())
+        .then(data => setLatest(data))
+    }, [])
+
+    // Last selectable month = latest month with data + 1
+    const maxAllowed = (() => {
+    if (!latest) return null
+    let { year: y, month: m } = latest
+    m += 1
+    if (m > 12) { m = 1; y += 1 }
+    return { year: y, month: m }
+    })()
+
+    const isMonthAllowed = (y, m) => {
+    if (!maxAllowed) return true
+    if (y < maxAllowed.year) return true
+    if (y === maxAllowed.year) return m <= maxAllowed.month
+    return false
+    }
+
+    useEffect(() => {
+    if (!maxAllowed) return
+    if (!isMonthAllowed(year, month)) {
+        setYear(maxAllowed.year)
+        setMonth(maxAllowed.month)
+    }
+    }, [maxAllowed]) // eslint-disable-line react-hooks/exhaustive-deps
+    
     const handleSubmit = async () => {
     const token = getToken()
     setSaving(true)
@@ -150,23 +185,27 @@ function AdminManualEntry() {
             onChange={e => setYear(parseInt(e.target.value, 10))}
             className="border rounded px-3 py-2 text-sm"
             >
-            {[2023, 2024, 2025, 2026].map(y => (
+            {[2023, 2024, 2025, 2026]
+                .filter(y => !maxAllowed || y <= maxAllowed.year)
+                .map(y => (
                 <option key={y} value={y}>{y}</option>
-            ))}
+                ))}
             </select>
         </div>
 
         <div>
             <label className="text-sm text-gray-500 block mb-1">Month</label>
             <select
-            value={month}
-            onChange={e => setMonth(parseInt(e.target.value, 10))}
-            className="border rounded px-3 py-2 text-sm"
-            >
-            {MONTHS.map((name, i) => (
-                <option key={i + 1} value={i + 1}>{name}</option>
-            ))}
-            </select>
+                value={month}
+                onChange={e => setMonth(parseInt(e.target.value, 10))}
+                className="border rounded px-3 py-2 text-sm"
+                >
+                {MONTHS.map((name, i) => {
+                    const m = i + 1
+                    if (!isMonthAllowed(year, m)) return null
+                    return <option key={m} value={m}>{name}</option>
+                })}
+                </select>
         </div>
 
         <div className="mt-5">
@@ -179,13 +218,6 @@ function AdminManualEntry() {
             </button>
         </div>
         <div className="mt-5 flex gap-2">
-        <button
-            onClick={handleSubmit}
-            disabled={saving || loading}
-            className="bg-blue-800 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 text-sm"
-        >
-            {saving ? 'Saving...' : 'Save Entry'}
-        </button>
         <button
             onClick={handleDelete}
             disabled={saving || loading}

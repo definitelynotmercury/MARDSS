@@ -165,3 +165,4 @@ def delete_monthly_data():
     return jsonify({
         "message": f"Deleted {deleted} records for {year}-{month:02d}"
     }), 200
+
