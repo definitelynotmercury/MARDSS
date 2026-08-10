@@ -110,6 +110,33 @@ function AdminManualEntry() {
     }
     }
 
+    const handleDelete = async () => {
+        if (!window.confirm(`Delete all data for ${MONTHS[month - 1]} ${year}? This cannot be undone.`)) return
+
+        const token = getToken()
+        setResult(null)
+
+        try {
+            const res = await fetch(`${BASE_URL}/api/admin/delete-monthly-data`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ year, month })
+            })
+            const data = await res.json()
+            if (res.ok) {
+                setResult({ success: true, message: data.message })
+                setGrid({})
+            } else {
+                setResult({ success: false, message: data.error || 'Delete failed' })
+            }
+        } catch {
+            setResult({ success: false, message: 'Could not reach the server' })
+        }
+    }
+
   return (
         <div className="bg-white rounded-xl shadow p-6">
         <h1 className="text-xl font-bold text-gray-700 mb-4">Manual Data Entry</h1>
@@ -151,6 +178,22 @@ function AdminManualEntry() {
             {saving ? 'Saving...' : 'Save Entry'}
             </button>
         </div>
+        <div className="mt-5 flex gap-2">
+        <button
+            onClick={handleSubmit}
+            disabled={saving || loading}
+            className="bg-blue-800 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 text-sm"
+        >
+            {saving ? 'Saving...' : 'Save Entry'}
+        </button>
+        <button
+            onClick={handleDelete}
+            disabled={saving || loading}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500 disabled:opacity-50 text-sm"
+        >
+            Delete Month
+        </button>
+    </div>
         </div>
 
         {/* Result message */}

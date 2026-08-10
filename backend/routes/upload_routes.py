@@ -134,3 +134,34 @@ def manual_entry():
         "message": "Entry saved successfully",
         "rows_inserted": len(rows)
     }), 200
+
+@upload_bp.route('/api/admin/delete-monthly-data', methods=['DELETE'])
+@admin_required
+def delete_monthly_data():
+    data = request.get_json()
+
+    year = data.get('year')
+    month = data.get('month')
+
+    if not year or not month:
+        return jsonify({"error": "year and month are required"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "DELETE FROM assistance_records WHERE year = %s AND month = %s",
+            (year, month)
+        )
+        conn.commit()
+        deleted = cursor.rowcount
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+    return jsonify({
+        "message": f"Deleted {deleted} records for {year}-{month:02d}"
+    }), 200
