@@ -334,7 +334,7 @@ function Analytics() {
                     </div>
                     <div className='flex gap-2 items-center'>
                         <select className="border rounded px-2 py-1 text-sm" onChange={e => setTopN(Number(e.target.value))}>
-                            {[5, 10, 15, 20, 25, 30].map(n => <option key={n} value={n}>TOP {n} TYPES</option>)}
+                            {[5, 10, 15, 20, 25, 24].map(n => <option key={n} value={n}>TOP {n} TYPES</option>)}
                         </select>
                         <select className= "border rounded px-2 py-1 text-sm" onChange={(e) => setSelectedMunicipalityRanking(e.target.value)} value={selectedMunicipalityRanking}>
                             <option value="ALL">ALL MUNICIPALITIES</option>
