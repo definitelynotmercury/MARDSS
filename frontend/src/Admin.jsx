@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from './AdminLayout'
 import { getToken } from './auth'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, Eye, EyeOff } from 'lucide-react'
 import { BASE_URL } from './config';
 
 function isValidEmail(email){
@@ -40,6 +40,8 @@ function Admin() {
     const [editRole, setEditRole] = useState('staff')
     const [editPictureFile, setEditPictureFile] = useState(null)
     const [editPicturePreview, setEditPicturePreview] = useState(null)
+
+    const [showPassword, setShowPassword] = useState(false)
 
     const [notification, setNotification] = useState({ show: false, message: '', type: 'success' })
     const showNotification = (message, type = 'success') => {
@@ -260,14 +262,23 @@ function Admin() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     autoComplete="off"
                                 />
-                                <input
-                                    placeholder="Password"
-                                    type="password"
-                                    className="border rounded px-3 py-2"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    autoComplete="new-password"
-                                />
+                                <div className="relative">
+                                    <input
+                                        placeholder="Password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        className="border rounded px-3 py-2 w-full pr-10"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        autoComplete="new-password"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    >
+                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
                                 <select
                                     className="border rounded px-3 py-2"
                                     value={role}
