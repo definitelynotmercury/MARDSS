@@ -580,7 +580,7 @@ function Export() {
                         Total Requests by Municipality/City
                     </p>
                     <p className="text-sm text-gray-400 mb-4">Top Municipality/City by Volume</p>
-                    <ResponsiveContainer width="100%" height={Math.min(700, Math.max(320, barChartData.length * 34))}>
+                    <ResponsiveContainer width="100%" height={800}>
                         <BarChart data={barChartData} layout="vertical">
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis type="number" />
