@@ -227,79 +227,95 @@ function Admin() {
                 </div>
 
                 {showForm && (
-                    <div className="grid grid-cols-1 gap-4 mb-6 p-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Username</label>
-                            <input
-                                placeholder="Username"
-                                className="border rounded px-3 py-2 w-full"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                autoComplete="off"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
-                            <input
-                                placeholder="Full Name"
-                                className="border rounded px-3 py-2 w-full"
-                                value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
-                                autoComplete="off"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Email</label>
-                            <input
-                                placeholder="Email"
-                                className="border rounded px-3 py-2 w-full"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                autoComplete="off"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Password</label>
-                            <div className="relative">
-                                <input
-                                    placeholder="Password"
-                                    type={showPassword ? 'text' : 'password'}
-                                    className="border rounded px-3 py-2 w-full pr-10"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    autoComplete="new-password"
-                                />
+                    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-lg font-bold text-gray-700">Create Account</h2>
                                 <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    onClick={() => setShowForm(false)}
+                                    className="text-gray-400 hover:text-gray-600 text-xl leading-none"
                                 >
-                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    &times;
                                 </button>
                             </div>
-                        </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Role</label>
-                            <select
-                                className="border rounded px-3 py-2 w-full"
-                                value={role}
-                                onChange={(e) => setRole(e.target.value)}
-                            >
-                                <option value="staff">Staff</option>
-                                <option value="admin">Admin</option>
-                            </select>
-                        </div>
+                            <div className="grid grid-cols-1 gap-4 mb-6 p-4">
 
-                        <button
-                            onClick={handleCreate}
-                            className="bg-green-600 text-white rounded px-4 py-2 hover:bg-green-700"
-                        >
-                            Save Account
-                        </button>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1">Username</label>
+                                    <input
+                                        placeholder="Username"
+                                        className="border rounded px-3 py-2 w-full"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        autoComplete="off"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
+                                    <input
+                                        placeholder="Full Name"
+                                        className="border rounded px-3 py-2 w-full"
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
+                                        autoComplete="off"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1">Email</label>
+                                    <input
+                                        placeholder="Email"
+                                        className="border rounded px-3 py-2 w-full"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        autoComplete="off"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1">Password</label>
+                                    <div className="relative">
+                                        <input
+                                            placeholder="Password"
+                                            type={showPassword ? 'text' : 'password'}
+                                            className="border rounded px-3 py-2 w-full pr-10"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            autoComplete="new-password"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        >
+                                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1">Role</label>
+                                    <select
+                                        className="border rounded px-3 py-2 w-full"
+                                        value={role}
+                                        onChange={(e) => setRole(e.target.value)}
+                                    >
+                                        <option value="staff">Staff</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </div>
+
+                                <button
+                                    onClick={handleCreate}
+                                    className="bg-green-600 text-white rounded px-4 py-2 hover:bg-green-700"
+                                >
+                                    Save Account
+                                </button>
+                            </div>
+
+                        </div>
                     </div>
                 )}
 
