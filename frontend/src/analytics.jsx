@@ -88,7 +88,7 @@ function Analytics() {
 
     //states and functions for drilldown section
     const [drilldown_data, setDrilldownData] = useState([])
-    const [drill_down_municipality, setDrillDownMunicipality] = useState('BULAKAN')
+    const [drill_down_municipality, setDrillDownMunicipality] = useState('ANGAT')
     const [drill_down_year, setDrillDownYear] = useState("ALL")  
     const [drill_down_month, setDrillDownMonth] = useState("ALL")
     const [showDrilldownMonthFilter, setShowDrilldownMonthFilter] = useState(false)
