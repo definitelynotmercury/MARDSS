@@ -485,7 +485,13 @@ function Export() {
         <div className="flex flex-col gap-6">
             {sections.dashboardKpi && (
                 <div ref={chartRefs.dashboardKpi} className="bg-white shadow rounded p-4">
-                    <p className="font-semibold text-gray-700 mb-3">Dashboard Summary</p>
+                    <p className="font-semibold text-gray-700 mb-1">Dashboard Summary</p>
+                    <p className="text-sm text-gray-400 mb-3">
+                        {selectedDashboardYear !== 'ALL' ? selectedDashboardYear : 'All Years'}
+                        {selectedMonth !== 'ALL' ? ` · ${months.find(m => m.value === Number(selectedMonth))?.label}` : ''}
+                        {selectedDashboardMunicipality !== 'ALL' ? ` · ${selectedDashboardMunicipality}` : ''}
+                        {selectedDashboardType !== 'ALL' ? ` · ${selectedDashboardType}` : ''}
+                    </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="bg-white border rounded p-4 border-l-4 border-l-[#0B2E52]">
                             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Total Requests</p>
@@ -519,7 +525,10 @@ function Export() {
                         <TrendingUp size={16} className="text-blue-600" />
                         Yearly Trend by Assistance Type
                     </p>
-                    <p className="text-sm text-gray-400 mb-4">Request volume over time</p>
+                    <p className="text-sm text-gray-400 mb-4">
+                        {selectedYoYType !== 'ALL' ? selectedYoYType : 'All Types'}
+                        {selectedYearForLine !== 'ALL' ? ` · ${selectedYearForLine}` : ' · All Years'}
+                    </p>
                     <ResponsiveContainer width="100%" height={400}>
                         <LineChart data={yoyTrendData}>
                             <CartesianGrid strokeDasharray="3 3" />
@@ -550,7 +559,10 @@ function Export() {
                         <BarChart2 size={16} className="text-blue-600" />
                         Distribution by Assistance Type
                     </p>
-                    <p className="text-sm text-gray-400 mb-4">Request volume by type</p>
+                    <p className="text-sm text-gray-400 mb-4">
+                        {selectedDistributionYear !== 'ALL' ? selectedDistributionYear : 'All Years'}
+                        {selectedDistributionMonth !== 'ALL' ? ` · ${months.find(m => m.value === Number(selectedDistributionMonth))?.label}` : ''}
+                    </p>
                     <ResponsiveContainer width="100%" height={Math.max(300, distributionData.length * 40)}>
                         <BarChart data={distributionData} layout="vertical" tabIndex={-1} margin={{ top: 5, right: 60, left: 5, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" />
@@ -579,7 +591,10 @@ function Export() {
                         <BarChart2 size={16} className="text-blue-600" />
                         Total Requests by Municipality/City
                     </p>
-                    <p className="text-sm text-gray-400 mb-4">Top Municipality/City by Volume</p>
+                    <p className="text-sm text-gray-400 mb-4">
+                        {selectedBarChartYear !== 'ALL' ? selectedBarChartYear : 'All Years'}
+                        {selectedBarMonth !== 'ALL' ? ` · ${months.find(m => m.value === Number(selectedBarMonth))?.label}` : ''}
+                    </p>
                     <ResponsiveContainer width="100%" height={800}>
                         <BarChart data={barChartData} layout="vertical">
                             <CartesianGrid strokeDasharray="3 3" />
