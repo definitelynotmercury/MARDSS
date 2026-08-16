@@ -219,10 +219,10 @@ function Admin() {
                 <div className="flex justify-between items-center mb-4">
                     <h1 className="text-xl font-bold text-gray-700">Manage Accounts</h1>
                     <button
-                        onClick={() => setShowForm(!showForm)}
+                        onClick={() => setShowForm(true)}
                         className="bg-blue-800 text-white px-4 py-2 rounded hover:bg-blue-700"
                     >
-                        {showForm ? 'Cancel' : '+ Create Account'}
+                        + Create Account
                     </button>
                 </div>
 
