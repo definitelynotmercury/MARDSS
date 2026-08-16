@@ -192,7 +192,7 @@ def generate_narrative():
         Be specific, mention actual numbers and names. Keep it professional and concise.
         """
     response = client.models.generate_content(
-        model="gemini-3-flash-preview",
+        model="gemini-3.1-flash-lite",
         contents=prompt
     )
     return jsonify({"narrative": response.text})

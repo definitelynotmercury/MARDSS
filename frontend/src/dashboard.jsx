@@ -41,8 +41,6 @@ function Dashboard() {
     const [showBarMonthFilter, setShowBarMonthFilter] = useState(false)
     const [selectedBarMonth, setSelectedBarMonth] = useState('ALL')
 
-    const [irregularities, setIrregularities] = useState([])
-
     const [narrative, setNarrative] = useState('')
     const [narrativeLoading, setNarrativeLoading] = useState(false)
 
@@ -55,7 +53,6 @@ function Dashboard() {
             const [muniRes, typeRes, irregsRes, typeTotalsRes] = await Promise.all([
                 fetch(`${BASE_URL}/api/municipalities`, { headers: { 'Authorization': `Bearer ${token}` } }),
                 fetch(`${BASE_URL}/api/assistance_types`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`${BASE_URL}/api/dashboard/irregularities`, { headers: { 'Authorization': `Bearer ${token}` } }),
                 fetch(`${BASE_URL}/api/dashboard/type-totals`, { headers: { 'Authorization': `Bearer ${token}` } })
             ])
             setMunicipalities(await muniRes.json())
@@ -126,7 +123,6 @@ function Dashboard() {
             },
             body: JSON.stringify({
                 kpi,
-                irregularities,
                 trend: trendData,
                 distributionData,
                 barData,
