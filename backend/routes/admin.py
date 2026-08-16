@@ -177,7 +177,7 @@ def delete_user(user_id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Check if user exists
+    
     cursor.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
     user = cursor.fetchone()
     if not user:
@@ -185,14 +185,19 @@ def delete_user(user_id):
         conn.close()
         return jsonify({'message': 'User not found'}), 404
 
-    # Step 1: Delete password reset records for this user
+    
+    if user_id == g.user_id:
+        cursor.close()
+        conn.close()
+        return jsonify({'message': 'You cannot delete your own account'}), 403
+
+    
     cursor.execute("DELETE FROM password_reset WHERE user_id = %s", (user_id,))
 
-    # Step 2: Nullify self-referencing FK columns on other users
+   
     cursor.execute("UPDATE users SET created_by = NULL WHERE created_by = %s", (user_id,))
     cursor.execute("UPDATE users SET updated_by = NULL WHERE updated_by = %s", (user_id,))
 
-    # Step 3: Safe to delete the user now
     cursor.execute("DELETE FROM users WHERE user_id = %s", (user_id,))
 
     conn.commit()
