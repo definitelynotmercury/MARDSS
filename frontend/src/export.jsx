@@ -598,7 +598,7 @@ function Export() {
                 <div ref={chartRefs.comparisonChart} className="bg-white shadow rounded p-4">
                     <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
                         <BarChart3 size={16} className="text-blue-600" />
-                        Side-by-side Comparison
+                        Municipality Comparison
                     </p>
                     <p className="text-sm text-gray-400 mb-4">
                         {compMunicipality1} vs {compMunicipality2}
@@ -623,7 +623,7 @@ function Export() {
                 <div ref={chartRefs.municipalityDrilldown} className="bg-white shadow rounded p-4">
                     <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
                         <Search size={16} className="text-blue-600" />
-                        Municipality Drill-Down
+                        Municipality Breakdown
                     </p>
                     <p className="text-sm text-gray-400 mb-4">
                         {drilldownMunicipality}{drilldownYear !== 'ALL' ? ` · ${drilldownYear}` : ' · All Years'}
@@ -648,7 +648,7 @@ function Export() {
                 <div ref={chartRefs.topNRanking} className="bg-white shadow rounded p-4">
                     <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
                         <Trophy size={16} className="text-blue-600" />
-                        Top N Rankings
+                        Municipality Rankings
                     </p>
                     <p className="text-sm text-gray-400 mb-4">
                         Top {topN} municipalities by total requests
@@ -1082,7 +1082,7 @@ function Export() {
                                             <div>
                                                 <p className="text-sm text-gray-400">Top N</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setTopN(Number(e.target.value))} value={topN}>
-                                                    {[5, 10, 15, 20].map(n => <option key={n} value={n}>Top {n}</option>)}
+                                                    {[5, 10, 15, ,24].map(n => <option key={n} value={n}>Top {n}</option>)}
                                                 </select>
                                             </div>
                                             <div>
