@@ -107,7 +107,7 @@ function Analytics() {
         fetchDrilldownData()
     }, [drill_down_municipality, drill_down_year, drill_down_month])
     
-    const maxTotal = Math.max(...drilldown_data.map(d => d.total), 1)
+    const maxTotal = drilldown_data.reduce((sum, d) => sum + Number(d.total), 0) || 1
 
     // States for rankings section
         
