@@ -11,6 +11,12 @@ function Login() {
         day: 'numeric'
     })
 
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleLogin()
+        }
+    }
+
     const navigate = useNavigate()
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
@@ -77,6 +83,7 @@ function Login() {
                         autoComplete="off"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
+                        onKeyDown={handleKeyDown}
                     />
                     <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                     <div className="relative">
@@ -88,6 +95,7 @@ function Login() {
                             autoComplete="new-password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            onKeyDown={handleKeyDown}
                         />
                         <button
                             type="button"
