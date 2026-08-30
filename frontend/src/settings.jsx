@@ -132,6 +132,12 @@ function Settings() {
     }
 }
 
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSave()
+        }
+    }
+
     return (
         <Layout>
             <div className="w-full bg-white rounded-xl shadow p-8">
@@ -192,6 +198,7 @@ function Settings() {
                             className="w-full border border-gray-300 rounded px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={fullName}
                             onChange={(e) => setFullName(e.target.value)}
+                            onKeyDown={handleKeyDown}
                         />
                     </div>
                     <div>
@@ -200,6 +207,7 @@ function Settings() {
                             className="w-full border border-gray-300 rounded px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
+                            onKeyDown={handleKeyDown}
                         />
                     </div>
                     <div>
@@ -208,6 +216,7 @@ function Settings() {
                             className="w-full border border-gray-300 rounded px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            onKeyDown={handleKeyDown}
                         />
                     </div>
                     <div>
@@ -234,6 +243,7 @@ function Settings() {
                                 className="w-full border border-gray-300 rounded px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 value={currentPassword}
                                 onChange={(e) => setCurrentPassword(e.target.value)}
+                                onKeyDown={handleKeyDown}
                             />
                             <button
                                 type="button"
@@ -252,6 +262,7 @@ function Settings() {
                                 className="w-full border border-gray-300 rounded px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
+                                onKeyDown={handleKeyDown}
                             />
                             <button
                                 type="button"
@@ -270,6 +281,7 @@ function Settings() {
                                 className="w-full border border-gray-300 rounded px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
+                                onKeyDown={handleKeyDown}
                             />
                             <button
                                 type="button"
