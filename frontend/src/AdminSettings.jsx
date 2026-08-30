@@ -126,9 +126,15 @@ function AdminSettings() {
         }
     }
 
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+            handleSave()
+        }
+    }
+
     return (
         <AdminLayout>
-            <div className="w-full bg-white rounded-xl shadow p-8">
+            <div className="w-full bg-white rounded-xl shadow p-8" onKeyDown={handleKeyDown}>
                 <h2 className="text-lg font-semibold text-gray-700 mb-6">Personal Information</h2>
                 <div className="flex flex-col items-center mb-8">
                     <div className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden mb-3 border-2 border-gray-300">
