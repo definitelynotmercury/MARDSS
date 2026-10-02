@@ -300,7 +300,7 @@ def check_health():
     conn = get_db()
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM municipalities ORDER BY municipality_name ASC")
+        cursor.execute("SELECT 1 FROM municipalities")
         data = cursor.fetchall()
         cursor.close()
     finally:
