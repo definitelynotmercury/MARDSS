@@ -293,3 +293,16 @@ def test_mail():
         return jsonify({'message': 'Email sent successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@auth_bp.route('/health', methods=['GET'])
+def check_health():
+    conn = get_db()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM municipalities ORDER BY municipality_name ASC")
+        data = cursor.fetchall()
+        cursor.close()
+    finally:
+        conn.close()
+    return jsonify({'Health' : 'OK'})
