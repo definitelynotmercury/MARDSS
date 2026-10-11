@@ -292,7 +292,7 @@ function Dashboard() {
                             name={selectedLineType !== 'ALL' ? selectedLineType : 'Total Requests'}
                             stroke={lineColor}
                             strokeWidth={3}
-                            label={renderLabel}
+                            label={{ position: 'top', fill: '#555', fontSize: 12 }}
                         />
                     </LineChart>
                 </ResponsiveContainer>

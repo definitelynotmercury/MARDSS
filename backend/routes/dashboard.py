@@ -265,7 +265,6 @@ def get_dashboard_irregularities():
 def generate_narrative():
     data = request.get_json()
     kpi = data.get("kpi", {})
-    irregularities = data.get("irregularities", [])
     trend = data.get("trend", [])
     distribution_data = data.get("distributionData", [])
     bar_data = data.get("barData", [])
@@ -301,7 +300,7 @@ def generate_narrative():
     # --- Other chart summaries ---
     distribution_summary = [{"type": p["name"], "value": p["value"]} for p in distribution_data]
     bar_summary = [{"municipality": b["municipality_name"], "total": b["total"]} for b in bar_data[:5]]
-    irregularity_messages = [i["message"] for i in irregularities] if irregularities else ["None detected"]
+
 
     # --- KPI period label ---
     month_name = MONTH_NAMES[int(month) - 1] if month != "ALL" else None
@@ -329,7 +328,7 @@ def generate_narrative():
 
         Write a comprehensive but concise narrative (5-6 sentences) covering all sections of the dashboard based on the data below.
         Do not suggest actions or recommendations. Only describe what the data shows.
-        Structure your narrative: overall totals (scoped to {kpi_period}) → {trend_granularity}-over-{trend_granularity} trend (this trend panel has its own independent year filter, separate from {kpi_period}) → type distribution → geographic breakdown → irregularities.
+        Structure your narrative: overall totals (scoped to {kpi_period}) → {trend_granularity}-over-{trend_granularity} trend (this trend panel has its own independent year filter, separate from {kpi_period}) → type distribution → geographic breakdown
         Make sure to reflect the active filters in your narrative — if a specific type, year, or month is selected,
         describe only that context (e.g. "In March 2025..." rather than implying full-year totals when a month is set).
 
@@ -349,9 +348,6 @@ def generate_narrative():
 
         [Top Municipalities - Bar Chart]
         - {bar_summary}
-
-        [Irregularities]
-        - {irregularity_messages}
 
         Be specific with numbers and names. Keep it professional.
     """
