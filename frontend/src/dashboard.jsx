@@ -279,7 +279,7 @@ function Dashboard() {
                 <ResponsiveContainer width="100%" height={600} margin={{ top: 30, right: 30, left: 30, bottom: 30 }}>
                     <LineChart data={trendData}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey={trendData[0]?.month ? 'month' : 'year'} padding={{ left: 20, right: 20 }} />
+                        <XAxis dataKey={trendData[0]?.month ? 'month' : 'year'} padding={{ top:20, bottom:20, left: 20, right: 20 }} />
                         <YAxis />
                         <Tooltip
                             formatter={(value) => Number(value).toLocaleString()}
