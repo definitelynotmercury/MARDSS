@@ -164,7 +164,7 @@ function Export() {
 
     const years = []
     let y = 2023
-    while (y < new Date().getFullYear()) years.push(y++)
+    while (y <= new Date().getFullYear()) years.push(y++)
 
     const generateColors = (count) =>
         Array.from({ length: count }, (_, i) => `hsl(${(i * 360) / count}, 55%, 60%)`)
