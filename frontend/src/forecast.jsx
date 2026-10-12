@@ -180,9 +180,9 @@ function Forecast() {
                     <p className="text-xs text-gray-400 mt-1">Range: {forecastData.forecast[2]?.lower} – {forecastData.forecast[2]?.upper}</p>
                 </div>
                 <div className="bg-white shadow rounded p-4 border-l-4 border-blue-800">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Avg. Annual Growth Rate</p>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Avg. Monthly Growth Rate</p>
                     <h1 className="text-2xl font-bold text-gray-800 mt-1">+{forecastData.average_growth_rate.toFixed(2)}%</h1>
-                    <p className="text-xs text-gray-400 mt-1">Year-over-year</p>
+                    <p className="text-xs text-gray-400 mt-1">Month-over-month</p>
                 </div>
             </div>
 
