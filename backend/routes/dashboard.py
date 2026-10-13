@@ -2,11 +2,20 @@ from flask import Blueprint, jsonify, request
 import mysql.connector
 from config import DB_CONFIG, client
 from auth_utils import token_required
+import os
+from google.genai import errors
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
 MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+MODEL_FALLBACKS = [
+    "gemini-3.1-flash-lite",
+    "gemini-3.5-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-3.8-flash",
+]
 
 def get_db():
     return mysql.connector.connect(**DB_CONFIG)
@@ -259,6 +268,25 @@ def get_dashboard_irregularities():
     alerts.sort(key=lambda x: x.get('pct_change', x.get('pct_above', 0)), reverse=True)
     return jsonify(alerts[:6])
 
+def generate_with_fallback(prompt):          # NEW (whole function)
+    last_error = None
+
+    for model_name in MODEL_FALLBACKS:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt
+            )
+            return response.text
+        except errors.APIError as e:
+            last_error = e
+            if e.code in (429, 500, 503):
+                print(f"{model_name} failed ({e.code}), trying next model...")
+                continue
+            raise
+
+    raise last_error
+
 
 @dashboard_bp.route("/api/dashboard/narrative", methods=["POST"])
 @token_required
@@ -352,11 +380,15 @@ def generate_narrative():
         Be specific with numbers and names. Keep it professional.
     """
 
-    response = client.models.generate_content(
-        model="gemini-3.1-flash-lite",
-        contents=prompt
-    )
-    return jsonify({"narrative": response.text})
+    try:
+        narrative = generate_with_fallback(prompt)
+        return jsonify({"narrative": narrative})
+    except errors.APIError as e:
+        print(e)
+        return jsonify({
+            "narrative": None,
+            "error": "The AI service is busy right now. Please try again in a moment."
+        }), 503
 
 
 @dashboard_bp.route("/api/municipalities")
