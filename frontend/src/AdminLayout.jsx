@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useNavigate, useLocation } from "react-router-dom";
 import { Users, Upload, LogOut, UserCircle } from 'lucide-react';
 import { BASE_URL } from './config';
 
 function AdminLayout({ children }) {
+    const [showLogoutModal, setShowLogoutModal] = useState(false)
     const navigate = useNavigate()
     const location = useLocation()
     const user = JSON.parse(localStorage.getItem('user'))
@@ -27,36 +29,37 @@ function AdminLayout({ children }) {
     return (
         <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
             <div className="flex items-center gap-3 bg-gradient-to-r from-[#0B2E52] to-[#1967B8] shadow px-6 py-4 text-white shrink-0">
-                    <img src="/pswdologo.jpg" alt="MARDSS logo" className="h-14 w-14 rounded-full border-2 border-solid border-amber-500" />
-                    <div className="flex flex-col gap-1">
-                        <div>
-                            <span className="font-bold text-lg">MAR</span>
-                            <span className="font-bold text-lg text-[#E8B324]">DSS</span>
-                        </div>
-                        <span className="flex-1 text-center font-semibold">
-                            Provincial Social Welfare and Development Office — Admin
-                        </span>
+                <img src="/pswdologo.jpg" alt="MARDSS logo" className="h-14 w-14 rounded-full border-2 border-solid border-amber-500" />
+                <div className="flex flex-col gap-1">
+                    <div>
+                        <span className="font-bold text-lg">MAR</span>
+                        <span className="font-bold text-lg text-[#E8B324]">DSS</span>
                     </div>
+                    <span className="flex-1 text-center font-semibold">
+                        Provincial Social Welfare and Development Office — Admin
+                    </span>
+                </div>
 
-                    <div className="flex items-center gap-3 ml-auto">
-                        <div className="relative border border-white/40 rounded-full px-3 py-1 text-white text-lg">
-                            {formattedDate}
-                        </div>
-                        <div className="w-14 h-14 rounded-full bg-gray-200 overflow-hidden mb-3 border-2">
-                            {user?.profile_picture ? (
-                                <img
-                                    src={`${BASE_URL}/${user.profile_picture}`}
-                                    alt="Profile"
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-3xl">
-                                    👤
-                                </div>
-                            )}
-                        </div>
+                <div className="flex items-center gap-3 ml-auto">
+                    <div className="relative border border-white/40 rounded-full px-3 py-1 text-white text-lg">
+                        {formattedDate}
+                    </div>
+                    <div className="w-14 h-14 rounded-full bg-gray-200 overflow-hidden mb-3 border-2">
+                        {user?.profile_picture ? (
+                            <img
+                                src={`${BASE_URL}/${user.profile_picture}`}
+                                alt="Profile"
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400 text-3xl">
+                                👤
+                            </div>
+                        )}
                     </div>
                 </div>
+            </div>
+
             {/* Main content */}
             <div className="flex-1 flex min-h-0">
                 {/* Sidebar */}
@@ -64,23 +67,20 @@ function AdminLayout({ children }) {
                     <nav className="flex flex-col flex-1 px-2 gap-1 mt-2">
                         {navItems.map((item) => {
                             const Icon = item.icon;
-                            return(
+                            return (
                                 <button key={item.path}
                                     onClick={() => navigate(item.path)}
                                     className={`flex items-center gap-3 text-left px-4 py-2 rounded text-sm border-l-4 ${
-                                    location.pathname === item.path
-                                        ? 'bg-blue-950/60 border-amber-500 text-white'
-                                        : 'border-transparent text-gray-300 hover:bg-gray-700'
-                                }`}
+                                        location.pathname === item.path
+                                            ? 'bg-blue-950/60 border-amber-500 text-white'
+                                            : 'border-transparent text-gray-300 hover:bg-gray-700'
+                                    }`}
                                 >
                                     <Icon size={18} />
                                     {item.label}
                                 </button>
-                                
                             )
-                        }
-                            
-                        )}
+                        })}
                     </nav>
                     <button
                         onClick={() => navigate('/admin/settings')}
@@ -94,18 +94,45 @@ function AdminLayout({ children }) {
                         My Profile
                     </button>
                     <button
-                        onClick={handleLogout}
+                        onClick={() => setShowLogoutModal(true)}
                         className="flex items-center gap-3 text-gray-400 text-sm px-4 py-2 rounded hover:bg-gray-700 hover:text-white text-left"
                     >
-                       <LogOut size={18} />
+                        <LogOut size={18} />
                         Logout
                     </button>
                 </div>
-                
+
                 <div className="p-6 flex-1 overflow-y-auto min-h-0">
                     {children}
                 </div>
             </div>
+
+            {/* Logout confirmation modal */}
+            {showLogoutModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+                    <div className="bg-white rounded-lg shadow-lg p-6 w-96 text-gray-700">
+                        <h2 className="text-lg font-bold text-[#0B2E52]">Log out?</h2>
+                        <p className="text-sm text-gray-500 mt-2">
+                            Are you sure you want to log out?
+                        </p>
+
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button
+                                onClick={() => setShowLogoutModal(false)}
+                                className="px-4 py-2 rounded text-sm bg-gray-200 text-gray-700 hover:bg-gray-300"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleLogout}
+                                className="px-4 py-2 rounded text-sm bg-red-600 text-white hover:bg-red-700"
+                            >
+                                Log out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
