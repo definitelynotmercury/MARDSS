@@ -3,10 +3,23 @@ import mysql.connector
 from datetime import date
 from config import DB_CONFIG, client
 from auth_utils import token_required
+import os
+from google.genai import errors
+
+
+MODEL_FALLBACKS = [
+    "gemini-3.1-flash-lite",
+    "gemini-3.5-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-3.8-flash",
+]
+
+
 analytics_bp = Blueprint('analytics',__name__)
 
 def get_db():
     return mysql.connector.connect(**DB_CONFIG)
+
 
 
 @analytics_bp.route('/api/analytics/comparison')
@@ -165,6 +178,28 @@ def n_rankings():
     final = final[:top_n]
     return jsonify(final)
 
+
+def generate_with_fallback(prompt):
+    last_error = None
+
+    for model_name in MODEL_FALLBACKS:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt
+            )
+            return response.text
+        except errors.APIError as e:
+            last_error = e
+            if e.code in (429, 500, 503):
+                print(f"{model_name} failed ({e.code}), trying next model...")
+                continue
+            raise
+
+    raise last_error
+
+
+
 @analytics_bp.route('/api/analytics/narrative', methods=['POST'])
 def generate_narrative():
     data = request.get_json()
@@ -191,11 +226,15 @@ def generate_narrative():
 
         Be specific, mention actual numbers and names. Keep it professional and concise.
         """
-    response = client.models.generate_content(
-        model="gemini-3.1-flash-lite",
-        contents=prompt
-    )
-    return jsonify({"narrative": response.text})
+    try:
+        narrative = generate_with_fallback(prompt)
+        return jsonify({"narrative": narrative})
+    except errors.APIError as e:
+        print(e)
+        return jsonify({
+            "narrative": None,
+            "error": "The AI service is busy right now. Please try again in a moment."
+        }), 503
 
 @analytics_bp.route('/api/analytics/latest_month')
 @token_required

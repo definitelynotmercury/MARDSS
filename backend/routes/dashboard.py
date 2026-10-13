@@ -268,7 +268,7 @@ def get_dashboard_irregularities():
     alerts.sort(key=lambda x: x.get('pct_change', x.get('pct_above', 0)), reverse=True)
     return jsonify(alerts[:6])
 
-def generate_with_fallback(prompt):          # NEW (whole function)
+def generate_with_fallback(prompt):
     last_error = None
 
     for model_name in MODEL_FALLBACKS:
