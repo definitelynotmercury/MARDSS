@@ -8,11 +8,20 @@ from sklearn.linear_model import LinearRegression
 from datetime import date
 import matplotlib.pyplot as plt
 from auth_utils import token_required
+import os
+from google.genai import errors
 
 forecast_bp = Blueprint('forecast', __name__)
 
 MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+MODEL_FALLBACKS = [
+    "gemini-3.1-flash-lite",
+    "gemini-3.5-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-3.8-flash",
+]
 
 def get_db():
     return mysql.connector.connect(**DB_CONFIG)
@@ -151,6 +160,25 @@ def predict():
                 
 
 
+def generate_with_fallback(prompt):
+    last_error = None
+
+    for model_name in MODEL_FALLBACKS:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt
+            )
+            return response.text
+        except errors.APIError as e:
+            last_error = e
+            if e.code in (429, 500, 503):
+                print(f"{model_name} failed ({e.code}), trying next model...")
+                continue
+            raise
+
+    raise last_error
+
 
 @forecast_bp.route('/api/forecast/narrative', methods=['POST'])
 @token_required
@@ -176,10 +204,12 @@ def generate_narrative():
         -95% confidence intervals for the forecasts: can also be found in {forecast}
         
         """
-    response = client.models.generate_content(
-        model="gemini-3.1-flash-lite",
-        contents=prompt
-    )
-    
-
-    return jsonify({"narrative": response.text})
+    try:
+        narrative = generate_with_fallback(prompt)
+        return jsonify({"narrative": narrative})
+    except errors.APIError as e:
+        print(e)
+        return jsonify({
+                "narrative": None,
+                "error": "The AI service is busy right now. Please try again in a moment."
+        }), 503
