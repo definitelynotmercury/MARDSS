@@ -17,12 +17,6 @@ MODEL_FALLBACKS = [
     "gemini-3.8-flash",
 ]
 
-SPIKE_PCT = 100          # flag if same-month-last-year at least doubled
-MIN_VOLUME = 10          # ignore tiny monthly counts (percentages are noise)
-RECENT_MONTHS = 3        # only alert on the latest N months with data
-MUNI_MULTIPLIER = 2.5    # municipality must be >= 2.5x the average for a type
-MUNI_MIN_VOLUME = 10
-MAX_ALERTS = 6
 
 def get_db():
     return mysql.connector.connect(**DB_CONFIG)
@@ -192,121 +186,6 @@ def get_dashboard_barchart():
 
     return jsonify(data)
 
-
-def recent_periods(latest_year, latest_month, n):
-    """Return the last n (year, month) pairs ending at the latest one.
-    Handles the January -> December rollover into the previous year."""
-    periods = []
-    y, m = latest_year, latest_month
-    for _ in range(n):
-        periods.append((y, m))
-        m -= 1
-        if m == 0:
-            m = 12
-            y -= 1
-    return periods
- 
- 
-@dashboard_bp.route("/api/dashboard/irregularities")
-@token_required
-def get_dashboard_irregularities():
-    conn = get_db()
-    try:
-        cursor = conn.cursor(dictionary=True)
- 
-        # Query 1: totals per type per month (for the YoY spike rule)
-        cursor.execute("""
-            SELECT a.type_name, r.year, r.month, SUM(r.request_count) AS total
-            FROM assistance_records r
-            JOIN assistance_types a ON r.assistance_type_id = a.type_id
-            GROUP BY a.type_id, a.type_name, r.year, r.month
-        """)
-        monthly_rows = cursor.fetchall()
- 
-        # Query 2: totals per municipality per type (for the above-average rule)
-        cursor.execute("""
-            SELECT m.municipality_name, a.type_name, SUM(r.request_count) AS total
-            FROM assistance_records r
-            JOIN assistance_types a ON r.assistance_type_id = a.type_id
-            JOIN municipalities m ON r.municipality_id = m.municipality_id
-            GROUP BY m.municipality_id, m.municipality_name, a.type_id, a.type_name
-        """)
-        municipality_data = cursor.fetchall()
-        cursor.close()
-    finally:
-        conn.close()
- 
-    alerts = []
- 
-    # ── Rule 1: same-month-last-year spike ──────────────────────────
-    # Reshape: {type_name: {(year, month): total}}
-    by_type = {}
-    for row in monthly_rows:
-        key = (int(row['year']), int(row['month']))
-        by_type.setdefault(row['type_name'], {})[key] = int(row['total'] or 0)
- 
-    if monthly_rows:
-        latest_year, latest_month = max(
-            (int(r['year']), int(r['month'])) for r in monthly_rows
-        )
-        window = recent_periods(latest_year, latest_month, RECENT_MONTHS)
- 
-        for type_name, series in by_type.items():
-            for (year, month) in window:
-                curr = series.get((year, month))
-                prev = series.get((year - 1, month))   # exact same month, last year
- 
-                if curr is None or prev is None or prev == 0:
-                    continue                            # no comparison possible
-                if curr < MIN_VOLUME:
-                    continue                            # too small to be meaningful
- 
-                pct_change = (curr - prev) / prev * 100
-                if pct_change >= SPIKE_PCT:
-                    month_name = MONTH_NAMES[month - 1]
-                    alerts.append({
-                        "type": "yoy_spike",
-                        "type_name": type_name,
-                        "year": year,
-                        "month": month_name,
-                        "prev_year": year - 1,
-                        "prev_total": prev,
-                        "curr_total": curr,
-                        "pct_change": round(pct_change, 1),
-                        "message": (
-                            f"{type_name} requests in {month_name} {year} rose from "
-                            f"{prev} to {curr} (+{pct_change:.1f}%) compared with "
-                            f"{month_name} {year - 1}."
-                        )
-                    })
- 
-    # ── Rule 2: above-average municipality (unchanged logic) ───────
-    type_muni = {}
-    for row in municipality_data:
-        type_muni.setdefault(row["type_name"], []).append(
-            (row['municipality_name'], int(row['total'] or 0))
-        )
- 
-    for type_name, muni_list in type_muni.items():
-        avg = sum(total for _, total in muni_list) / len(muni_list)
-        for muni_name, muni_total in muni_list:
-            if muni_total >= avg * MUNI_MULTIPLIER and muni_total >= MUNI_MIN_VOLUME:
-                pct_above = round(((muni_total / avg) - 1) * 100, 1)
-                alerts.append({
-                    "type": "above_average",
-                    "type_name": type_name,
-                    "municipality": muni_name,
-                    "muni_total": muni_total,
-                    "provincial_avg": round(avg, 1),
-                    "pct_above": pct_above,
-                    "message": (
-                        f"Above-average {type_name} demand in {muni_name}. "
-                        f"Requests up {pct_above}% vs. provincial average."
-                    )
-                })
- 
-    alerts.sort(key=lambda x: x.get('pct_change', x.get('pct_above', 0)), reverse=True)
-    return jsonify(alerts[:MAX_ALERTS])
 
 def generate_with_fallback(prompt):
     last_error = None
