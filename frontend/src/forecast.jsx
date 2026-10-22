@@ -1,285 +1,239 @@
-import Layout from "./Layout";
-import { getToken } from "./auth";
+import Layout from './Layout'
 import { useState, useEffect } from 'react'
-import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts'
-import { TrendingUp, FileText } from 'lucide-react'
-import { BASE_URL } from './config';
-const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-        const order = ['historical', 'upper', 'projected', 'lower']
-        const sorted = order
-            .map(name => payload.find(e => e.name === name))
-            .filter(Boolean)
-        return (
-            <div className="bg-white border border-gray-200 rounded p-2 text-sm">
-                <p className="font-semibold">{label}</p>
-                {sorted.map((entry) => (
-                    <p key={entry.name} style={{ color: entry.color }}>
-                        {entry.name}: {entry.value}
-                    </p>
-                ))}
-            </div>
-        )
-    }
-    return null
+import { ResponsiveContainer, ComposedChart, Line, Area, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ReferenceLine } from 'recharts'
+import { TrendingUp, Table2, CalendarRange, Gauge } from 'lucide-react'
+import { apiGet, apiPost } from './api'
+import { formatNumber, CHART, axisProps } from './uiUtils'
+import {
+    PageHeader, Card, CardHeader, FilterSelect, KpiCard, TrendBadge, ChartState, NarrativePanel,
+} from './ui'
+
+const SERIES_LABELS = {
+    total: 'Historical',
+    future_prediction: 'Projected',
+    band: 'Confidence range',
 }
 
+function ForecastTooltip({ active, payload, label }) {
+    if (!active || !payload?.length) return null
+    const row = payload[0].payload
+    const isProjected = row.total == null
+    return (
+        <div className="flex min-w-[10rem] flex-col gap-1 rounded-lg border border-gray-200 bg-white p-3 text-xs shadow-md">
+            <p className="font-semibold text-gray-800">{label}</p>
+            {isProjected ? (
+                <>
+                    <p className="flex justify-between gap-4"><span className="text-gray-500">Projected</span><span className="font-semibold tabular-nums">{formatNumber(row.future_prediction)}</span></p>
+                    <p className="flex justify-between gap-4"><span className="text-gray-500">Range</span><span className="tabular-nums">{formatNumber(row.lower)} – {formatNumber(row.upper)}</span></p>
+                </>
+            ) : (
+                <p className="flex justify-between gap-4"><span className="text-gray-500">Actual</span><span className="font-semibold tabular-nums">{formatNumber(row.total)}</span></p>
+            )}
+        </div>
+    )
+}
 
 function Forecast() {
-
     const [municipalities, setMunicipalities] = useState([])
     const [types, setTypes] = useState([])
     const [selectedMunicipality, setSelectedMunicipality] = useState('ALL')
     const [selectedType, setSelectedType] = useState('ALL')
 
-    const [forecastData, setForecastData] = useState({
-    timeline: [],
-    forecast: [],
-    average_growth_rate: 0
-    })
+    const [forecastData, setForecastData] = useState({ timeline: [], forecast: [], average_growth_rate: 0 })
+    const [loading, setLoading] = useState(true)
 
-    const months = [
-    { label: 'Jan', value: 1 },
-    { label: 'Feb', value: 2 },
-    { label: 'Mar', value: 3 },
-    { label: 'Apr', value: 4 },
-    { label: 'May', value: 5 },
-    { label: 'Jun', value: 6 },
-    { label: 'Jul', value: 7 },
-    { label: 'Aug', value: 8 },
-    { label: 'Sep', value: 9 },
-    { label: 'Oct', value: 10 },
-    { label: 'Nov', value: 11 },
-    { label: 'Dec', value: 12 },
-    ]
-
-    //narrative
-    const[narrative,setNarrative] = useState('')
+    const [narrative, setNarrative] = useState('')
     const [narrativeLoading, setNarrativeLoading] = useState(false)
+    const [narrativeError, setNarrativeError] = useState('')
+
+    const [showHistory, setShowHistory] = useState(false)
 
     useEffect(() => {
-        const token = getToken()
-        const fetchdata = async() => {
-            const response1 = await fetch(`${BASE_URL}/api/municipalities`,{
-                'headers': {
-                    'Authorization': `Bearer ${token}`
-                }
+        Promise.all([apiGet('/api/municipalities'), apiGet('/api/assistance_types')])
+            .then(([muni, typeList]) => {
+                setMunicipalities(muni)
+                setTypes(typeList)
             })
-            const muni_data = await response1.json()
-            setMunicipalities(muni_data)
-
-            const response2 = await fetch(`${BASE_URL}/api/assistance_types`,{
-                'headers': {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            const type_data = await response2.json()
-            setTypes(type_data)
-
-        }
-        fetchdata()
+            .catch(err => console.error(err))
     }, [])
 
     useEffect(() => {
-        const fetchForecastData = async() => {
-            const token = getToken()
-            const response = await fetch(`${BASE_URL}/api/forecast/predict?municipality=${selectedMunicipality}&type=${selectedType}`,{
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            const data = await response.json()
-            setForecastData(data)
-        }
-        fetchForecastData()
-    }, [selectedMunicipality, selectedType])
-
-    const generateNarrative = async() => {
-        const token = getToken()
-        setNarrativeLoading(true)
-        const response = await fetch(`${BASE_URL}/api/forecast/narrative`, {
-            method: 'POST',
-            headers:{ 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                forecastData,
-                selectedMunicipality,
-                selectedType
+        let cancelled = false
+        setLoading(true)
+        apiGet(`/api/forecast/predict?municipality=${encodeURIComponent(selectedMunicipality)}&type=${encodeURIComponent(selectedType)}`)
+            .then(data => {
+                if (cancelled) return
+                setForecastData({
+                    timeline: data?.timeline ?? [],
+                    forecast: data?.forecast ?? [],
+                    average_growth_rate: Number(data?.average_growth_rate ?? 0),
                 })
             })
-        const data = await response.json()
-        setNarrative(data.narrative)
-        setNarrativeLoading(false)
+            .catch(() => { if (!cancelled) setForecastData({ timeline: [], forecast: [], average_growth_rate: 0 }) })
+            .finally(() => { if (!cancelled) setLoading(false) })
+        return () => { cancelled = true }
+    }, [selectedMunicipality, selectedType])
+
+    const generateNarrative = async () => {
+        setNarrativeLoading(true)
+        setNarrative('')
+        setNarrativeError('')
+        try {
+            const data = await apiPost('/api/forecast/narrative', { forecastData, selectedMunicipality, selectedType })
+            setNarrative(data.narrative)
+        } catch {
+            setNarrativeError('Unable to generate a narrative right now. Please try again.')
+        } finally {
+            setNarrativeLoading(false)
         }
-    
+    }
 
-        const lastTotal = forecastData.timeline[forecastData.timeline.length-1]?.total
-        const chartData = [
-            ...forecastData.timeline.map((row,i) =>({
-                label: row.label,
-                total: row.total,
-                future_prediction: i === forecastData.timeline.length-1 ? lastTotal :null
-            })),
-            ...forecastData.forecast.map((row)=>({
-                label: row.label,
-                future_prediction: row.future_prediction,
-                lower : row.lower,
-                upper : row.upper
-            }))
-        ]
-        console.log(chartData)
-    
+    const { timeline, forecast, average_growth_rate } = forecastData
+    const lastActual = timeline[timeline.length - 1]
+    const chartData = [
+        ...timeline.map((row, i) => ({
+            label: row.label,
+            total: row.total,
+            future_prediction: i === timeline.length - 1 ? row.total : null,
+            band: i === timeline.length - 1 ? [row.total, row.total] : null,
+        })),
+        ...forecast.map(row => ({
+            label: row.label,
+            future_prediction: row.future_prediction,
+            lower: row.lower,
+            upper: row.upper,
+            band: [row.lower, row.upper],
+        })),
+    ]
 
-    const renderEndLabel = (dataKey) => ({ x, y, value }) => {
-    if (value == null) return null;
-    const colors = { historical: '#8884d8', projected: '#82ca9d', upper: '#ff7300', lower: '#ff7300' }
-    const offsets = { historical: -10, projected: -10, upper: -20, lower: 5 }
+    const historyRows = showHistory ? timeline : timeline.slice(-6)
+    const scopeLabel = [
+        selectedMunicipality === 'ALL' ? 'All municipalities' : selectedMunicipality,
+        selectedType === 'ALL' ? 'all assistance types' : selectedType,
+    ].join(' · ')
+
     return (
-        <text x={x} y={y + offsets[dataKey]} fontSize={11} fontWeight={600} textAnchor="middle" fill={colors[dataKey]}>
-            {value.toLocaleString()}
-        </text>
-        );
-    };
-
-    return(
         <Layout>
-            <div className="flex items-center justify-between mb-4">
-                <h1 className="text-xl font-bold text-gray-700">Forecasting</h1>
-                <div className="flex gap-3 items-center">
-                    <select className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white shadow-sm" value={selectedType} onChange={(e) => setSelectedType(e.target.value)}>
-                        <option value="ALL">All Types</option>
-                        {types.map((t) => (
-                                    <option key={t.type_id} value={t.type_name}>{t.type_name}</option>
-                            ))}
-                    </select>
+            <PageHeader title="Forecasting" description={`Projected medical assistance demand for ${scopeLabel}.`}>
+                <FilterSelect id="fc-type" label="Assistance type" value={selectedType} onChange={e => setSelectedType(e.target.value)}>
+                    <option value="ALL">All types</option>
+                    {types.map(t => <option key={t.type_id} value={t.type_name}>{t.type_name}</option>)}
+                </FilterSelect>
+                <FilterSelect id="fc-muni" label="Municipality / city" value={selectedMunicipality} onChange={e => setSelectedMunicipality(e.target.value)}>
+                    <option value="ALL">All municipalities</option>
+                    {municipalities.map(m => <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>)}
+                </FilterSelect>
+            </PageHeader>
 
-                    <select className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white shadow-sm" value={selectedMunicipality} onChange={(e) => setSelectedMunicipality(e.target.value)}>
-                        <option value="ALL">All Municipalities/Cities</option>
-                        {municipalities.map((m) => (
-                            <option key={m.municipality_id} value={m.municipality_name}>
-                                {m.municipality_name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {[0, 1, 2].map(i => {
+                    const f = forecast[i]
+                    return (
+                        <KpiCard
+                            key={i}
+                            accent={i === 0}
+                            icon={CalendarRange}
+                            loading={loading}
+                            label={f ? `${f.month} ${f.year} projection` : `Month ${i + 1} projection`}
+                            value={formatNumber(f?.future_prediction)}
+                            hint={f ? `Range ${formatNumber(f.lower)} – ${formatNumber(f.upper)}` : null}
+                        />
+                    )
+                })}
+                <KpiCard
+                    icon={Gauge}
+                    loading={loading}
+                    label="Avg. monthly growth"
+                    value={`${average_growth_rate >= 0 ? '+' : ''}${average_growth_rate.toFixed(2)}%`}
+                    badge={<TrendBadge value={Number(average_growth_rate.toFixed(2))} />}
+                    hint="month-over-month"
+                />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white shadow rounded p-4 border-l-4 border-blue-600">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{forecastData.forecast[0]?.month} {forecastData.forecast[0]?.year} Projection</p>
-                    <h1 className="text-2xl font-bold text-gray-800 mt-1">{forecastData.forecast[0]?.future_prediction}</h1>
-                    <p className="text-xs text-gray-400 mt-1">Range: {forecastData.forecast[0]?.lower} – {forecastData.forecast[0]?.upper}</p>
-                </div>
-                <div className="bg-white shadow rounded p-4 border-l-4 border-yellow-500">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{forecastData.forecast[1]?.month} {forecastData.forecast[1]?.year} Projection</p>
-                    <h1 className="text-2xl font-bold text-gray-800 mt-1">{forecastData.forecast[1]?.future_prediction}</h1>
-                    <p className="text-xs text-gray-400 mt-1">Range: {forecastData.forecast[1]?.lower} – {forecastData.forecast[1]?.upper}</p>
-                </div>
-                <div className="bg-white shadow rounded p-4 border-l-4 border-blue-600">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{forecastData.forecast[2]?.month} {forecastData.forecast[2]?.year} Projection</p>
-                    <h1 className="text-2xl font-bold text-gray-800 mt-1">{forecastData.forecast[2]?.future_prediction}</h1>
-                    <p className="text-xs text-gray-400 mt-1">Range: {forecastData.forecast[2]?.lower} – {forecastData.forecast[2]?.upper}</p>
-                </div>
-                <div className="bg-white shadow rounded p-4 border-l-4 border-blue-800">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Avg. Monthly Growth Rate</p>
-                    <h1 className="text-2xl font-bold text-gray-800 mt-1">+{forecastData.average_growth_rate.toFixed(2)}%</h1>
-                    <p className="text-xs text-gray-400 mt-1">Month-over-month </p>
-                </div>
-            </div>
+            <Card className="mb-6">
+                <CardHeader
+                    icon={TrendingUp}
+                    title="Demand forecast"
+                    description={lastActual ? `Actuals through ${lastActual.label}, followed by projected demand with a confidence range` : 'Actuals followed by projected demand with a confidence range'}
+                />
+                <ChartState loading={loading} empty={!chartData.length} height={420}>
+                    <ResponsiveContainer width="100%" height={420}>
+                        <ComposedChart data={chartData} margin={{ top: 16, right: 24, left: 0, bottom: 0 }}>
+                            <CartesianGrid stroke={CHART.grid} vertical={false} />
+                            <XAxis dataKey="label" minTickGap={24} {...axisProps} />
+                            <YAxis tickFormatter={formatNumber} width={56} {...axisProps} axisLine={false} />
+                            <Tooltip content={<ForecastTooltip />} cursor={{ stroke: CHART.muted }} />
+                            <Legend verticalAlign="top" align="right" height={32} iconType="plainline" wrapperStyle={{ fontSize: 12 }} formatter={key => SERIES_LABELS[key] ?? key} />
+                            {lastActual && <ReferenceLine x={lastActual.label} stroke={CHART.muted} strokeDasharray="4 4" label={{ value: 'Forecast →', position: 'insideTopRight', fill: CHART.axis, fontSize: 11 }} />}
+                            <Area dataKey="band" name="band" stroke="none" fill={CHART.amber} fillOpacity={0.18} isAnimationActive={false} activeDot={false} />
+                            <Line dataKey="total" name="total" stroke={CHART.navy} strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                            <Line dataKey="future_prediction" name="future_prediction" stroke={CHART.amber} strokeWidth={2.5} strokeDasharray="6 4" dot={{ r: 3, fill: CHART.amber }} activeDot={{ r: 5 }} />
+                        </ComposedChart>
+                    </ResponsiveContainer>
+                </ChartState>
+            </Card>
 
-            <div className="bg-white shadow rounded p-4 mb-6">
-                <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp className="w-4 h-4 text-blue-600" />
-                    <p className="font-semibold text-gray-700">Demand Forecast</p>
-                </div>
-                <p className="text-sm text-gray-400 mb-4">Historical data (solid line) and projections (dashed line) with confidence range</p>
-                <ResponsiveContainer width="100%" height={600}>
-                    <LineChart data={chartData} margin={{ top: 30, right: 20, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" />
-                        <YAxis />
-                        <Line dataKey="total" stroke="#8884d8" strokeWidth={2} dot={false} label={renderEndLabel('historical')} />
-                        <Line dataKey="future_prediction"  stroke="#82ca9d" strokeWidth={2} strokeDasharray="5 5" dot={false} label={renderEndLabel('projected')}/> 
-                        <Line dataKey="upper" stroke="#ff7300" strokeWidth={1} strokeDasharray="3 3" dot={false} label={renderEndLabel('upper')}/>
-                        <Line dataKey="lower" stroke="#ff7300" strokeWidth={1} strokeDasharray="3 3" dot={false} label={renderEndLabel('lower')} />
-                        <Tooltip content={<CustomTooltip />} />
-                    </LineChart>
-                </ResponsiveContainer>
-            </div>
-
-            <div className="bg-white shadow rounded p-4">
-                <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp className="w-4 h-4 text-blue-600" />
-                    <p className="font-semibold text-gray-700">Forecast Data</p>
-                </div>
-                <p className="text-sm text-gray-400 mb-4">Yearly breakdown with confidence intervals</p>
-
-                <div className="overflow-x-auto">
+            <Card className="mb-6">
+                <CardHeader icon={Table2} title="Forecast data" description="Monthly actuals and projections with confidence bounds">
+                    {timeline.length > 6 && (
+                        <button
+                            type="button"
+                            onClick={() => setShowHistory(v => !v)}
+                            className="h-9 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                        >
+                            {showHistory ? 'Show recent only' : `Show all ${timeline.length} historical months`}
+                        </button>
+                    )}
+                </CardHeader>
+                <div className="max-h-[28rem] overflow-auto rounded-lg border border-gray-200">
                     <table className="w-full text-sm">
-                        <thead>
-                            <tr className="text-left text-gray-500 border-b">
-                                <th className="px-4 py-2">Year</th>
-                                <th className="px-4 py-2">Month</th>
-                                <th className="px-4 py-2">Projected Requests</th>
-                                <th className="px-4 py-2">Lower Bound</th>
-                                <th className="px-4 py-2">Upper Bound</th>
-                                <th className="px-4 py-2">Type</th>
+                        <thead className="sticky top-0 bg-gray-50">
+                            <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                <th scope="col" className="px-4 py-2.5">Period</th>
+                                <th scope="col" className="px-4 py-2.5 text-right">Requests</th>
+                                <th scope="col" className="px-4 py-2.5 text-right">Lower bound</th>
+                                <th scope="col" className="px-4 py-2.5 text-right">Upper bound</th>
+                                <th scope="col" className="px-4 py-2.5">Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {forecastData.timeline.map((item,i) => (
-                                <tr key={i} className="border-b">
-                                    <td className="px-4 py-2 font-medium text-gray-700">{item.year}</td>
-                                    <td className="px-4 py-2">{item.month}</td>
-                                    <td className="px-4 py-2">{forecastData.timeline[i]?.total}</td>
-                                    <td className="px-4 py-2 text-gray-400">—</td>
-                                    <td className="px-4 py-2 text-gray-400">—</td>
-                                    <td className="px-4 py-2">
-                                        <span className="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold uppercase">
-                                            Historical
-                                        </span>
+                            {historyRows.map((item, i) => (
+                                <tr key={`h-${item.year}-${item.month}-${i}`} className="border-t border-gray-100">
+                                    <td className="px-4 py-2.5 font-medium text-gray-700">{item.month} {item.year}</td>
+                                    <td className="px-4 py-2.5 text-right tabular-nums">{formatNumber(item.total)}</td>
+                                    <td className="px-4 py-2.5 text-right text-gray-400">—</td>
+                                    <td className="px-4 py-2.5 text-right text-gray-400">—</td>
+                                    <td className="px-4 py-2.5">
+                                        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">Actual</span>
                                     </td>
                                 </tr>
                             ))}
-                            {forecastData.forecast.map((item, i) => (
-                                <tr key={i} className="border-b bg-yellow-50">
-                                    <td className="px-4 py-2 font-medium text-gray-700">{item.year}</td>
-                                    <td className="px-4 py-2">{item.month}</td>
-                                    <td className="px-4 py-2 font-semibold text-gray-800">{forecastData.forecast[i]?.future_prediction}</td>
-                                    <td className="px-4 py-2">{forecastData.forecast[i]?.lower}</td>
-                                    <td className="px-4 py-2">{forecastData.forecast[i]?.upper}</td>
-                                    <td className="px-4 py-2">
-                                        <span className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-semibold uppercase">
-                                            Projected
-                                        </span>
+                            {forecast.map((item, i) => (
+                                <tr key={`f-${item.year}-${item.month}-${i}`} className="border-t border-amber-100 bg-amber-50/50">
+                                    <td className="px-4 py-2.5 font-medium text-gray-800">{item.month} {item.year}</td>
+                                    <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-gray-900">{formatNumber(item.future_prediction)}</td>
+                                    <td className="px-4 py-2.5 text-right tabular-nums text-gray-600">{formatNumber(item.lower)}</td>
+                                    <td className="px-4 py-2.5 text-right tabular-nums text-gray-600">{formatNumber(item.upper)}</td>
+                                    <td className="px-4 py-2.5">
+                                        <span className="rounded-full bg-brand-amber/25 px-2.5 py-0.5 text-xs font-semibold text-amber-800">Projected</span>
                                     </td>
                                 </tr>
                             ))}
+                            {!loading && !historyRows.length && !forecast.length && (
+                                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">No forecast data for the selected filters.</td></tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
+            </Card>
 
-            </div>
-
-            <div className="bg-white shadow rounded p-4 mt-6 border-l-4 border-yellow-500">
-                <div className="flex items-center gap-2 mb-1">
-                    <FileText className="w-4 h-4 text-yellow-600" />
-                    <p className="font-semibold text-gray-700">Narrative Output</p>
-                </div>
-                {!narrative && !narrativeLoading && (
-                    <p className="text-sm text-gray-400 mb-4">
-                        Click the button to generate an AI-powered narrative based on current dashboard data.
-                    </p>
-                )}
-                {narrativeLoading && <p className="text-sm text-gray-400">Generating narrative...</p>}
-                {narrative && !narrativeLoading && <p className="text-sm text-gray-700 mb-4 leading-relaxed">{narrative}</p>}
-                <button
-                    onClick={generateNarrative}
-                    disabled={narrativeLoading}
-                    className="bg-blue-600 text-white px-4 py-2 rounded text-sm mt-2 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {narrativeLoading ? 'Generating...' : 'Generate Narrative'}
-                </button>
-            </div>
+            <NarrativePanel
+                narrative={narrative}
+                loading={narrativeLoading}
+                error={narrativeError}
+                onGenerate={generateNarrative}
+                scope="the forecast for the selected filters"
+            />
         </Layout>
     )
 }
