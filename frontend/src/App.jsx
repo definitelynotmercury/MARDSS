@@ -1,5 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Login from './Login'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Dashboard from './dashboard'
 import Analytics from './analytics'
 import Forecast from './forecast'
@@ -19,7 +18,8 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<Login />} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/login" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                 <Route path="/forecast" element={<ProtectedRoute><Forecast /></ProtectedRoute>} />

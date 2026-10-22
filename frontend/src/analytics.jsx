@@ -39,10 +39,6 @@ function Analytics() {
     const [types, setTypes] = useState([])
 
     useEffect(() => {
-        if (!getToken()) {
-            window.location.href = '/login'
-            return
-        }
         Promise.all([apiGet('/api/municipalities'), apiGet('/api/assistance_types')])
             .then(([muni, typeList]) => {
                 setMunicipalities(muni)
