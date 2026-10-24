@@ -76,9 +76,9 @@ function Dashboard() {
                 `${BASE_URL}/api/assistance_types?category=${selectedCategory}`,
                 {headers: { 'Authorization': `Bearer ${token}` } }
             )
-            setTypes(await typeRes.json())
+            setTypes(await res.json())
         }
-        fetchTypes
+        fetchTypes()
     },[selectedCategory])
 
 /* 
