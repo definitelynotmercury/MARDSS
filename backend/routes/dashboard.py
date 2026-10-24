@@ -427,7 +427,7 @@ def get_type_totals():
 @dashboard_bp.route("/api/dashboard/distribution")
 @token_required
 def get_distribution_data():
-    selected_type = request.args.get("type", "ALL")
+    category = request.args.get("category", "ALL")
     year = request.args.get("year", "ALL")
     month = request.args.get("month", "ALL")
 
@@ -438,9 +438,9 @@ def get_distribution_data():
         filters.append("r.year = %s")
         params.append(int(year))
 
-    if selected_type != "ALL":
-        filters.append("a.type_name = %s")
-        params.append(selected_type)
+    if category != "ALL":
+        filters.append("a.category_id = %s")
+        params.append(int(category))
 
     if month != "ALL":
         filters.append("r.month = %s")
@@ -452,22 +452,31 @@ def get_distribution_data():
     try:
         cursor = conn.cursor(dictionary=True)
 
-        cursor.execute(f"""
-            SELECT a.type_name, SUM(r.request_count) AS total
+        if category == 'ALL':
+            cursor.execute(f"""
+            SELECT c.category_name AS name, SUM(r.request_count) AS total
             FROM assistance_records r
             JOIN assistance_types a ON r.assistance_type_id = a.type_id
+            JOIN category c ON a.category_id = c.category_id
             {where_clause}
-            GROUP BY a.type_name
+            GROUP BY c.category_id
             ORDER BY total DESC
-        """, params)
+
+            """, params)
+        else:
+            cursor.execute(f"""
+                SELECT a.type_name AS name, SUM(r.request_count) AS total
+                FROM assistance_records r
+                JOIN assistance_types a ON r.assistance_type_id = a.type_id
+                {where_clause}
+                GROUP BY a.type_name
+                ORDER BY total DESC
+            """, params)
         data = cursor.fetchall()
         cursor.close()
     finally:
         conn.close()
 
-    all_types = [{"name": row["type_name"], "value": int(row["total"])} for row in data]
-
-    if selected_type != "ALL":
-        return jsonify([item for item in all_types if item["name"] == selected_type])
+    all_types = [{"name": row["name"], "value": int(row["total"])} for row in data]
 
     return jsonify(all_types)
