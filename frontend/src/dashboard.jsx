@@ -219,8 +219,8 @@ function Dashboard() {
                     </select>
                     <select className={pillSelect} onChange={e => setSelectedCategory(e.target.value)}>
                         <option value="ALL">ALL CATEGORY</option>
-                        {municipalities.map(m => (
-                            <option value={m.category_id} key={m.category_id}>{m.category_name}</option>
+                        {category.map(c => (
+                            <option value={c.category_id} key={c.category_id}>{c.category_name}</option>
                         ))}
                     </select>
                     {showTypeFilter && (
