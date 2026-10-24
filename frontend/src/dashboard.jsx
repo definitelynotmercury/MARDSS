@@ -217,19 +217,19 @@ function Dashboard() {
                             <option value={m.municipality_id} key={m.municipality_id}>{m.municipality_name}</option>
                         ))}
                     </select>
-                    <select className={pillSelect} onChange={e => setSelectedCategory(e.target.value)}>
+                    <select className={pillSelect} onChange={e => {
+                            const value = e.target.value
+                            setSelectedType(value)
+                            setshowTypeFilter(value !== 'ALL')
+                            if (value === 'ALL') setshowTypeFilter('ALL')
+                        }}>
                         <option value="ALL">ALL CATEGORY</option>
                         {category.map(c => (
                             <option value={c.category_id} key={c.category_id}>{c.category_name}</option>
                         ))}
                     </select>
                     {showTypeFilter && (
-                        <select className={pillSelect} onChange={e => {
-                            const value = e.target.value
-                            setSelectedType(value)
-                            setshowTypeFilter(value !== 'ALL')
-                            if (value === 'ALL') setshowTypeFilter('ALL')
-                        }}>
+                        <select className={pillSelect} onChange={e => setSelectedType(e.target.value)}>
                             <option value="ALL">ALL TYPES</option>
                             {types.map(t => (
                                 <option value={t.type_id} key={t.type_id}>{t.type_name}</option>
