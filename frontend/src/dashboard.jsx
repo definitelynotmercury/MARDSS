@@ -15,6 +15,7 @@ function Dashboard() {
     const [municipalities, setMunicipalities] = useState([])
     const [types, setTypes] = useState([])
     const [category,setCategory] = useState([])
+
     
 
     const [selectedYear, setSelectedYear] = useState('ALL')
@@ -53,20 +54,45 @@ function Dashboard() {
             window.location.href = '/login'
         }
         const fetchStatic = async () => {
-            const [muniRes, typeRes, catRes, irregsRes, typeTotalsRes] = await Promise.all([
+            const [muniRes, /*typeRes,*/ catRes, typeTotalsRes] = await Promise.all([
                 fetch(`${BASE_URL}/api/municipalities`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`${BASE_URL}/api/assistance_types`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                //fetch(`${BASE_URL}/api/assistance_types`, { headers: { 'Authorization': `Bearer ${token}` } }),
                 fetch(`${BASE_URL}/api/category`, { headers: { 'Authorization': `Bearer ${token}` } }),
                 fetch(`${BASE_URL}/api/dashboard/type-totals`, { headers: { 'Authorization': `Bearer ${token}` } })
             ])
             setMunicipalities(await muniRes.json())
-            setTypes(await typeRes.json())
+            //setTypes(await typeRes.json())
             setCategory(await catRes.json())
-            setIrregularities(await irregsRes.json())
             setTypeTotals(await typeTotalsRes.json())
         }
         fetchStatic()
     }, [])
+
+
+    useEffect(()=>{
+        const fetchTypes = async () => {
+            const token = getToken()
+            const res = await fetch(
+                `${BASE_URL}/api/filtered_types?category=${selectedCategory}`,
+                {headers: { 'Authorization': `Bearer ${token}` } }
+            )
+            setTypes(await typeRes.json())
+        }
+        fetchTypes
+    },[selectedCategory])
+
+/* 
+    useEffect(()=>{
+        const fetchFilteredTypes = async () => {
+            const token = getToken()
+            const res = await fetch(
+                `${BASE_URL}/api/filtered_types?category=${selectedCategory}`,
+                {headers: { 'Authorization': `Bearer ${token}` } }
+            )
+            
+        }
+    })
+*/
 
     useEffect(() => {
         const fetchTrend = async () => {
