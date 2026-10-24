@@ -337,6 +337,19 @@ def get_assistance_types():
         conn.close()
     return jsonify(data)
 
+@dashboard_bp.route("/api/category")
+@token_required
+def get_assistance_types():
+    conn = get_db()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM category ORDER BY category_name ASC")
+        data = cursor.fetchall()
+        cursor.close()
+    finally:
+        conn.close()
+    return jsonify(data)
+
 @dashboard_bp.route("/api/dashboard/type-totals")
 @token_required
 def get_type_totals():

@@ -18,8 +18,10 @@ function Dashboard() {
 
     const [selectedYear, setSelectedYear] = useState('ALL')
     const [selectedMunicipality, setSelectedMunicipality] = useState('ALL')
+    const [selectedCategory,setSelectedCategory] = useState('ALL')
     const [selectedType, setSelectedType] = useState('ALL')
     const [selectedMonth, setSelectedMonth] = useState('ALL')
+    const [showTypeFilter, setShowTypeFilter] = useState('ALL')
     const [showMonthFilter, setShowMonthFilter] = useState(false)
 
     const [kpi, setKpi] = useState(null)
@@ -53,6 +55,7 @@ function Dashboard() {
             const [muniRes, typeRes, irregsRes, typeTotalsRes] = await Promise.all([
                 fetch(`${BASE_URL}/api/municipalities`, { headers: { 'Authorization': `Bearer ${token}` } }),
                 fetch(`${BASE_URL}/api/assistance_types`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${BASE_URL}/api/category`, { headers: { 'Authorization': `Bearer ${token}` } }),
                 fetch(`${BASE_URL}/api/dashboard/type-totals`, { headers: { 'Authorization': `Bearer ${token}` } })
             ])
             setMunicipalities(await muniRes.json())
@@ -212,12 +215,20 @@ function Dashboard() {
                             <option value={m.municipality_id} key={m.municipality_id}>{m.municipality_name}</option>
                         ))}
                     </select>
-                    <select className={pillSelect} onChange={e => setSelectedType(e.target.value)}>
-                        <option value="ALL">ALL TYPES</option>
-                        {types.map(t => (
-                            <option value={t.type_id} key={t.type_id}>{t.type_name}</option>
+                    <select className={pillSelect} onChange={e => setSelectedCategory(e.target.value)}>
+                        <option value="ALL">ALL CATEGORY</option>
+                        {municipalities.map(m => (
+                            <option value={m.category_id} key={m.category_id}>{m.category_name}</option>
                         ))}
                     </select>
+                    {showTypeFilter && (
+                        <select className={pillSelect} onChange={e => setSelectedType(e.target.value)}>
+                            <option value="ALL">ALL TYPES</option>
+                            {types.map(t => (
+                                <option value={t.type_id} key={t.type_id}>{t.type_name}</option>
+                            ))}
+                        </select>
+                    )}
                 </div>
             </div>
 
