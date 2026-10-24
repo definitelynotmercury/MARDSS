@@ -120,9 +120,12 @@ def get_dashboard_trend():
     conn = get_db()
     year = request.args.get("year", "ALL")
     type_ = request.args.get("type", "ALL")
-
+    category = request.args.get("category", "ALL")
     filters = []
     params = []
+    if category != "ALL":
+        filters.append("a.category_id = %s")
+        params.append(category)
     if type_ != "ALL":
         filters.append("a.type_name = %s")
         params.append(type_)

@@ -100,7 +100,7 @@ function Dashboard() {
         const fetchTrend = async () => {
             const token = getToken()
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/trend?year=${selectedYearForLine}&type=${encodeURIComponent(selectedLineType)}`,
+                `${BASE_URL}/api/dashboard/trend?year=${selectedYearForLine}&category=${selectedCategoryLine}&type=${encodeURIComponent(selectedLineType)}`,
                 { headers: { 'Authorization': `Bearer ${token}` } }
             )
             setTrendData(await res.json())
