@@ -37,6 +37,9 @@ function Dashboard() {
 
     const [selectedLineType, setSelectedLineType] = useState('ALL')
     const [selectedYearForLine, setSelectedYearForLine] = useState('ALL')
+    const [selectedCategoryLine, setSelectedCategoryLine] = useState('ALL')
+    const [showLineTypeFilter, setLineShowTypeFilter] = useState(false)
+    const [lineFilteredType, setLineFilteredType] = useState([])
 
     const [selectedDistributionYear, setSelectedDistributionYear] = useState('ALL')
     const [showDistributionMonthFilter, setShowDistributionMonthFilter] = useState(false)
@@ -81,6 +84,17 @@ function Dashboard() {
         fetchFilteredTypes()
     },[selectedCategory])
 
+    useEffect(()=>{
+        const fetchLineFilteredTypes = async () => {
+            const token = getToken()
+            const res = await fetch(
+                `${BASE_URL}/api/filtered_types?category=${selectedCategoryLine}`,
+                {headers: { 'Authorization': `Bearer ${token}` } }
+            )
+            setLineFilteredType(await res.json())
+        }
+        fetchLineFilteredTypes()
+    },[selectedCategory])
 
     useEffect(() => {
         const fetchTrend = async () => {
@@ -298,10 +312,25 @@ function Dashboard() {
                         <p className="text-sm text-gray-400">Request volume over time</p>
                     </div>
                     <div className="flex gap-2 items-center flex-wrap">
-                        <select className={pillSelect} onChange={e => setSelectedLineType(e.target.value)}>
-                            <option value="ALL">ALL TYPES</option>
-                            {types.map(t => <option value={t.type_name} key={t.type_id}>{t.type_name}</option>)}
+                        <select className={pillSelect} onChange={e => {
+                                const value = e.target.value
+                                setSelectedCategoryLine(value)
+                                setLineShowTypeFilter(value !== 'ALL')
+                                setSelectedType('ALL')
+                            }}>
+                            <option value="ALL">ALL CATEGORY</option>
+                            {category.map(c => (
+                                <option value={c.category_id} key={c.category_id}>{c.category_name}</option>
+                            ))}
                         </select>
+                        {showLineTypeFilter && (
+                            <select className={pillSelect} onChange={e => setSelectedLineType(e.target.value)}>
+                                <option value="ALL">ALL TYPES</option>
+                                {lineFilteredType.map(t => (
+                                    <option value={t.type_id} key={t.type_id}>{t.type_name}</option>
+                                ))}
+                            </select>
+                        )}
                         <select className={pillSelect} onChange={e => setSelectedYearForLine(e.target.value)}>
                             <option value="ALL">ALL YEARS</option>
                             {years.map(year => <option key={year}>{year}</option>)}
