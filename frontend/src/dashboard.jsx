@@ -14,6 +14,7 @@ function Dashboard() {
 
     const [municipalities, setMunicipalities] = useState([])
     const [types, setTypes] = useState([])
+    const [category,setCategory] = useState([])
     
 
     const [selectedYear, setSelectedYear] = useState('ALL')
@@ -52,7 +53,7 @@ function Dashboard() {
             window.location.href = '/login'
         }
         const fetchStatic = async () => {
-            const [muniRes, typeRes, irregsRes, typeTotalsRes] = await Promise.all([
+            const [muniRes, typeRes, catRes, irregsRes, typeTotalsRes] = await Promise.all([
                 fetch(`${BASE_URL}/api/municipalities`, { headers: { 'Authorization': `Bearer ${token}` } }),
                 fetch(`${BASE_URL}/api/assistance_types`, { headers: { 'Authorization': `Bearer ${token}` } }),
                 fetch(`${BASE_URL}/api/category`, { headers: { 'Authorization': `Bearer ${token}` } }),
@@ -60,6 +61,7 @@ function Dashboard() {
             ])
             setMunicipalities(await muniRes.json())
             setTypes(await typeRes.json())
+            setCategory(await catRes.json())
             setIrregularities(await irregsRes.json())
             setTypeTotals(await typeTotalsRes.json())
         }
@@ -222,7 +224,12 @@ function Dashboard() {
                         ))}
                     </select>
                     {showTypeFilter && (
-                        <select className={pillSelect} onChange={e => setSelectedType(e.target.value)}>
+                        <select className={pillSelect} onChange={e => {
+                            const value = e.target.value
+                            setSelectedType(value)
+                            setshowTypeFilter(value !== 'ALL')
+                            if (value === 'ALL') setshowTypeFilter('ALL')
+                        }}>
                             <option value="ALL">ALL TYPES</option>
                             {types.map(t => (
                                 <option value={t.type_id} key={t.type_id}>{t.type_name}</option>
