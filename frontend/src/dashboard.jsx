@@ -122,13 +122,13 @@ function Dashboard() {
         const fetchKpi = async () => {
             const token = getToken()
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/kpi?year=${selectedYear}&municipality=${selectedMunicipality}&type=${selectedType}&month=${selectedMonth}`,
+                `${BASE_URL}/api/dashboard/kpi?year=${selectedYear}&municipality=${selectedMunicipality}&category=${selectedCategory}&type=${selectedType}&month=${selectedMonth}`,
                 { headers: { 'Authorization': `Bearer ${token}` } }
             )
             setKpi(await res.json())
         }
         fetchKpi()
-    }, [selectedYear, selectedMunicipality, selectedType, selectedMonth])
+    }, [selectedYear, selectedMunicipality, selectedCategory, selectedType, selectedMonth])
 
     const generateNarrative = async () => {
         setNarrativeLoading(true)
@@ -235,7 +235,7 @@ function Dashboard() {
                             const value = e.target.value
                             setSelectedCategory(value)
                             setShowTypeFilter(value !== 'ALL')
-                            if (value === 'ALL') setSelectedType('ALL')
+                            setSelectedType('ALL')
                         }}>
                         <option value="ALL">ALL CATEGORY</option>
                         {category.map(c => (

@@ -30,6 +30,7 @@ def get_kpi():
     year = request.args.get('year', 'ALL')
     month = request.args.get('month', 'ALL')
     municipality = request.args.get('municipality', 'ALL')
+    category = request.args.get('category', 'ALL')
     type_ = request.args.get('type', 'ALL')
 
     filters = []
@@ -41,6 +42,9 @@ def get_kpi():
     if municipality != 'ALL':
         filters.append("r.municipality_id = %s")
         params.append(municipality)
+    if category != 'ALL':
+       filters.append("a.category_id = %s")
+       params.append(category)
     if type_ != 'ALL':
         filters.append("r.assistance_type_id = %s")
         params.append(type_)
