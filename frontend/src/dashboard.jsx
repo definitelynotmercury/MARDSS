@@ -355,112 +355,107 @@ function Dashboard() {
                 </ResponsiveContainer>
             </div>
 
-                        {/* ── Distribution + Municipality, side by side ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-start">
-
-                {/* ── Distribution Bar Chart ── */}
-                <div className="bg-white shadow rounded p-4">
-                    <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
-                        <div>
-                            <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
-                                <BarChart2 size={16} className="text-blue-600" />
-                                Distribution by Assistance Type
-                            </p>
-                            <p className="text-sm text-gray-400">Request volume by type</p>
-                        </div>
-                        <div className="flex gap-2 items-center flex-wrap">
-                            <select className={pillSelect} onChange={e => setSelectedDistributionCategory(e.target.value)}>
-                                <option value="ALL">ALL CATEGORY</option>
-                                {category.map(c => (
-                                    <option value={c.category_id} key={c.category_id}>{c.category_name}</option>
-                                ))}
-                            </select>
-                            <select className={pillSelect}
-                                onChange={e => {
-                                    const value = e.target.value
-                                    setSelectedDistributionYear(value)
-                                    setShowDistributionMonthFilter(value !== 'ALL')
-                                    if (value === 'ALL') setSelectedDistributionMonth('ALL')
-                                }}>
-                                <option value="ALL">ALL YEARS</option>
-                                {years.map(year => <option key={year}>{year}</option>)}
-                            </select>
-                            {showDistributionMonthFilter && (
-                                <select className={pillSelect} onChange={e => setSelectedDistributionMonth(e.target.value)}>
-                                    <option value="ALL">ALL MONTHS</option>
-                                    {months.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}
-                                </select>
-                            )}
-                        </div>
+            {/* ── Distribution Bar Chart ── */}
+            <div className="bg-white shadow rounded p-4 mb-6">
+                <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
+                    <div>
+                        <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                            <BarChart2 size={16} className="text-blue-600" />
+                            Distribution by Assistance Type
+                        </p>
+                        <p className="text-sm text-gray-400">Request volume by type</p>
                     </div>
-                    <ResponsiveContainer width="100%" height={Math.max(300, distributionData.length * 40)}>
-                        <BarChart data={distributionData} layout="vertical" tabIndex={-1} margin={{ top: 5, right: 60, left: 5, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" />
-                            <YAxis dataKey="name" type="category" width={150} />
-                            <Tooltip formatter={(value) => Number(value).toLocaleString()} />
-                            <Bar dataKey="value" stroke="none" tabIndex={-1}>
-                                {distributionData.map((_, index) => (
-                                    <Cell key={index} fill={distributionColors[index]} />
-                                ))}
-                                <LabelList
-                                    dataKey="value"
-                                    position="right"
-                                    formatter={(value) => Number(value).toLocaleString()}
-                                    style={{ fill: '#374151', fontSize: 12, fontWeight: 600 }}
-                                />
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-
-                {/* ── Bar Chart ── */}
-                <div className="bg-white shadow rounded p-4">
-                    <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
-                        <div>
-                            <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
-                                <BarChart2 size={16} className="text-blue-600" />
-                                Total Requests by Municipality/City
-                            </p>
-                            <p className="text-sm text-gray-400">Top Municipality/City by Volume</p>
-                        </div>
-                        <div className="flex gap-2 items-center flex-wrap">
-                            <select className={pillSelect}
-                                onChange={e => {
-                                    const value = e.target.value
-                                    setSelectedBarYear(value)
-                                    setShowBarMonthFilter(value !== 'ALL')
-                                    if (value === 'ALL') setSelectedBarMonth('ALL')
-                                }}>
-                                <option value="ALL">ALL YEARS</option>
-                                {years.map(year => <option key={year}>{year}</option>)}
+                    <div className="flex gap-2 items-center flex-wrap">
+                        <select className={pillSelect} onChange={e => setSelectedDistributionCategory(e.target.value)}>
+                        <option value="ALL">ALL CATEGORY</option>
+                        {category.map(c => (
+                            <option value={c.category_id} key={c.category_id}>{c.category_name}</option>
+                        ))}
+                    </select>
+                        <select className={pillSelect}
+                            onChange={e => {
+                                const value = e.target.value
+                                setSelectedDistributionYear(value)
+                                setShowDistributionMonthFilter(value !== 'ALL')
+                                if (value === 'ALL') setSelectedDistributionMonth('ALL')
+                            }}>
+                            <option value="ALL">ALL YEARS</option>
+                            {years.map(year => <option key={year}>{year}</option>)}
+                        </select>
+                        {showDistributionMonthFilter && (
+                            <select className={pillSelect} onChange={e => setSelectedDistributionMonth(e.target.value)}>
+                                <option value="ALL">ALL MONTHS</option>
+                                {months.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}
                             </select>
-                            {showBarMonthFilter && (
-                                <select className={pillSelect} onChange={e => setSelectedBarMonth(e.target.value)}>
-                                    <option value="ALL">ALL MONTHS</option>
-                                    {months.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}
-                                </select>
-                            )}
-                        </div>
+                        )}
                     </div>
-                    <ResponsiveContainer width="100%" height={800}>
-                        <BarChart data={barData} layout="vertical" tabIndex={-1}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" />
-                            <YAxis dataKey="municipality_name" type="category" width={150} />
-                            <Tooltip />
-                            <Bar dataKey="total" fill="#1e3a5f" stroke="none" tabIndex={-1}>
-                                <LabelList
-                                    dataKey="total"
-                                    position="insideRight"
-                                    formatter={(value) => Number(value).toLocaleString()}
-                                    style={{ fill: '#ffffff', fontSize: 12, fontWeight: 600 }}
-                                />
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
                 </div>
+                <ResponsiveContainer width="100%" height={Math.max(300, distributionData.length * 40)}>
+                    <BarChart data={distributionData} layout="vertical" tabIndex={-1} margin={{ top: 5, right: 60, left: 5, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="name" type="category" width={150} />
+                        <Tooltip formatter={(value) => Number(value).toLocaleString()} />
+                        <Bar dataKey="value" stroke="none" tabIndex={-1}>
+                            {distributionData.map((_, index) => (
+                                <Cell key={index} fill={distributionColors[index]} />
+                            ))}
+                            <LabelList
+                                dataKey="value"
+                                position="right"
+                                formatter={(value) => Number(value).toLocaleString()}
+                                style={{ fill: '#374151', fontSize: 12, fontWeight: 600 }}
+                            />
+                        </Bar>
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
 
+            {/* ── Bar Chart ── */}
+            <div className="bg-white shadow rounded p-4 mb-6">
+                <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
+                    <div>
+                        <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                            <BarChart2 size={16} className="text-blue-600" />
+                            Total Requests by Municipality/City
+                        </p>
+                        <p className="text-sm text-gray-400">Top Municipality/City by Volume</p>
+                    </div>
+                    <div className="flex gap-2 items-center flex-wrap">
+                        <select className={pillSelect}
+                            onChange={e => {
+                                const value = e.target.value
+                                setSelectedBarYear(value)
+                                setShowBarMonthFilter(value !== 'ALL')
+                                if (value === 'ALL') setSelectedBarMonth('ALL')
+                            }}>
+                            <option value="ALL">ALL YEARS</option>
+                            {years.map(year => <option key={year}>{year}</option>)}
+                        </select>
+                        {showBarMonthFilter && (
+                            <select className={pillSelect} onChange={e => setSelectedBarMonth(e.target.value)}>
+                                <option value="ALL">ALL MONTHS</option>
+                                {months.map(month => <option key={month.value} value={month.value}>{month.label}</option>)}
+                            </select>
+                        )}
+                    </div>
+                </div>
+                <ResponsiveContainer width="100%" height={800}>
+                    <BarChart data={barData} layout="vertical" tabIndex={-1}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="municipality_name" type="category" width={150} />
+                        <Tooltip />
+                        <Bar dataKey="total" fill="#1e3a5f" stroke="none" tabIndex={-1}>
+                            <LabelList
+                                dataKey="total"
+                                position="insideRight"
+                                formatter={(value) => Number(value).toLocaleString()}
+                                style={{ fill: '#ffffff', fontSize: 12, fontWeight: 600 }}
+                            />
+                        </Bar>
+                    </BarChart>
+                </ResponsiveContainer>
             </div>
 
             {/* ── Narrative ── */}
