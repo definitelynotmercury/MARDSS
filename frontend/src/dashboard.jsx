@@ -94,7 +94,7 @@ function Dashboard() {
             setLineFilteredType(await res.json())
         }
         fetchLineFilteredTypes()
-    },[selectedCategory])
+    },[selectedCategoryLine])
 
     useEffect(() => {
         const fetchTrend = async () => {
@@ -316,7 +316,7 @@ function Dashboard() {
                                 const value = e.target.value
                                 setSelectedCategoryLine(value)
                                 setLineShowTypeFilter(value !== 'ALL')
-                                setSelectedType('ALL')
+                                setSelectedLineType('ALL')
                             }}>
                             <option value="ALL">ALL CATEGORY</option>
                             {category.map(c => (
