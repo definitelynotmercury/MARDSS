@@ -186,7 +186,6 @@ function Dashboard() {
         { label: 'Jul', value: 7 }, { label: 'Aug', value: 8 }, { label: 'Sep', value: 9 },
         { label: 'Oct', value: 10 }, { label: 'Nov', value: 11 }, { label: 'Dec', value: 12 },
     ]
-    const distributionColors = generateColors(distributionData.length)
 
     const renderLabel = ({ x, y, value, index }) => {
         if (index !== trendData.length - 1) return null;
@@ -397,9 +396,6 @@ function Dashboard() {
                         <YAxis dataKey="name" type="category" width={150} tickFormatter={(value) => value.replace(/\//g, ' / ')} />
                         <Tooltip formatter={(value) => Number(value).toLocaleString()} />
                         <Bar dataKey="value" stroke="none" tabIndex={-1}>
-                            {distributionData.map((_, index) => (
-                                <Cell key={index} fill={distributionColors[index]} />
-                            ))}
                             <LabelList
                                 dataKey="value"
                                 position="right"
