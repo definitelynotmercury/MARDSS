@@ -106,7 +106,7 @@ function Dashboard() {
             setTrendData(await res.json())
         }
         fetchTrend()
-    }, [selectedYearForLine, selectedLineType])
+    }, [selectedYearForLine, selectedCategoryLine, selectedLineType])
 
     useEffect(() => {
         const fetchDistribution = async () => {
