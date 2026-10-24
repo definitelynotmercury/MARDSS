@@ -327,7 +327,7 @@ function Dashboard() {
                             <select className={pillSelect} onChange={e => setSelectedLineType(e.target.value)}>
                                 <option value="ALL">ALL TYPES</option>
                                 {lineFilteredType.map(t => (
-                                    <option value={t.type_id} key={t.type_id}>{t.type_name}</option>
+                                    <option value={t.type_id} key={t.type_name}>{t.type_name}</option>
                                 ))}
                             </select>
                         )}
