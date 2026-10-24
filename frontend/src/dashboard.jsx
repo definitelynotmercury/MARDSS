@@ -27,6 +27,7 @@ function Dashboard() {
     const [showMonthFilter, setShowMonthFilter] = useState(false)
 
     const [kpi, setKpi] = useState(null)
+    const [kpiFilteredType, setKpiFiltedType] = useState([])
 
     const DEFAULT_LINE_COLOR = '#0E7C86'
 
@@ -54,34 +55,20 @@ function Dashboard() {
             window.location.href = '/login'
         }
         const fetchStatic = async () => {
-            const [muniRes, /*typeRes,*/ catRes, typeTotalsRes] = await Promise.all([
+            const [muniRes, typeRes, catRes, typeTotalsRes] = await Promise.all([
                 fetch(`${BASE_URL}/api/municipalities`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                //fetch(`${BASE_URL}/api/assistance_types`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${BASE_URL}/api/assistance_types`, { headers: { 'Authorization': `Bearer ${token}` } }),
                 fetch(`${BASE_URL}/api/category`, { headers: { 'Authorization': `Bearer ${token}` } }),
                 fetch(`${BASE_URL}/api/dashboard/type-totals`, { headers: { 'Authorization': `Bearer ${token}` } })
             ])
             setMunicipalities(await muniRes.json())
-            //setTypes(await typeRes.json())
+            setTypes(await typeRes.json())
             setCategory(await catRes.json())
             setTypeTotals(await typeTotalsRes.json())
         }
         fetchStatic()
     }, [])
 
-
-    useEffect(()=>{
-        const fetchTypes = async () => {
-            const token = getToken()
-            const res = await fetch(
-                `${BASE_URL}/api/assistance_types?category=${selectedCategory}`,
-                {headers: { 'Authorization': `Bearer ${token}` } }
-            )
-            setTypes(await res.json())
-        }
-        fetchTypes()
-    },[selectedCategory])
-
-/* 
     useEffect(()=>{
         const fetchFilteredTypes = async () => {
             const token = getToken()
@@ -89,10 +76,11 @@ function Dashboard() {
                 `${BASE_URL}/api/filtered_types?category=${selectedCategory}`,
                 {headers: { 'Authorization': `Bearer ${token}` } }
             )
-            
+            setKpiFiltedType(await res.json())
         }
-    })
-*/
+        fetchFilteredTypes()
+    },[selectedCategory])
+
 
     useEffect(() => {
         const fetchTrend = async () => {
@@ -257,7 +245,7 @@ function Dashboard() {
                     {showTypeFilter && (
                         <select className={pillSelect} onChange={e => setSelectedType(e.target.value)}>
                             <option value="ALL">ALL TYPES</option>
-                            {types.map(t => (
+                            {kpiFilteredType.map(t => (
                                 <option value={t.type_id} key={t.type_id}>{t.type_name}</option>
                             ))}
                         </select>

@@ -10,14 +10,7 @@ dashboard_bp = Blueprint('dashboard', __name__)
 MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-CATEGORY_LOOKUP = {
-    1: 'Diagnostic and Laboratory Services',
-    2: 'Treatment and Surgical Procedures',
-    3: 'Therapy and Rehabilitation',
-    4: 'Assistive Devices and Medical Equipment',
-    5: 'Medical Financial Support',
-    6: 'Social and Emergency Assistance',
-}
+
 
 MODEL_FALLBACKS = [
     "gemini-3.1-flash-lite",
@@ -337,25 +330,10 @@ def get_municipalities():
 @token_required
 def get_assistance_types():
     conn = get_db()
-    category = request.args.get("category","ALL")
-
-    filters = []
-    params = []
-    if category != "ALL":
-        filters.append("t.category_id = %s")
-        params.append(int(category))
-    
-    where_clause = "WHERE " + " AND ".join(filters) if filters else ""
 
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute(f"""
-            SELECT t.type_id, t.type_name, t.category_id, c.category_name
-            FROM assistance_types AS t
-            JOIN category AS c ON t.category_id = c.category_id
-            {where_clause}
-            ORDER BY t.type_name ASC
-        """, params)
+        cursor.execute("SELECT * FROM assistance_types ORDER BY type_name ASC")
         data = cursor.fetchall()
         cursor.close()
     finally:
@@ -379,9 +357,25 @@ def get_category():
 @token_required
 def get_filtered_types():
     conn = get_db()
+    category = request.args.get("category","ALL")
+
+    filters = []
+    params = []
+    if category != "ALL":
+        filters.append("t.category_id = %s")
+        params.append(int(category))
+    
+    where_clause = "WHERE " + " AND ".join(filters) if filters else ""
+
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM category ORDER BY category_name ASC")
+        cursor.execute(f"""
+            SELECT t.type_id, t.type_name, t.category_id, c.category_name
+            FROM assistance_types AS t
+            JOIN category AS c ON t.category_id = c.category_id
+            {where_clause}
+            ORDER BY t.type_name ASC
+        """, params)
         data = cursor.fetchall()
         cursor.close()
     finally:
