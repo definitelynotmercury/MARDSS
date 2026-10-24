@@ -73,7 +73,7 @@ function Dashboard() {
         const fetchTypes = async () => {
             const token = getToken()
             const res = await fetch(
-                `${BASE_URL}/api/filtered_types?category=${selectedCategory}`,
+                `${BASE_URL}/api/assistance_types?category=${selectedCategory}`,
                 {headers: { 'Authorization': `Bearer ${token}` } }
             )
             setTypes(await typeRes.json())
