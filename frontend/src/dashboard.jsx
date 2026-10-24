@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import Layout from './Layout'
 import { getToken } from './auth'
 import {
@@ -28,8 +28,6 @@ function Dashboard() {
 
     const [kpi, setKpi] = useState(null)
     const [kpiFilteredType, setKpiFiltedType] = useState([])
-
-    const DEFAULT_LINE_COLOR = '#0E7C86'
 
     const [trendData, setTrendData] = useState([])
     const [barData, setBarData] = useState([])
@@ -199,17 +197,6 @@ function Dashboard() {
     };
 
     const pillSelect = "border px-3 py-1 text-sm bg-white"
-
-    const typeColorMap = useMemo(() => {
-    const colors = generateColors(types.length)
-    const map = {}
-    types.forEach((t, i) => { map[t.type_name] = colors[i] })
-        return map
-    }, [types])
-
-    const lineColor = selectedLineType !== 'ALL'
-        ? (typeColorMap[selectedLineType] || DEFAULT_LINE_COLOR)
-    : DEFAULT_LINE_COLOR
 
     return (
         <Layout>
