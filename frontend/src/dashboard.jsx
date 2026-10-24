@@ -307,7 +307,7 @@ function Dashboard() {
                     <div>
                         <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
                             <TrendingUp size={16} className="text-blue-600" />
-                            Yearly Trend by Assistance Types
+                            Yearly Trend by Assistance Type
                         </p>
                         <p className="text-sm text-gray-400">Request volume over time</p>
                     </div>
@@ -327,7 +327,7 @@ function Dashboard() {
                             <select className={pillSelect} onChange={e => setSelectedLineType(e.target.value)}>
                                 <option value="ALL">ALL TYPES</option>
                                 {lineFilteredType.map(t => (
-                                    <option value={t.type_id} key={t.type_name}>{t.type_name}</option>
+                                    <option value={t.type_name} key={t.type_id}>{t.type_name}</option>
                                 ))}
                             </select>
                         )}
