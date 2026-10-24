@@ -338,7 +338,6 @@ function Dashboard() {
                             type="monotone"
                             dataKey="total"
                             name={selectedLineType !== 'ALL' ? selectedLineType : 'Total Requests'}
-                            stroke={lineColor}
                             strokeWidth={3}
                             label={{ position: 'top', offset: 12,fill: '#555', fontSize: 12 }}
                         />
