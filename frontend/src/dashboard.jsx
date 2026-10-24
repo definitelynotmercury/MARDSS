@@ -394,7 +394,7 @@ function Dashboard() {
                     <BarChart data={distributionData} layout="vertical" tabIndex={-1} margin={{ top: 5, right: 60, left: 5, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis type="number" />
-                        <YAxis dataKey="name" type="category" width={210} tick={{ fontSize: 12 }} />
+                        <YAxis dataKey="name" type="category" width={150} tickFormatter={(value) => value.replace(/\//g, ' / ')} />
                         <Tooltip formatter={(value) => Number(value).toLocaleString()} />
                         <Bar dataKey="value" stroke="none" tabIndex={-1}>
                             {distributionData.map((_, index) => (
