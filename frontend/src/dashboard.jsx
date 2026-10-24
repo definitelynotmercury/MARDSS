@@ -269,7 +269,7 @@ function Dashboard() {
                 <div className="bg-white shadow rounded p-4 border-l-4 border-[#A6790E]">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Highest Volume Type</p>
                     <h1 className="text-lg font-bold text-gray-800 mt-1">
-                        {kpi?.top_type?.type_name ?? 'N/A'}
+                        {kpi?.top_type?.name ?? 'N/A'}
                     </h1>
                     <p className="text-sm text-gray-400">
                         {kpi?.top_type?.total ? `${Number(kpi.top_type.total).toLocaleString()} requests` : ''}

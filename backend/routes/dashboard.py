@@ -66,18 +66,31 @@ def get_kpi():
         """, params)
         sum_req = cursor.fetchone()
 
-        cursor.execute(f"""
-            SELECT a.type_name, SUM(r.request_count) AS total
-            FROM assistance_records r
-            JOIN assistance_types a ON r.assistance_type_id = a.type_id
-            JOIN municipalities m ON r.municipality_id = m.municipality_id
-            {where_clause}
-            GROUP BY r.assistance_type_id
-            ORDER BY total DESC
-            LIMIT 1
-        """, params)
+        if category == 'ALL' and type_ == 'ALL':
+            cursor.execute(f"""
+                SELECT c.category_name AS name, SUM(r.request_count) AS total
+                FROM assistance_records r
+                JOIN assistance_types a ON r.assistance_type_id = a.type_id
+                JOIN category c ON a.category_id = c.category_id
+                JOIN municipalities m ON r.municipality_id = m.municipality_id
+                {where_clause}
+                GROUP BY c.category_id
+                ORDER BY total DESC
+                LIMIT 1
+            """, params)
+        else:
+            cursor.execute(f"""
+                SELECT a.type_name AS name, SUM(r.request_count) AS total
+                FROM assistance_records r
+                JOIN assistance_types a ON r.assistance_type_id = a.type_id
+                JOIN municipalities m ON r.municipality_id = m.municipality_id
+                {where_clause}
+                GROUP BY r.assistance_type_id
+                ORDER BY total DESC
+                LIMIT 1
+            """, params)
         highest_type = cursor.fetchone()
-
+        
         cursor.execute(f"""
             SELECT m.municipality_name, SUM(r.request_count) AS total
             FROM assistance_records r
