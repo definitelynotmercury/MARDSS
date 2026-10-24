@@ -347,6 +347,7 @@ function Dashboard() {
                             stroke={DEFAULT_LINE_COLOR}
                             strokeWidth={3}
                             fill="url(#trendFill)"
+                            dot={true}
                             label={{ position: 'top', offset: 12,fill: '#555', fontSize: 12 }}
                         />
                     </AreaChart>
