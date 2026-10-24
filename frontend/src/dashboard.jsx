@@ -22,7 +22,7 @@ function Dashboard() {
     const [selectedCategory,setSelectedCategory] = useState('ALL')
     const [selectedType, setSelectedType] = useState('ALL')
     const [selectedMonth, setSelectedMonth] = useState('ALL')
-    const [showTypeFilter, setShowTypeFilter] = useState('ALL')
+    const [showTypeFilter, setShowTypeFilter] = useState(false)
     const [showMonthFilter, setShowMonthFilter] = useState(false)
 
     const [kpi, setKpi] = useState(null)
@@ -221,7 +221,7 @@ function Dashboard() {
                             const value = e.target.value
                             setSelectedCategory(value)
                             setShowTypeFilter(value !== 'ALL')
-                            if (value === 'ALL') setShowTypeFilter('ALL')
+                            if (value === 'ALL') setSelectedType('ALL')
                         }}>
                         <option value="ALL">ALL CATEGORY</option>
                         {category.map(c => (
