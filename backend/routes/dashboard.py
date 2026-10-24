@@ -124,7 +124,7 @@ def get_dashboard_trend():
     filters = []
     params = []
     if type_ != "ALL":
-        filters.append("a.type_name = %s")
+        filters.append("a.type_id = %s")
         params.append(type_)
 
     try:
