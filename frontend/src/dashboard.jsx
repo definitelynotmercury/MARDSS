@@ -332,9 +332,9 @@ function Dashboard() {
                             <stop offset="100%" stopColor={DEFAULT_LINE_COLOR} stopOpacity={0} />
                         </linearGradient>
                     </defs>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey={trendData[0]?.month ? 'month' : 'year'} padding={{left: 20, right: 20 }} />
-                        <YAxis domain={[0, dataMax => Math.ceil(dataMax * 1.15)]} />
+                        <CartesianGrid vertical={false} stroke="#eef0f2" />
+                        <XAxis dataKey={trendData[0]?.month ? 'month' : 'year'} axisLine={false} tickLine={false} padding={{ left: 20, right: 20 }} />
+                        <YAxis axisLine={false} tickLine={false} domain={[0, dataMax => Math.ceil(dataMax * 1.15)]} />
                         <Tooltip
                             formatter={(value) => Number(value).toLocaleString()}
                             wrapperStyle={{ zIndex: 1000, top: 0 }}
