@@ -339,7 +339,7 @@ def get_assistance_types():
 
 @dashboard_bp.route("/api/category")
 @token_required
-def get_assistance_types():
+def get_category():
     conn = get_db()
     try:
         cursor = conn.cursor(dictionary=True)
