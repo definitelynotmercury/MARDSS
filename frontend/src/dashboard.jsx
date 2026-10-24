@@ -219,9 +219,9 @@ function Dashboard() {
                     </select>
                     <select className={pillSelect} onChange={e => {
                             const value = e.target.value
-                            setSelectedType(value)
-                            setshowTypeFilter(value !== 'ALL')
-                            if (value === 'ALL') setshowTypeFilter('ALL')
+                            setSelectedCategory(value)
+                            setShowTypeFilter(value !== 'ALL')
+                            if (value === 'ALL') setShowTypeFilter('ALL')
                         }}>
                         <option value="ALL">ALL CATEGORY</option>
                         {category.map(c => (
