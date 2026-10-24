@@ -307,7 +307,7 @@ function Dashboard() {
                     <div>
                         <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
                             <TrendingUp size={16} className="text-blue-600" />
-                            Yearly Trend by Assistance Type
+                            Yearly Trend by Assistance Types
                         </p>
                         <p className="text-sm text-gray-400">Request volume over time</p>
                     </div>
