@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Layout from './Layout'
 import { getToken } from './auth'
 import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     BarChart, Bar, Cell, LabelList
 } from 'recharts'
 import { TrendingUp, BarChart2, FileText } from 'lucide-react'
@@ -16,7 +16,7 @@ function Dashboard() {
     const [types, setTypes] = useState([])
     const [category,setCategory] = useState([])
 
-    
+    const DEFAULT_LINE_COLOR = '#0E7C86'
 
     const [selectedYear, setSelectedYear] = useState('ALL')
     const [selectedMunicipality, setSelectedMunicipality] = useState('ALL')
@@ -325,7 +325,13 @@ function Dashboard() {
                     </div>
                 </div>
                 <ResponsiveContainer width="100%" height={600} margin={{ top: 30, right: 30, left: 30, bottom: 30 }}>
-                    <LineChart data={trendData}>
+                    <AreaChart data={trendData}>
+                    <defs>
+                        <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={DEFAULT_LINE_COLOR} stopOpacity={0.15} />
+                            <stop offset="100%" stopColor={DEFAULT_LINE_COLOR} stopOpacity={0} />
+                        </linearGradient>
+                    </defs>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey={trendData[0]?.month ? 'month' : 'year'} padding={{left: 20, right: 20 }} />
                         <YAxis domain={[0, dataMax => Math.ceil(dataMax * 1.15)]} />
@@ -334,14 +340,16 @@ function Dashboard() {
                             wrapperStyle={{ zIndex: 1000, top: 0 }}
                         />
                         <Legend />
-                        <Line
+                        <Area
                             type="monotone"
                             dataKey="total"
                             name={selectedLineType !== 'ALL' ? selectedLineType : 'Total Requests'}
+                            stroke={DEFAULT_LINE_COLOR}
                             strokeWidth={3}
+                            fill="url(#trendFill)"
                             label={{ position: 'top', offset: 12,fill: '#555', fontSize: 12 }}
                         />
-                    </LineChart>
+                    </AreaChart>
                 </ResponsiveContainer>
             </div>
 
