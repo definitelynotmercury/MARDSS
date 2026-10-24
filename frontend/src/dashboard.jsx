@@ -42,6 +42,7 @@ function Dashboard() {
     const [selectedDistributionYear, setSelectedDistributionYear] = useState('ALL')
     const [showDistributionMonthFilter, setShowDistributionMonthFilter] = useState(false)
     const [selectedDistributionMonth, setSelectedDistributionMonth] = useState('ALL')
+    const [selectedDistributionCategory, setSelectedDistributionCategory] = useState('ALL')
 
     const [selectedBarYear, setSelectedBarYear] = useState('ALL')
     const [showBarMonthFilter, setShowBarMonthFilter] = useState(false)
@@ -110,13 +111,13 @@ function Dashboard() {
         const fetchDistribution = async () => {
             const token = getToken()
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/distribution?year=${selectedDistributionYear}&month=${selectedDistributionMonth}`,
+                `${BASE_URL}/api/dashboard/distribution?year=${selectedDistributionYear}&month=${selectedDistributionMonth}&category=${selectedDistributionCategory}`,
                 { headers: { 'Authorization': `Bearer ${token}` } }
             )
             setDistributionData(await res.json())
         }
         fetchDistribution()
-    }, [selectedDistributionYear, selectedDistributionMonth])
+    }, [selectedDistributionYear, selectedDistributionMonth,selectedDistributionCategory])
 
     useEffect(() => {
         const fetchBar = async () => {
@@ -365,6 +366,12 @@ function Dashboard() {
                         <p className="text-sm text-gray-400">Request volume by type</p>
                     </div>
                     <div className="flex gap-2 items-center flex-wrap">
+                        <select className={pillSelect} onChange={e => setSelectedDistributionCategory(e.target.value)}>
+                            <option value="ALL">ALL CATEGORY</option>
+                            {category.map(c => (
+                                <option value={c.category_id} key={c.category_id}>{c.category_name}</option>
+                            ))}
+                        </select>
                         <select className={pillSelect}
                             onChange={e => {
                                 const value = e.target.value
