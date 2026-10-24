@@ -391,10 +391,10 @@ function Dashboard() {
                     </div>
                 </div>
                 <ResponsiveContainer width="100%" height={Math.max(300, distributionData.length * 40)}>
-                    <BarChart data={distributionData} layout="vertical" tabIndex={-1} margin={{ top: 5, right: 60, left: 5, bottom: 5 }}>
+                    <BarChart data={distributionData} tabIndex={-1} margin={{ top: 20, right: 20, left: 5, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis dataKey="name" type="category" width={150} />
+                        <YAxis type="number" />
+                        <XAxis dataKey="name" type="category" width={150} />
                         <Tooltip formatter={(value) => Number(value).toLocaleString()} />
                         <Bar dataKey="value" stroke="none" tabIndex={-1}>
                             {distributionData.map((_, index) => (
