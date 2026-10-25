@@ -16,7 +16,7 @@ function Dashboard() {
     const [types, setTypes] = useState([])
     const [category,setCategory] = useState([])
 
-    const DEFAULT_LINE_COLOR = '#0E7C86'
+    const DEFAULT_LINE_COLOR = '#4A7FC1'
 
     const [selectedYear, setSelectedYear] = useState('ALL')
     const [selectedMunicipality, setSelectedMunicipality] = useState('ALL')
@@ -442,7 +442,7 @@ function Dashboard() {
                         <XAxis type="number" />
                         <YAxis dataKey="municipality_name" type="category" width={150} />
                         <Tooltip />
-                        <Bar dataKey="total" fill="#1e3a5f" stroke="none" tabIndex={-1}>
+                        <Bar dataKey="total" fill="#4A7FC1" stroke="none" tabIndex={-1}>
                             <LabelList
                                 dataKey="total"
                                 position="insideRight"
