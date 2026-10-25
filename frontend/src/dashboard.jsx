@@ -395,7 +395,7 @@ function Dashboard() {
                         <XAxis type="number" />
                         <YAxis dataKey="name" type="category" width={150} tickFormatter={(value) => value.replace(/\//g, ' / ')} />
                         <Tooltip formatter={(value) => Number(value).toLocaleString()} />
-                        <Bar dataKey="value" fill="#1e3a5f" stroke="none" tabIndex={-1}>
+                        <Bar dataKey="value" fill="#2563eb"  stroke="none" tabIndex={-1}>
                             <LabelList
                                 dataKey="value"
                                 position="right"
