@@ -22,6 +22,7 @@ const sectionLabels = {
     municipalityDrilldown: 'Municipality Drilldown',
     topNRanking: 'Top N Rankings',
     forecast: 'Demand Forecast',
+    forecastRanking: 'Projected Demand Ranking',
 }
 
 const months = [
@@ -79,6 +80,7 @@ function Export() {
         municipalityDrilldown: false,
         topNRanking: false,
         forecast: false,
+        forecastRanking: false,
     })
 
     const chartRefs = {
@@ -90,23 +92,29 @@ function Export() {
         municipalityDrilldown: useRef(null),
         topNRanking: useRef(null),
         forecast: useRef(null),
+        forecastRanking: useRef(null),
     }
 
-    // Dashboard KPI
+    // Dashboard KPI (municipality, category and type all hold IDs, like the Dashboard page)
     const [selectedDashboardYear, setSelectedDashboardYear] = useState('ALL')
+    const [selectedDashboardCategory, setSelectedDashboardCategory] = useState('ALL')
     const [selectedDashboardType, setSelectedDashboardType] = useState('ALL')
     const [selectedDashboardMunicipality, setSelectedDashboardMunicipality] = useState('ALL')
     const [selectedMonth, setSelectedMonth] = useState('ALL')
     const [showMonthFilter, setShowMonthFilter] = useState(false)
+    const [kpiFilteredTypes, setKpiFilteredTypes] = useState([])
 
-    // YoY Trends — matched to Dashboard: type + year only (no Top N)
+    // YoY Trends — category + type (type holds a name, like the Dashboard line chart) + year
+    const [yoyCategory, setYoyCategory] = useState('ALL')
     const [selectedYoYType, setSelectedYoYType] = useState('ALL')
+    const [yoyFilteredTypes, setYoyFilteredTypes] = useState([])
     const [selectedYearForLine, setSelectedYearForLine] = useState('ALL')
     const [yoyTrendData, setYoyTrendData] = useState([])
 
     const DEFAULT_LINE_COLOR = '#0E7C86'
 
-    // Distribution by Assistance Type — matched to Dashboard: year + conditional month
+    // Distribution by Assistance Type — category + year + conditional month
+    const [distributionCategory, setDistributionCategory] = useState('ALL')
     const [selectedDistributionYear, setSelectedDistributionYear] = useState('ALL')
     const [selectedDistributionMonth, setSelectedDistributionMonth] = useState('ALL')
     const [showDistributionMonthFilter, setShowDistributionMonthFilter] = useState(false)
@@ -117,16 +125,19 @@ function Export() {
     const [showBarMonthFilter, setShowBarMonthFilter] = useState(false)
     const [selectedBarMonth, setSelectedBarMonth] = useState('ALL')
 
-    // Comparison Chart
+    // Comparison Chart — category, then type (type holds a name)
     const [compMunicipality1, setCompMunicipality1] = useState('BULAKAN')
     const [compMunicipality2, setCompMunicipality2] = useState('CALUMPIT')
+    const [compCategory, setCompCategory] = useState('ALL')
     const [compType, setCompType] = useState('ALL')
+    const [compFilteredTypes, setCompFilteredTypes] = useState([])
     const [compYear, setCompYear] = useState('ALL')
     const [showComparisonMonthFilter, setShowComparisonMonthFilter] = useState(false)
     const [comparisonMonth, setComparisonMonth] = useState('ALL')
 
     // Municipality Drilldown
     const [drilldownMunicipality, setDrilldownMunicipality] = useState('BULAKAN')
+    const [drilldownCategory, setDrilldownCategory] = useState('ALL')
     const [drilldownYear, setDrilldownYear] = useState('ALL')
     const [drill_down_month, setDrillDownMonth] = useState("ALL")
     const [showDrilldownMonthFilter, setShowDrilldownMonthFilter] = useState(false)
@@ -137,13 +148,21 @@ function Export() {
     const [rankingMonth, setRankingMonth] = useState("ALL")
     const [availableMonths, setAvailableMonths] = useState([])
 
-    // Forecast
+    // Forecast — category, then type (type holds a name)
     const [forecastMunicipality, setForecastMunicipality] = useState('ALL')
+    const [forecastCategory, setForecastCategory] = useState('ALL')
     const [forecastType, setForecastType] = useState('ALL')
+    const [forecastFilteredTypes, setForecastFilteredTypes] = useState([])
+
+    // Projected Demand Ranking
+    const [fRankCategory, setFRankCategory] = useState('ALL')
+    const [fRankMunicipality, setFRankMunicipality] = useState('ALL')
+    const [forecastRankingData, setForecastRankingData] = useState({ months: [], rankings: [] })
 
     // Shared
     const [municipalities, setMunicipalities] = useState([])
     const [types, setTypes] = useState([])
+    const [categories, setCategories] = useState([])
 
     // Data for preview
     const [kpiPreview, setKpiPreview] = useState(null)
@@ -184,6 +203,21 @@ function Export() {
 
     const anyChartSelected = Object.values(sections).some(Boolean)
 
+    // ── Readable names for the preview subtitles (IDs never show up on screen) ──
+    const categoryName = (id) =>
+        id === 'ALL'
+            ? 'All Categories'
+            : (categories.find(c => String(c.category_id) === String(id))?.category_name ?? id)
+
+    const municipalityNameById = (id) =>
+        municipalities.find(m => String(m.municipality_id) === String(id))?.municipality_name ?? id
+
+    const kpiTypeName = (id) =>
+        kpiFilteredTypes.find(t => String(t.type_id) === String(id))?.type_name ?? id
+
+    // The KPI "top" card is a category only when no category/type filter is set
+    const kpiTopLabel = selectedDashboardCategory === 'ALL' && selectedDashboardType === 'ALL' ? 'Category' : 'Type'
+
     const renderLabel = ({ x, y, value, index }) => {
         if (index !== yoyTrendData.length - 1) return null;
         return (
@@ -205,9 +239,31 @@ function Export() {
                 headers : { 'Authorization' : `Bearer ${token}` }
             })
             setTypes(await response2.json())
+            const response3 = await fetch(`${BASE_URL}/api/category`,{
+                headers : { 'Authorization' : `Bearer ${token}` }
+            })
+            setCategories(await response3.json())
         }
         fetchdata()
     }, [])
+
+    // ── Types that belong to a picked category (one effect per section, since filters are independent) ──
+    const fetchTypesForCategory = async (categoryId, setter) => {
+        if (categoryId === 'ALL') {
+            setter([])
+            return
+        }
+        const token = getToken()
+        const res = await fetch(`${BASE_URL}/api/filtered_types?category=${categoryId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        setter(await res.json())
+    }
+
+    useEffect(() => { fetchTypesForCategory(selectedDashboardCategory, setKpiFilteredTypes) }, [selectedDashboardCategory])
+    useEffect(() => { fetchTypesForCategory(yoyCategory, setYoyFilteredTypes) }, [yoyCategory])
+    useEffect(() => { fetchTypesForCategory(compCategory, setCompFilteredTypes) }, [compCategory])
+    useEffect(() => { fetchTypesForCategory(forecastCategory, setForecastFilteredTypes) }, [forecastCategory])
 
     // ── Dashboard KPI ──
     useEffect(() => {
@@ -215,13 +271,13 @@ function Export() {
         if (!sections.dashboardKpi) return
         const fetchKpi = async () => {
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/kpi?year=${selectedDashboardYear}&municipality=${selectedDashboardMunicipality}&type=${selectedDashboardType}&month=${selectedMonth}`,
+                `${BASE_URL}/api/dashboard/kpi?year=${selectedDashboardYear}&municipality=${selectedDashboardMunicipality}&category=${selectedDashboardCategory}&type=${selectedDashboardType}&month=${selectedMonth}`,
                 { headers : { 'Authorization' : `Bearer ${token}` } }
             )
             setKpiPreview(await res.json())
         }
         fetchKpi()
-    }, [sections.dashboardKpi, selectedDashboardYear, selectedDashboardMunicipality, selectedDashboardType, selectedMonth])
+    }, [sections.dashboardKpi, selectedDashboardYear, selectedDashboardMunicipality, selectedDashboardCategory, selectedDashboardType, selectedMonth])
 
     // ── YoY Trend — matched to Dashboard's line chart fetch ──
     useEffect(() => {
@@ -229,26 +285,26 @@ function Export() {
         if (!sections.yoyTrends) return
         const loadYoY = async () => {
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/trend?year=${selectedYearForLine}&type=${selectedYoYType}`,
+                `${BASE_URL}/api/dashboard/trend?year=${selectedYearForLine}&category=${yoyCategory}&type=${encodeURIComponent(selectedYoYType)}`,
                 { headers : { 'Authorization' : `Bearer ${token}` } }
             )
             setYoyTrendData(await res.json())
         }
         loadYoY()
-    }, [sections.yoyTrends, selectedYearForLine, selectedYoYType])
+    }, [sections.yoyTrends, selectedYearForLine, yoyCategory, selectedYoYType])
 
     // ── Distribution by Assistance Type — matched to Dashboard's distribution fetch ──
     useEffect(() => {
         const token = getToken()
         const fetchDistribution = async () => {
             const res = await fetch(
-                `${BASE_URL}/api/dashboard/distribution?year=${selectedDistributionYear}&month=${selectedDistributionMonth}`,
+                `${BASE_URL}/api/dashboard/distribution?year=${selectedDistributionYear}&month=${selectedDistributionMonth}&category=${distributionCategory}`,
                 { headers : { 'Authorization' : `Bearer ${token}` } }
             )
             setDistributionData(await res.json())
         }
         fetchDistribution()
-    }, [selectedDistributionYear, selectedDistributionMonth])
+    }, [selectedDistributionYear, selectedDistributionMonth, distributionCategory])
 
     // ── Distribution by Municipality ──
     useEffect(() => {
@@ -269,13 +325,13 @@ function Export() {
         if (!sections.comparisonChart) return
         const fetchComparison = async () => {
             const res = await fetch(
-                `${BASE_URL}/api/analytics/comparison?municipality_1=${compMunicipality1}&municipality_2=${compMunicipality2}&type=${compType}&year=${compYear}&month=${comparisonMonth}`,
+                `${BASE_URL}/api/analytics/comparison?municipality_1=${compMunicipality1}&municipality_2=${compMunicipality2}&category=${compCategory}&type=${encodeURIComponent(compType)}&year=${compYear}&month=${comparisonMonth}`,
                 { headers : { 'Authorization' : `Bearer ${token}` } }
             )
             setComparisonData(await res.json())
         }
         fetchComparison()
-    }, [sections.comparisonChart, compMunicipality1, compMunicipality2, compType, compYear, comparisonMonth])
+    }, [sections.comparisonChart, compMunicipality1, compMunicipality2, compCategory, compType, compYear, comparisonMonth])
 
     // ── Municipality Drilldown ──
     useEffect(() => {
@@ -283,13 +339,13 @@ function Export() {
         if (!sections.municipalityDrilldown) return
         const fetchDrilldown = async () => {
             const res = await fetch(
-                `${BASE_URL}/api/analytics/drill_down?municipality=${drilldownMunicipality}&year=${drilldownYear}&month=${drill_down_month}`,
+                `${BASE_URL}/api/analytics/drill_down?municipality=${drilldownMunicipality}&category=${drilldownCategory}&year=${drilldownYear}&month=${drill_down_month}`,
                 { headers : { 'Authorization' : `Bearer ${token}` } }
             )
             setDrilldownData(await res.json())
         }
         fetchDrilldown()
-    }, [sections.municipalityDrilldown, drilldownMunicipality, drilldownYear, drill_down_month])
+    }, [sections.municipalityDrilldown, drilldownMunicipality, drilldownCategory, drilldownYear, drill_down_month])
 
     // ── Top N Rankings ──
     useEffect(() => {
@@ -307,15 +363,30 @@ function Export() {
     // ── Forecast ──
     useEffect(() => {
         const token = getToken()
+        if (!sections.forecast) return
         const fetchForecastData = async() => {
             const response = await fetch(
-                `${BASE_URL}/api/forecast/predict?municipality=${forecastMunicipality}&type=${forecastType}`,
+                `${BASE_URL}/api/forecast/predict?municipality=${forecastMunicipality}&category=${forecastCategory}&type=${encodeURIComponent(forecastType)}`,
                 { headers : { 'Authorization' : `Bearer ${token}` } }
             )
             setForecastData(await response.json())
         }
         fetchForecastData()
-    }, [forecastMunicipality, forecastType])
+    }, [sections.forecast, forecastMunicipality, forecastCategory, forecastType])
+
+    // ── Projected Demand Ranking ──
+    useEffect(() => {
+        const token = getToken()
+        if (!sections.forecastRanking) return
+        const fetchForecastRanking = async () => {
+            const response = await fetch(
+                `${BASE_URL}/api/forecast/ranking?category=${fRankCategory}&municipality=${encodeURIComponent(fRankMunicipality)}`,
+                { headers : { 'Authorization' : `Bearer ${token}` } }
+            )
+            setForecastRankingData(await response.json())
+        }
+        fetchForecastRanking()
+    }, [sections.forecastRanking, fRankCategory, fRankMunicipality])
 
     const renderEndLabel = (dataKey) => ({ x, y, value }) => {
         if (value == null) return null;
@@ -489,14 +560,15 @@ function Export() {
                     <p className="text-sm text-gray-400 mb-3">
                         {selectedDashboardYear !== 'ALL' ? selectedDashboardYear : 'All Years'}
                         {selectedMonth !== 'ALL' ? ` · ${months.find(m => m.value === Number(selectedMonth))?.label}` : ''}
-                        {selectedDashboardMunicipality !== 'ALL' ? ` · ${selectedDashboardMunicipality}` : ''}
-                        {selectedDashboardType !== 'ALL' ? ` · ${selectedDashboardType}` : ''}
+                        {selectedDashboardMunicipality !== 'ALL' ? ` · ${municipalityNameById(selectedDashboardMunicipality)}` : ''}
+                        {selectedDashboardCategory !== 'ALL' ? ` · ${categoryName(selectedDashboardCategory)}` : ''}
+                        {selectedDashboardType !== 'ALL' ? ` · ${kpiTypeName(selectedDashboardType)}` : ''}
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="bg-white border rounded p-4 border-l-4 border-l-[#0B2E52]">
                             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Total Requests</p>
                             <h2 className="text-2xl font-bold text-gray-800 mt-1">
-                                {kpiPreview ? kpiPreview.total_requests : 'Loading...'}
+                                {kpiPreview ? Number(kpiPreview.total_requests).toLocaleString() : 'Loading...'}
                             </h2>
                             {kpiPreview?.growth_percent != null && (
                                 <span className="inline-block mt-2 bg-green-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
@@ -505,20 +577,20 @@ function Export() {
                             )}
                         </div>
                         <div className="bg-white border rounded p-4 border-l-4 border-l-[#A6790E]">
-                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Highest Volume Type</p>
-                            <h2 className="text-lg font-bold text-gray-800 mt-1">{kpiPreview?.top_type?.type_name ?? 'N/A'}</h2>
-                            <p className="text-sm text-gray-400">{kpiPreview?.top_type?.total ? `${kpiPreview.top_type.total} requests` : ''}</p>
+                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Highest Volume {kpiTopLabel}</p>
+                            <h2 className="text-lg font-bold text-gray-800 mt-1">{kpiPreview?.top_type?.name ?? 'N/A'}</h2>
+                            <p className="text-sm text-gray-400">{kpiPreview?.top_type?.total ? `${Number(kpiPreview.top_type.total).toLocaleString()} requests` : ''}</p>
                         </div>
                         <div className="bg-white border rounded p-4 border-l-4 border-l-[#2862DC]">
                             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Highest Volume Municipality</p>
                             <h2 className="text-lg font-bold text-gray-800 mt-1">{kpiPreview?.top_municipality?.municipality_name ?? 'N/A'}</h2>
-                            <p className="text-sm text-gray-400">{kpiPreview?.top_municipality?.total ? `${kpiPreview.top_municipality.total} requests` : ''}</p>
+                            <p className="text-sm text-gray-400">{kpiPreview?.top_municipality?.total ? `${Number(kpiPreview.top_municipality.total).toLocaleString()} requests` : ''}</p>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* YoY Trends — now single line like Dashboard */}
+            {/* YoY Trends — single line like Dashboard */}
             {sections.yoyTrends && yoyTrendData.length > 0 && (
                 <div ref={chartRefs.yoyTrends} className="bg-white shadow rounded p-4">
                     <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
@@ -526,7 +598,8 @@ function Export() {
                         Yearly Trend by Assistance Type
                     </p>
                     <p className="text-sm text-gray-400 mb-4">
-                        {selectedYoYType !== 'ALL' ? selectedYoYType : 'All Types'}
+                        {yoyCategory !== 'ALL' ? categoryName(yoyCategory) : 'All Categories'}
+                        {selectedYoYType !== 'ALL' ? ` · ${selectedYoYType}` : ''}
                         {selectedYearForLine !== 'ALL' ? ` · ${selectedYearForLine}` : ' · All Years'}
                     </p>
                     <ResponsiveContainer width="100%" height={400}>
@@ -552,22 +625,23 @@ function Export() {
                 </div>
             )}
 
-            {/* Distribution by Assistance Type — now horizontal bar like Dashboard */}
+            {/* Distribution — categories when ALL, types of the picked category otherwise */}
             {sections.distributionByAssistance && (
                 <div ref={chartRefs.distributionByAssistance} className="bg-white shadow rounded p-4">
                     <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
                         <BarChart2 size={16} className="text-blue-600" />
-                        Distribution by Assistance Type
+                        {distributionCategory === 'ALL' ? 'Distribution by Assistance Category' : 'Distribution by Assistance Type'}
                     </p>
                     <p className="text-sm text-gray-400 mb-4">
-                        {selectedDistributionYear !== 'ALL' ? selectedDistributionYear : 'All Years'}
+                        {distributionCategory === 'ALL' ? 'All Categories' : categoryName(distributionCategory)}
+                        {selectedDistributionYear !== 'ALL' ? ` · ${selectedDistributionYear}` : ' · All Years'}
                         {selectedDistributionMonth !== 'ALL' ? ` · ${months.find(m => m.value === Number(selectedDistributionMonth))?.label}` : ''}
                     </p>
                     <ResponsiveContainer width="100%" height={Math.max(300, distributionData.length * 40)}>
                         <BarChart data={distributionData} layout="vertical" tabIndex={-1} margin={{ top: 5, right: 60, left: 5, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis type="number" />
-                            <YAxis dataKey="name" type="category" width={150} />
+                            <YAxis dataKey="name" type="category" width={150} tickFormatter={(value) => value.replace(/\//g, ' / ')} />
                             <Tooltip formatter={(value) => Number(value).toLocaleString()} />
                             <Bar dataKey="value" stroke="none" tabIndex={-1}>
                                 {distributionData.map((_, index) => (
@@ -609,6 +683,7 @@ function Export() {
                 </div>
             )}
 
+            {/* Comparison — categories on the x-axis when ALL, types of the picked category otherwise */}
             {sections.comparisonChart && (
                 <div ref={chartRefs.comparisonChart} className="bg-white shadow rounded p-4">
                     <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
@@ -617,13 +692,15 @@ function Export() {
                     </p>
                     <p className="text-sm text-gray-400 mb-4">
                         {compMunicipality1} vs {compMunicipality2}
+                        {compCategory !== 'ALL' ? ` · ${categoryName(compCategory)}` : ' · All Categories'}
                         {compType !== 'ALL' ? ` · ${compType}` : ''}
                         {compYear !== 'ALL' ? ` · ${compYear}` : ' · All Years'}
+                        {comparisonMonth !== 'ALL' ? ` · ${months.find(m => m.value === Number(comparisonMonth))?.label}` : ''}
                     </p>
                     <ResponsiveContainer width="100%" height={400}>
                         <BarChart data={comparisonData} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                            <XAxis dataKey="type_name" angle={-45} textAnchor="end" interval={0} height={200} tick={{ fontSize: 11 }} />
+                            <XAxis dataKey="name" angle={-45} textAnchor="end" interval={0} height={200} tick={{ fontSize: 11 }} />
                             <YAxis type="number" width={50} tick={{ fontSize: 11 }} />
                             <Tooltip />
                             <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -634,6 +711,7 @@ function Export() {
                 </div>
             )}
 
+            {/* Drilldown — cards show categories when ALL, types of the picked category otherwise */}
             {sections.municipalityDrilldown && (
                 <div ref={chartRefs.municipalityDrilldown} className="bg-white shadow rounded p-4">
                     <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
@@ -641,13 +719,16 @@ function Export() {
                         Municipality Breakdown
                     </p>
                     <p className="text-sm text-gray-400 mb-4">
-                        {drilldownMunicipality}{drilldownYear !== 'ALL' ? ` · ${drilldownYear}` : ' · All Years'}
+                        {drilldownMunicipality}
+                        {drilldownCategory !== 'ALL' ? ` · ${categoryName(drilldownCategory)}` : ' · All Categories'}
+                        {drilldownYear !== 'ALL' ? ` · ${drilldownYear}` : ' · All Years'}
+                        {drill_down_month !== 'ALL' ? ` · ${months.find(m => m.value === Number(drill_down_month))?.label}` : ''}
                     </p>
                     <div className="grid grid-cols-2 gap-3">
                         {drilldownData.map((item) => (
-                            <div key={item.type_name} className="bg-gray-100 rounded-lg p-4">
+                            <div key={item.name} className="bg-gray-100 rounded-lg p-4">
                                 <div className="flex justify-between text-sm font-medium mb-2">
-                                    <span className="text-gray-600">{item.type_name}</span>
+                                    <span className="text-gray-600">{item.name}</span>
                                     <span className="text-gray-800">{item.total.toLocaleString()}</span>
                                 </div>
                                 <div className="h-2 bg-gray-300 rounded-full">
@@ -725,8 +806,8 @@ function Export() {
                     </p>
                     <p className="text-sm text-gray-400 mb-4">
                         Historical data (solid line) and projections (dashed line) with confidence range
-                        {forecastMunicipality !== 'ALL' || forecastType !== 'ALL' ? (
-                            <> · {forecastMunicipality !== 'ALL' ? forecastMunicipality : 'All Municipalities'}{forecastType !== 'ALL' ? ` · ${forecastType}` : ''}</>
+                        {forecastMunicipality !== 'ALL' || forecastCategory !== 'ALL' || forecastType !== 'ALL' ? (
+                            <> · {forecastMunicipality !== 'ALL' ? forecastMunicipality : 'All Municipalities'}{forecastCategory !== 'ALL' ? ` · ${categoryName(forecastCategory)}` : ''}{forecastType !== 'ALL' ? ` · ${forecastType}` : ''}</>
                         ) : null}
                     </p>
                     <ResponsiveContainer width="100%" height={400}>
@@ -741,6 +822,55 @@ function Export() {
                             <Tooltip content={<CustomTooltip />} />
                         </LineChart>
                     </ResponsiveContainer>
+                </div>
+            )}
+
+            {/* Projected Demand Ranking — categories when ALL, types of the picked category otherwise */}
+            {sections.forecastRanking && (
+                <div ref={chartRefs.forecastRanking} className="bg-white shadow rounded p-4">
+                    <p className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                        <Trophy size={16} className="text-blue-600" />
+                        Projected Demand Ranking
+                    </p>
+                    <p className="text-sm text-gray-400 mb-4">
+                        {fRankCategory === 'ALL'
+                            ? 'Categories ranked by projected requests over the next 3 months'
+                            : `Types in ${categoryName(fRankCategory)} ranked by projected requests over the next 3 months`}
+                        {` · ${fRankMunicipality !== 'ALL' ? fRankMunicipality : 'All Municipalities'}`}
+                    </p>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="text-left text-gray-500 border-b">
+                                    <th className="pb-3 pr-4">Rank</th>
+                                    <th className="pb-3 pr-4">{fRankCategory === 'ALL' ? 'Category' : 'Type'}</th>
+                                    {forecastRankingData.months.map((label) => (
+                                        <th key={label} className="pb-3 pr-4">{label}</th>
+                                    ))}
+                                    <th className="pb-3">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {forecastRankingData.rankings.map((item) => (
+                                    <tr key={item.name} className="border-b hover:bg-gray-50">
+                                        <td className="py-3 pr-4">
+                                            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-bold ${item.rank === 1 ? 'bg-blue-800' : item.rank === 2 ? 'bg-blue-600' : item.rank === 3 ? 'bg-blue-400' : 'bg-gray-300 text-gray-600'}`}>
+                                                {item.rank}
+                                            </span>
+                                        </td>
+                                        <td className="py-3 pr-4 font-medium text-gray-700">{item.name}</td>
+                                        {item.predictions.map((p, i) => (
+                                            <td key={i} className="py-3 pr-4 text-gray-500">{p.toLocaleString()}</td>
+                                        ))}
+                                        <td className="py-3 text-gray-800 font-semibold">{item.total.toLocaleString()}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {forecastRankingData.rankings.length === 0 && (
+                            <p className="text-sm text-gray-400 py-4">No data for this selection.</p>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
@@ -884,9 +1014,9 @@ function Export() {
                                         <label htmlFor={key} className="text-base text-gray-600 cursor-pointer">{sectionLabels[key]}</label>
                                     </div>
 
-                                    {/* Dashboard KPI filters — unchanged */}
+                                    {/* Dashboard KPI — year, month, municipality, category, then type */}
                                     {key === 'dashboardKpi' && value && (
-                                        <div className="mt-2 grid grid-cols-4 gap-2 pl-6">
+                                        <div className="mt-2 grid grid-cols-5 gap-2 pl-6">
                                             <div>
                                                 <p className="text-sm text-gray-400">Year</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm"
@@ -915,29 +1045,55 @@ function Export() {
                                                 <p className="text-sm text-gray-400">Municipality</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedDashboardMunicipality(e.target.value)} value={selectedDashboardMunicipality}>
                                                     <option value="ALL">ALL MUNICIPALITIES</option>
-                                                    {municipalities.map(m => <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>)}
+                                                    {municipalities.map(m => <option key={m.municipality_id} value={m.municipality_id}>{m.municipality_name}</option>)}
                                                 </select>
                                             </div>
                                             <div>
-                                                <p className="text-sm text-gray-400">Assistance Type</p>
-                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedDashboardType(e.target.value)} value={selectedDashboardType}>
-                                                    <option value="ALL">ALL TYPES</option>
-                                                    {types.map(t => <option key={t.type_id} value={t.type_name}>{t.type_name}</option>)}
+                                                <p className="text-sm text-gray-400">Category</p>
+                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm"
+                                                    onChange={e => {
+                                                        setSelectedDashboardCategory(e.target.value)
+                                                        setSelectedDashboardType('ALL')
+                                                    }} value={selectedDashboardCategory}>
+                                                    <option value="ALL">ALL CATEGORY</option>
+                                                    {categories.map(c => <option key={c.category_id} value={c.category_id}>{c.category_name}</option>)}
                                                 </select>
                                             </div>
+                                            {selectedDashboardCategory !== 'ALL' && (
+                                                <div>
+                                                    <p className="text-sm text-gray-400">Assistance Type</p>
+                                                    <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedDashboardType(e.target.value)} value={selectedDashboardType}>
+                                                        <option value="ALL">ALL TYPES</option>
+                                                        {kpiFilteredTypes.map(t => <option key={t.type_id} value={t.type_id}>{t.type_name}</option>)}
+                                                    </select>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
-                                    {/* YoY Trends — Type + Year only, no Top N */}
+                                    {/* YoY Trends — category, then type, then year */}
                                     {key === 'yoyTrends' && value && (
-                                        <div className="mt-2 grid grid-cols-2 gap-2 pl-6">
+                                        <div className="mt-2 grid grid-cols-3 gap-2 pl-6">
                                             <div>
-                                                <p className="text-sm text-gray-400">Assistance Type</p>
-                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedYoYType(e.target.value)} value={selectedYoYType}>
-                                                    <option value="ALL">ALL TYPES</option>
-                                                    {types.map(t => <option key={t.type_id} value={t.type_name}>{t.type_name}</option>)}
+                                                <p className="text-sm text-gray-400">Category</p>
+                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm"
+                                                    onChange={e => {
+                                                        setYoyCategory(e.target.value)
+                                                        setSelectedYoYType('ALL')
+                                                    }} value={yoyCategory}>
+                                                    <option value="ALL">ALL CATEGORY</option>
+                                                    {categories.map(c => <option key={c.category_id} value={c.category_id}>{c.category_name}</option>)}
                                                 </select>
                                             </div>
+                                            {yoyCategory !== 'ALL' && (
+                                                <div>
+                                                    <p className="text-sm text-gray-400">Assistance Type</p>
+                                                    <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedYoYType(e.target.value)} value={selectedYoYType}>
+                                                        <option value="ALL">ALL TYPES</option>
+                                                        {yoyFilteredTypes.map(t => <option key={t.type_id} value={t.type_name}>{t.type_name}</option>)}
+                                                    </select>
+                                                </div>
+                                            )}
                                             <div>
                                                 <p className="text-sm text-gray-400">Year</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setSelectedYearForLine(e.target.value)} value={selectedYearForLine}>
@@ -948,9 +1104,16 @@ function Export() {
                                         </div>
                                     )}
 
-                                    {/* Distribution by Assistance Type — Year + conditional Month only */}
+                                    {/* Distribution by Assistance Type — category, year, conditional month */}
                                     {key === 'distributionByAssistance' && value && (
                                         <div className="mt-2 grid grid-cols-3 gap-2 pl-6">
+                                            <div>
+                                                <p className="text-sm text-gray-400">Category</p>
+                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setDistributionCategory(e.target.value)} value={distributionCategory}>
+                                                    <option value="ALL">ALL CATEGORY</option>
+                                                    {categories.map(c => <option key={c.category_id} value={c.category_id}>{c.category_name}</option>)}
+                                                </select>
+                                            </div>
                                             <div>
                                                 <p className="text-sm text-gray-400">Year</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm"
@@ -1007,9 +1170,9 @@ function Export() {
                                         </div>
                                     )}
 
-                                    {/* Comparison Chart — unchanged */}
+                                    {/* Comparison Chart — two municipalities, category, then type, then year/month */}
                                     {key === 'comparisonChart' && value && (
-                                        <div className="mt-2 grid grid-cols-5 gap-2 pl-6">
+                                        <div className="mt-2 grid grid-cols-3 gap-2 pl-6">
                                             <div>
                                                 <p className="text-sm text-gray-400">Municipality 1</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setCompMunicipality1(e.target.value)} value={compMunicipality1}>
@@ -1023,12 +1186,25 @@ function Export() {
                                                 </select>
                                             </div>
                                             <div>
-                                                <p className="text-sm text-gray-400">Assistance Type</p>
-                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setCompType(e.target.value)} value={compType}>
-                                                    <option value="ALL">ALL</option>
-                                                    {types.map(t => <option key={t.type_id} value={t.type_name}>{t.type_name}</option>)}
+                                                <p className="text-sm text-gray-400">Category</p>
+                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm"
+                                                    onChange={e => {
+                                                        setCompCategory(e.target.value)
+                                                        setCompType('ALL')
+                                                    }} value={compCategory}>
+                                                    <option value="ALL">ALL CATEGORY</option>
+                                                    {categories.map(c => <option key={c.category_id} value={c.category_id}>{c.category_name}</option>)}
                                                 </select>
                                             </div>
+                                            {compCategory !== 'ALL' && (
+                                                <div>
+                                                    <p className="text-sm text-gray-400">Assistance Type</p>
+                                                    <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setCompType(e.target.value)} value={compType}>
+                                                        <option value="ALL">ALL TYPES</option>
+                                                        {compFilteredTypes.map(t => <option key={t.type_id} value={t.type_name}>{t.type_name}</option>)}
+                                                    </select>
+                                                </div>
+                                            )}
                                             <div>
                                                 <p className="text-sm text-gray-400">Year</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm"
@@ -1054,13 +1230,20 @@ function Export() {
                                         </div>
                                     )}
 
-                                    {/* Municipality Drilldown — unchanged */}
+                                    {/* Municipality Drilldown — municipality, category, year, month */}
                                     {key === 'municipalityDrilldown' && value && (
-                                        <div className="mt-2 grid grid-cols-3 gap-2 pl-6">
+                                        <div className="mt-2 grid grid-cols-4 gap-2 pl-6">
                                             <div>
                                                 <p className="text-sm text-gray-400">Municipality</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setDrilldownMunicipality(e.target.value)} value={drilldownMunicipality}>
                                                     {municipalities.map(m => <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>)}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-400">Category</p>
+                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setDrilldownCategory(e.target.value)} value={drilldownCategory}>
+                                                    <option value="ALL">ALL CATEGORY</option>
+                                                    {categories.map(c => <option key={c.category_id} value={c.category_id}>{c.category_name}</option>)}
                                                 </select>
                                             </div>
                                             <div>
@@ -1091,13 +1274,13 @@ function Export() {
                                         </div>
                                     )}
 
-                                    {/* Top N Rankings — unchanged */}
+                                    {/* Top N Rankings — unchanged (typo in the Top N list fixed) */}
                                     {key === 'topNRanking' && value && (
                                         <div className="mt-2 grid grid-cols-3 gap-2 pl-6">
                                             <div>
                                                 <p className="text-sm text-gray-400">Top N</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setTopN(Number(e.target.value))} value={topN}>
-                                                    {[5, 10, 15, ,24].map(n => <option key={n} value={n}>Top {n}</option>)}
+                                                    {[5, 10, 15, 20, 24].map(n => <option key={n} value={n}>Top {n}</option>)}
                                                 </select>
                                             </div>
                                             <div>
@@ -1120,9 +1303,9 @@ function Export() {
                                         </div>
                                     )}
 
-                                    {/* Forecast — unchanged */}
+                                    {/* Forecast — municipality, category, then type */}
                                     {key === 'forecast' && value && (
-                                        <div className="mt-2 grid grid-cols-2 gap-2 pl-6">
+                                        <div className="mt-2 grid grid-cols-3 gap-2 pl-6">
                                             <div>
                                                 <p className="text-sm text-gray-400">Municipality</p>
                                                 <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setForecastMunicipality(e.target.value)} value={forecastMunicipality}>
@@ -1131,10 +1314,43 @@ function Export() {
                                                 </select>
                                             </div>
                                             <div>
-                                                <p className="text-sm text-gray-400">Assistance Type</p>
-                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setForecastType(e.target.value)} value={forecastType}>
-                                                    <option value="ALL">ALL TYPES</option>
-                                                    {types.map(t => <option key={t.type_id} value={t.type_name}>{t.type_name}</option>)}
+                                                <p className="text-sm text-gray-400">Category</p>
+                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm"
+                                                    onChange={e => {
+                                                        setForecastCategory(e.target.value)
+                                                        setForecastType('ALL')
+                                                    }} value={forecastCategory}>
+                                                    <option value="ALL">ALL CATEGORY</option>
+                                                    {categories.map(c => <option key={c.category_id} value={c.category_id}>{c.category_name}</option>)}
+                                                </select>
+                                            </div>
+                                            {forecastCategory !== 'ALL' && (
+                                                <div>
+                                                    <p className="text-sm text-gray-400">Assistance Type</p>
+                                                    <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setForecastType(e.target.value)} value={forecastType}>
+                                                        <option value="ALL">ALL TYPES</option>
+                                                        {forecastFilteredTypes.map(t => <option key={t.type_id} value={t.type_name}>{t.type_name}</option>)}
+                                                    </select>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Projected Demand Ranking — category and municipality */}
+                                    {key === 'forecastRanking' && value && (
+                                        <div className="mt-2 grid grid-cols-2 gap-2 pl-6">
+                                            <div>
+                                                <p className="text-sm text-gray-400">Category</p>
+                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setFRankCategory(e.target.value)} value={fRankCategory}>
+                                                    <option value="ALL">ALL CATEGORY</option>
+                                                    {categories.map(c => <option key={c.category_id} value={c.category_id}>{c.category_name}</option>)}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-400">Municipality</p>
+                                                <select className="w-full border border-gray-300 rounded p-2 mt-1 text-sm" onChange={e => setFRankMunicipality(e.target.value)} value={fRankMunicipality}>
+                                                    <option value="ALL">ALL MUNICIPALITIES</option>
+                                                    {municipalities.map(m => <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>)}
                                                 </select>
                                             </div>
                                         </div>
