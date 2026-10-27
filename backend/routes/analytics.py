@@ -53,7 +53,6 @@ def comparison():
 
     where_clause = "WHERE " + " AND ".join(filters)
 
-    # Category ALL -> group by category. Category picked -> group by type.
     if category == 'ALL':
         label_col = "c.category_name"
     else:
@@ -91,37 +90,46 @@ def comparison():
 @token_required
 def drill_down():
     municipality = request.args.get('municipality', 'ANGAT')
+    category = request.args.get('category', 'ALL')
     selected_year = request.args.get('year', 'ALL')
     month = request.args.get('month', 'ALL')
-    
+
     filters = ["(m.municipality_name = %s)"]
     params = [municipality]
+
+    if category != 'ALL':
+        filters.append("a.category_id = %s")
+        params.append(int(category))
 
     if selected_year != 'ALL':
         filters.append("r.year = %s")
         params.append(selected_year)
-    
+
     if month != 'ALL':
         filters.append("r.month = %s")
         params.append(month)
 
     where_clause = "WHERE " + " AND ".join(filters)
 
+    label_col = "c.category_name" if category == 'ALL' else "a.type_name"
+
     conn = get_db()
-    cursor = conn.cursor(dictionary=True)
-
-    cursor.execute(f"""
-        SELECT a.type_name, m.municipality_name, CAST(SUM(r.request_count) AS UNSIGNED) AS total FROM assistance_records r 
-        JOIN assistance_types a ON r.assistance_type_id = a.type_id
-        JOIN municipalities m ON r.municipality_id = m.municipality_id
-        {where_clause}
-        GROUP BY m.municipality_name, a.type_name
-        ORDER BY total DESC
-    """, params)
-
-    data = cursor.fetchall()
-    cursor.close()
-    conn.close()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(f"""
+            SELECT {label_col} AS name, CAST(SUM(r.request_count) AS UNSIGNED) AS total
+            FROM assistance_records r
+            JOIN assistance_types a ON r.assistance_type_id = a.type_id
+            JOIN category c ON a.category_id = c.category_id
+            JOIN municipalities m ON r.municipality_id = m.municipality_id
+            {where_clause}
+            GROUP BY {label_col}
+            ORDER BY total DESC
+        """, params)
+        data = cursor.fetchall()
+        cursor.close()
+    finally:
+        conn.close()
 
     return jsonify(data)
 

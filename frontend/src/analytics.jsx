@@ -109,11 +109,12 @@ function Analytics() {
     const [drill_down_year, setDrillDownYear] = useState("ALL")  
     const [drill_down_month, setDrillDownMonth] = useState("ALL")
     const [showDrilldownMonthFilter, setShowDrilldownMonthFilter] = useState(false)
+    const [drill_down_category, setDrillDownCategory] = useState('ALL')
 
     useEffect(() => {
         const fetchDrilldownData = async () => {
             const token = getToken()
-            const response = await fetch(`${BASE_URL}/api/analytics/drill_down?municipality=${drill_down_municipality}&year=${drill_down_year}&month=${drill_down_month}`, {
+            const response = await fetch(`${BASE_URL}/api/analytics/drill_down?municipality=${drill_down_municipality}&category=${drill_down_category}&year=${drill_down_year}&month=${drill_down_month}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -122,7 +123,7 @@ function Analytics() {
             setDrilldownData(data)
         }   
         fetchDrilldownData()
-    }, [drill_down_municipality, drill_down_year, drill_down_month])
+    }, [drill_down_municipality, drill_down_category, drill_down_year, drill_down_month])
     
     const maxTotal = drilldown_data.reduce((sum, d) => sum + Number(d.total), 0) || 1
 
@@ -310,9 +311,10 @@ function Analytics() {
                         <p className="font-semibold text-gray-700">Municipality Breakdown</p>
                     </div>
                     <div className='flex gap-2 items-center'>
-                        <select className= "border rounded px-2 py-1 text-sm" onChange={(e) => setDrillDownMunicipality(e.target.value)} value={drill_down_municipality}>
-                            {municipalities.map((m) =>  (
-                                <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
+                        <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setDrillDownCategory(e.target.value)} value={drill_down_category}>
+                            <option value="ALL">ALL CATEGORY</option>
+                            {categories.map((c) => (
+                                <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
                             ))}
                         </select>
                         <select className="border rounded px-2 py-1 text-sm" onChange={(e) =>     
@@ -340,7 +342,7 @@ function Analytics() {
                         )}
                     </div>
                 </div>
-                <p className="text-sm text-gray-400 mb-4">Breakdown by assistance type with mini stat cards</p>
+                <p className="text-sm text-gray-400 mb-4">Breakdown by assistance type with mini stat cards to Breakdown by category, or by type when a category is selected</p>
 
                 <div className="grid grid-cols-2 gap-3">
                     {drilldown_data.map((item) => (
