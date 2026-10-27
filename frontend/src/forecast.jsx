@@ -2,7 +2,7 @@ import Layout from "./Layout";
 import { getToken } from "./auth";
 import { useState, useEffect } from 'react'
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts'
-import { TrendingUp, FileText } from 'lucide-react'
+import { TrendingUp, FileText, Trophy } from 'lucide-react'
 import { BASE_URL } from './config';
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -54,6 +54,23 @@ function Forecast() {
     { label: 'Nov', value: 11 },
     { label: 'Dec', value: 12 },
     ]
+
+    const [rankCategory, setRankCategory] = useState('ALL')
+    const [rankMunicipality, setRankMunicipality] = useState('ALL')
+    const [rankingData, setRankingData] = useState({ months: [], rankings: [] })
+
+    useEffect(() => {
+        const fetchRanking = async () => {
+            const token = getToken()
+            const res = await fetch(`${BASE_URL}/api/forecast/ranking?category=${rankCategory}&municipality=${encodeURIComponent(rankMunicipality)}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            setRankingData(await res.json())
+        }
+        fetchRanking()
+    }, [rankCategory, rankMunicipality])
+
+    const maxRankTotal = Math.max(...rankingData.rankings.map(r => r.total), 1)
 
     //narrative
     const[narrative,setNarrative] = useState('')
@@ -237,57 +254,78 @@ function Forecast() {
             </div>
 
             <div className="bg-white shadow rounded p-4">
-                <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp className="w-4 h-4 text-blue-600" />
-                    <p className="font-semibold text-gray-700">Forecast Data</p>
+                <div className="flex items-start justify-between flex-wrap gap-3 mb-1">
+                    <div className="flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-blue-600" />
+                        <p className="font-semibold text-gray-700">Projected Demand Ranking</p>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                        <select className="border rounded px-2 py-1 text-sm"
+                            value={rankCategory}
+                            onChange={(e) => setRankCategory(e.target.value)}>
+                            <option value="ALL">ALL CATEGORY</option>
+                            {categories.map((c) => (
+                                <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
+                            ))}
+                        </select>
+                        <select className="border rounded px-2 py-1 text-sm"
+                            value={rankMunicipality}
+                            onChange={(e) => setRankMunicipality(e.target.value)}>
+                            <option value="ALL">ALL MUNICIPALITIES</option>
+                            {municipalities.map((m) => (
+                                <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
-                <p className="text-sm text-gray-400 mb-4">Yearly breakdown with confidence intervals</p>
+                <p className="text-sm text-gray-400 mb-4">
+                    {rankCategory === 'ALL'
+                        ? 'Categories ranked by projected requests over the next 3 months'
+                        : 'Types in the selected category ranked by projected requests over the next 3 months'}
+                </p>
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-left text-gray-500 border-b">
-                                <th className="px-4 py-2">Year</th>
-                                <th className="px-4 py-2">Month</th>
-                                <th className="px-4 py-2">Projected Requests</th>
-                                <th className="px-4 py-2">Lower Bound</th>
-                                <th className="px-4 py-2">Upper Bound</th>
-                                <th className="px-4 py-2">Type</th>
+                                <th className="pb-3 pr-4">Rank</th>
+                                <th className="pb-3 pr-4">{rankCategory === 'ALL' ? 'Category' : 'Type'}</th>
+                                {rankingData.months.map((label) => (
+                                    <th key={label} className="pb-3 pr-4">{label}</th>
+                                ))}
+                                <th className="pb-3 pr-4">Total</th>
+                                <th className="pb-3">Volume</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {forecastData.timeline.map((item,i) => (
-                                <tr key={i} className="border-b">
-                                    <td className="px-4 py-2 font-medium text-gray-700">{item.year}</td>
-                                    <td className="px-4 py-2">{item.month}</td>
-                                    <td className="px-4 py-2">{forecastData.timeline[i]?.total}</td>
-                                    <td className="px-4 py-2 text-gray-400">—</td>
-                                    <td className="px-4 py-2 text-gray-400">—</td>
-                                    <td className="px-4 py-2">
-                                        <span className="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold uppercase">
-                                            Historical
+                            {rankingData.rankings.map((item) => (
+                                <tr key={item.name} className="border-b hover:bg-gray-50">
+                                    <td className="py-3 pr-4">
+                                        <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-bold ${item.rank === 1 ? 'bg-blue-800' : item.rank === 2 ? 'bg-blue-600' : item.rank === 3 ? 'bg-blue-400' : 'bg-gray-300 text-gray-600'}`}>
+                                            {item.rank}
                                         </span>
                                     </td>
-                                </tr>
-                            ))}
-                            {forecastData.forecast.map((item, i) => (
-                                <tr key={i} className="border-b bg-yellow-50">
-                                    <td className="px-4 py-2 font-medium text-gray-700">{item.year}</td>
-                                    <td className="px-4 py-2">{item.month}</td>
-                                    <td className="px-4 py-2 font-semibold text-gray-800">{forecastData.forecast[i]?.future_prediction}</td>
-                                    <td className="px-4 py-2">{forecastData.forecast[i]?.lower}</td>
-                                    <td className="px-4 py-2">{forecastData.forecast[i]?.upper}</td>
-                                    <td className="px-4 py-2">
-                                        <span className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-semibold uppercase">
-                                            Projected
-                                        </span>
+                                    <td className="py-3 pr-4 font-medium text-gray-700">{item.name}</td>
+                                    {item.predictions.map((p, i) => (
+                                        <td key={i} className="py-3 pr-4 text-gray-500">{p.toLocaleString()}</td>
+                                    ))}
+                                    <td className="py-3 pr-4 text-gray-800 font-semibold">{item.total.toLocaleString()}</td>
+                                    <td className="py-3 w-40">
+                                        <div className="h-2 bg-gray-200 rounded-full">
+                                            <div
+                                                className="h-2 bg-teal-600 rounded-full"
+                                                style={{ width: `${(item.total / maxRankTotal) * 100}%` }}
+                                            />
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
+                    {rankingData.rankings.length === 0 && (
+                        <p className="text-sm text-gray-400 py-4">No data for this selection.</p>
+                    )}
                 </div>
-
             </div>
 
             <div className="bg-white shadow rounded p-4 mt-6 border-l-4 border-yellow-500">

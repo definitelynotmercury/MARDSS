@@ -183,6 +183,94 @@ def generate_with_fallback(prompt):
 
     raise last_error
 
+@forecast_bp.route('/api/forecast/ranking')
+@token_required
+def forecast_ranking():
+    municipality = request.args.get('municipality', 'ALL')
+    category = request.args.get('category', 'ALL')
+
+    filters = []
+    params = []
+
+    if municipality != 'ALL':
+        filters.append("m.municipality_name = %s")
+        params.append(municipality)
+    if category != 'ALL':
+        filters.append("a.category_id = %s")
+        params.append(int(category))
+
+    where_clause = "WHERE " + " AND ".join(filters) if filters else ""
+
+    # Category ALL -> rank categories. Category picked -> rank types inside it.
+    label_col = "c.category_name" if category == 'ALL' else "a.type_name"
+
+    conn = get_db()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(f"""
+            SELECT {label_col} AS name, r.year, r.month, SUM(r.request_count) AS total
+            FROM assistance_records r
+            JOIN assistance_types a ON r.assistance_type_id = a.type_id
+            JOIN category c ON a.category_id = c.category_id
+            JOIN municipalities m ON r.municipality_id = m.municipality_id
+            {where_clause}
+            GROUP BY {label_col}, r.year, r.month
+        """, params)
+        rows = cursor.fetchall()
+        cursor.close()
+    finally:
+        conn.close()
+
+    if not rows:
+        return jsonify({"months": [], "rankings": []})
+
+    # Build one continuous month timeline so months with no records count as 0
+    keys = sorted({(r['year'], r['month']) for r in rows})
+    last_year, last_month = keys[-1]
+    timeline = []
+    y, m = keys[0]
+    while (y, m) <= (last_year, last_month):
+        timeline.append((y, m))
+        m += 1
+        if m > 12:
+            m = 1
+            y += 1
+    index_of = {key: i for i, key in enumerate(timeline)}
+
+    series = {}
+    for row in rows:
+        totals = series.setdefault(row['name'], np.zeros(len(timeline)))
+        totals[index_of[(row['year'], row['month'])]] = float(row['total'])
+
+    # Labels for the next 3 months
+    predict_range = 3
+    month_labels = []
+    y, m = last_year, last_month
+    for _ in range(predict_range):
+        m += 1
+        if m > 12:
+            m = 1
+            y += 1
+        month_labels.append(f"{MONTH_NAMES[m - 1]} {y}")
+
+    X = np.arange(len(timeline)).reshape(-1, 1)
+    future_X = np.arange(len(timeline), len(timeline) + predict_range).reshape(-1, 1)
+
+    rankings = []
+    for name, totals in series.items():
+        model = LinearRegression().fit(X, totals)
+        preds = np.maximum(np.round(model.predict(future_X)), 0).astype(int)
+        rankings.append({
+            "name": name,
+            "predictions": [int(p) for p in preds],
+            "total": int(preds.sum())
+        })
+
+    rankings.sort(key=lambda item: item["total"], reverse=True)
+    for i, item in enumerate(rankings):
+        item["rank"] = i + 1
+
+    return jsonify({"months": month_labels, "rankings": rankings})
 
 @forecast_bp.route('/api/forecast/narrative', methods=['POST'])
 @token_required
