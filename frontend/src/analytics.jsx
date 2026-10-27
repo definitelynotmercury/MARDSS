@@ -292,7 +292,7 @@ function Analytics() {
                 <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={comparisonData}  tabIndex={-1} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="name" angle={-45} textAnchor="end" interval={0} height={200} tick={{ fontSize: 11 }} />
+                        <XAxis dataKey="name" angle={-45} textAnchor="end" interval={0} height={200} tick={{ fontSize: 18 }} />
                         <YAxis type="number" width={50} tick={{ fontSize: 11 }} />
                         <Tooltip />
                         <Legend wrapperStyle={{ fontSize: 12 }} />
