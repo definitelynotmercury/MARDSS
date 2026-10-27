@@ -28,9 +28,11 @@ const CustomTooltip = ({ active, payload, label }) => {
 function Forecast() {
 
     const [municipalities, setMunicipalities] = useState([])
-    const [types, setTypes] = useState([])
     const [selectedMunicipality, setSelectedMunicipality] = useState('ALL')
     const [selectedType, setSelectedType] = useState('ALL')
+    const [categories, setCategories] = useState([])
+    const [selectedCategory, setSelectedCategory] = useState('ALL')
+    const [filteredTypes, setFilteredTypes] = useState([])
 
     const [forecastData, setForecastData] = useState({
     timeline: [],
@@ -68,22 +70,34 @@ function Forecast() {
             const muni_data = await response1.json()
             setMunicipalities(muni_data)
 
-            const response2 = await fetch(`${BASE_URL}/api/assistance_types`,{
-                'headers': {
-                    'Authorization': `Bearer ${token}`
-                }
+            const response2 = await fetch(`${BASE_URL}/api/category`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             })
-            const type_data = await response2.json()
-            setTypes(type_data)
+            setCategories(await response2.json())
 
         }
         fetchdata()
     }, [])
 
     useEffect(() => {
+        if (selectedCategory === 'ALL') {
+            setFilteredTypes([])
+            return
+        }
+        const fetchFilteredTypes = async () => {
+            const token = getToken()
+            const res = await fetch(`${BASE_URL}/api/filtered_types?category=${selectedCategory}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            setFilteredTypes(await res.json())
+        }
+        fetchFilteredTypes()
+    }, [selectedCategory])
+
+    useEffect(() => {
         const fetchForecastData = async() => {
             const token = getToken()
-            const response = await fetch(`${BASE_URL}/api/forecast/predict?municipality=${selectedMunicipality}&type=${selectedType}`,{
+            const response = await fetch(`${BASE_URL}/api/forecast/predict?municipality=${selectedMunicipality}&category=${selectedCategory}&type=${encodeURIComponent(selectedType)}`,{
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -92,7 +106,7 @@ function Forecast() {
             setForecastData(data)
         }
         fetchForecastData()
-    }, [selectedMunicipality, selectedType])
+    }, [selectedMunicipality, selectedCategory, selectedType])
 
     const generateNarrative = async() => {
         const token = getToken()
@@ -145,12 +159,28 @@ function Forecast() {
             <div className="flex items-center justify-between mb-4">
                 <h1 className="text-xl font-bold text-gray-700">Forecasting</h1>
                 <div className="flex gap-3 items-center">
-                    <select className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white shadow-sm" value={selectedType} onChange={(e) => setSelectedType(e.target.value)}>
-                        <option value="ALL">All Types</option>
-                        {types.map((t) => (
-                                    <option key={t.type_id} value={t.type_name}>{t.type_name}</option>
-                            ))}
+                    <select className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white shadow-sm"
+                        value={selectedCategory}
+                        onChange={(e) => {
+                            setSelectedCategory(e.target.value)
+                            setSelectedType('ALL')
+                        }}>
+                        <option value="ALL">All Categories</option>
+                        {categories.map((c) => (
+                            <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
+                        ))}
                     </select>
+
+                    {selectedCategory !== 'ALL' && (
+                        <select className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white shadow-sm"
+                            value={selectedType}
+                            onChange={(e) => setSelectedType(e.target.value)}>
+                            <option value="ALL">All Types</option>
+                            {filteredTypes.map((t) => (
+                                <option key={t.type_id} value={t.type_name}>{t.type_name}</option>
+                            ))}
+                        </select>
+                    )}
 
                     <select className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white shadow-sm" value={selectedMunicipality} onChange={(e) => setSelectedMunicipality(e.target.value)}>
                         <option value="ALL">All Municipalities/Cities</option>

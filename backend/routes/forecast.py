@@ -31,6 +31,7 @@ def get_db():
 @token_required
 def predict():
     muncipality = request.args.get('municipality', 'ALL')
+    category = request.args.get('category', 'ALL')
     type_ = request.args.get('type', 'ALL')
 
     filters = []
@@ -39,6 +40,9 @@ def predict():
     if muncipality != 'ALL':
         filters.append("m.municipality_name = %s")
         params.append(muncipality)
+    if category != 'ALL':
+        filters.append("a.category_id = %s")
+        params.append(int(category))
     if type_ != 'ALL':
         filters.append("a.type_name = %s")
         params.append(type_)
