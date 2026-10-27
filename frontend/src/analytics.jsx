@@ -30,7 +30,6 @@ function Analytics() {
     const [selectedYear, setSelectedYear] = useState('ALL')
     const [comparisonData, setComparisonData] = useState([])
     const [municipalities, setMunicipalities] = useState([])
-    const [types, setTypes] = useState([])
     const [showComparisonMonthFilter, setShowComparisonMonthFilter] = useState(false)
     const [comparisonMonth, setComparisonMonth] = useState('ALL')
     const [selectedCategory, setSelectedCategory] = useState('ALL')
@@ -55,8 +54,6 @@ function Analytics() {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             setCategories(await response2.json())
-            const type_data = await response2.json()
-            setTypes(type_data)
 
         }
         fetchdata()
@@ -311,6 +308,11 @@ function Analytics() {
                         <p className="font-semibold text-gray-700">Municipality Breakdown</p>
                     </div>
                     <div className='flex gap-2 items-center'>
+                        <select className= "border rounded px-2 py-1 text-sm" onChange={(e) => setDrillDownMunicipality(e.target.value)} value={drill_down_municipality}>
+                            {municipalities.map((m) =>  (
+                                <option key={m.municipality_id} value={m.municipality_name}>{m.municipality_name}</option>
+                            ))}
+                        </select>
                         <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setDrillDownCategory(e.target.value)} value={drill_down_category}>
                             <option value="ALL">ALL CATEGORY</option>
                             {categories.map((c) => (
@@ -342,13 +344,13 @@ function Analytics() {
                         )}
                     </div>
                 </div>
-                <p className="text-sm text-gray-400 mb-4">Breakdown by assistance type with mini stat cards to Breakdown by category, or by type when a category is selected</p>
+                <p className="text-sm text-gray-400 mb-4">Breakdown by assistance type with mini stat cards</p>
 
                 <div className="grid grid-cols-2 gap-3">
                     {drilldown_data.map((item) => (
-                        <div key={item.type_name} className="bg-gray-100 rounded-lg p-4">
+                        <div key={item.name} className="bg-gray-100 rounded-lg p-4">
                             <div className="flex justify-between text-sm font-medium mb-2">
-                                <span className="text-gray-600">{item.type_name}</span>
+                                <span className="text-gray-600">{item.name}</span>
                                 <span className="text-gray-800">{item.total.toLocaleString()}</span>
                             </div>
                             <div className="h-2 bg-gray-300 rounded-full">
