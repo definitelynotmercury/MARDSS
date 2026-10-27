@@ -134,8 +134,12 @@ function Forecast() {
             body: JSON.stringify({
                 forecastData,
                 selectedMunicipality,
-                selectedType
-                })
+                selectedCategory,
+                selectedType,
+                rankingData,
+                rankCategory,
+                rankMunicipality
+            })
             })
         const data = await response.json()
         setNarrative(data.narrative)

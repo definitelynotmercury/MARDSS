@@ -26,6 +26,19 @@ MODEL_FALLBACKS = [
 def get_db():
     return mysql.connector.connect(**DB_CONFIG)
 
+def lookup_name(table, id_col, name_col, value):
+    if value == "ALL":
+        return "ALL"
+    conn = get_db()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(f"SELECT {name_col} FROM {table} WHERE {id_col} = %s", (value,))
+        row = cursor.fetchone()
+        cursor.close()
+    finally:
+        conn.close()
+    return row[name_col] if row else value
+
    
 @forecast_bp.route('/api/forecast/predict')
 @token_required
@@ -276,32 +289,72 @@ def forecast_ranking():
 @token_required
 def generate_narrative():
     data = request.get_json()
+
+    # --- Forecast chart ---
     forecast_data = data.get('forecastData', {})
     selected_municipality = data.get('selectedMunicipality', 'ALL')
+    selected_category = data.get('selectedCategory', 'ALL')
     selected_type = data.get('selectedType', 'ALL')
+    timeline = forecast_data.get('timeline', [])
+    forecast = forecast_data.get('forecast', [])
+    avg_growth = forecast_data.get('average_growth_rate', 0)
 
+    # --- Ranking card ---
+    ranking_data = data.get('rankingData', {})
+    rank_months = ranking_data.get('months', [])
+    rankings = ranking_data.get('rankings', [])
+    rank_category = data.get('rankCategory', 'ALL')
+    rank_municipality = data.get('rankMunicipality', 'ALL')
 
-    timeline = forecast_data.get('timeline',[])
-    forecast = forecast_data.get('forecast',[])
-    
+    # --- Turn category IDs into names ---
+    category_name = lookup_name("category", "category_id", "category_name", selected_category)
+    rank_category_name = lookup_name("category", "category_id", "category_name", rank_category)
+
+    # --- What does each section cover? ---
+    chart_scope_parts = []
+    if selected_category != 'ALL':
+        chart_scope_parts.append(f"category '{category_name}'")
+    if selected_type != 'ALL':
+        chart_scope_parts.append(f"type '{selected_type}'")
+    chart_scope = ", ".join(chart_scope_parts) if chart_scope_parts else "all categories and types"
+    chart_place = selected_municipality if selected_municipality != 'ALL' else "the entire province"
+
+    if rank_category == 'ALL':
+        ranking_scope = "The ranking lists assistance CATEGORIES"
+    else:
+        ranking_scope = (
+            f"The ranking lists the assistance TYPES within the category '{rank_category_name}'"
+        )
+    rank_place = rank_municipality if rank_municipality != 'ALL' else "the entire province"
+
     prompt = f"""
         You are a data analyst reporting for the Provincial Social Welfare and Development Office (PSWDO) of Bulacan.
-        Based on the following dashboard data, write a concise 3-4 sentence narrative that describes what the data shows.
+        Based on the following dashboard data, write a concise 4-5 sentence narrative that describes what the data shows.
         Do not suggest any actions or recommendations. Only explain the patterns, trends, and figures presented.
+        Each section below has its own independent filters, so do not apply one section's filters to another.
 
-        -selected municipality: {selected_municipality} - if it says all, it means the data is for the entire province
-        -selected assistance type: {selected_type} - if it says all, it means the data includes all types of assistance
-        -Historical data of total assistance requests from {timeline}
-        -Predicted totals for the next 3months {forecast}
-        -95% confidence intervals for the forecasts: can also be found in {forecast}
-        
-        """
+        [Demand Forecast Chart]
+        - Area: {chart_place}
+        - Scope: {chart_scope}
+        - Historical monthly totals (last 12 months): {timeline}
+        - Predicted totals for the next 3 months, with 95% confidence intervals (lower/upper): {forecast}
+        - Average month-over-month growth rate: {round(avg_growth, 2)}%
+
+        [Projected Demand Ranking]
+        - Area: {rank_place}
+        - {ranking_scope}
+        - Ranked by total projected requests over the next 3 months ({', '.join(rank_months)})
+        - Data (rank 1 is highest; "predictions" are per month in the order above, "total" is the sum): {rankings}
+
+        Be specific, mention actual numbers and names. Keep it professional and concise.
+    """
+
     try:
         narrative = generate_with_fallback(prompt)
         return jsonify({"narrative": narrative})
     except errors.APIError as e:
         print(e)
         return jsonify({
-                "narrative": None,
-                "error": "The AI service is busy right now. Please try again in a moment."
+            "narrative": None,
+            "error": "The AI service is busy right now. Please try again in a moment."
         }), 503
