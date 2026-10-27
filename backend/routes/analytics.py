@@ -20,6 +20,19 @@ analytics_bp = Blueprint('analytics',__name__)
 def get_db():
     return mysql.connector.connect(**DB_CONFIG)
 
+def lookup_name(table, id_col, name_col, value):
+    if value == "ALL":
+        return "ALL"
+    conn = get_db()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(f"SELECT {name_col} FROM {table} WHERE {id_col} = %s", (value,))
+        row = cursor.fetchone()
+        cursor.close()
+    finally:
+        conn.close()
+    return row[name_col] if row else value
+
 
 
 @analytics_bp.route('/api/analytics/comparison')
@@ -220,31 +233,81 @@ def generate_with_fallback(prompt):
 
 
 @analytics_bp.route('/api/analytics/narrative', methods=['POST'])
+@token_required
 def generate_narrative():
     data = request.get_json()
-    comparisonData = data.get('comparisonData', [])
-    comparisonMonth = data.get('comparisonMonth', 'ALL')
-    comparisonSelectedYear = data.get('selectedYear', 'ALL')
 
-    drilldown_Data = data.get('drilldown_data', [])
+    # --- Comparison chart ---
+    comparison_data = data.get('comparisonData', [])
+    comparison_year = data.get('selectedYear', 'ALL')
+    comparison_month = data.get('comparisonMonth', 'ALL')
+    municipality_1 = data.get('municipality1', '')
+    municipality_2 = data.get('municipality2', '')
+    comparison_category = data.get('comparisonCategory', 'ALL')
+    comparison_type = data.get('comparisonType', 'ALL')
+
+    # --- Drill-down ---
+    drilldown_data = data.get('drilldown_data', [])
     drill_down_year = data.get('drill_down_year', 'ALL')
     drill_down_month = data.get('drill_down_month', 'ALL')
+    drill_down_municipality = data.get('drill_down_municipality', '')
+    drill_down_category = data.get('drill_down_category', 'ALL')
+
+    # --- Rankings ---
     rankings = data.get('rankings', [])
 
+    # --- Turn category IDs into names ---
+    comparison_category_name = lookup_name("category", "category_id", "category_name", comparison_category)
+    drill_down_category_name = lookup_name("category", "category_id", "category_name", drill_down_category)
+
+    # --- What does each chart show? ---
+    if comparison_category == 'ALL':
+        comparison_scope = "The chart compares the two municipalities across assistance CATEGORIES"
+    elif comparison_type == 'ALL':
+        comparison_scope = (
+            f"The chart compares the two municipalities across the assistance TYPES "
+            f"within the category '{comparison_category_name}'"
+        )
+    else:
+        comparison_scope = (
+            f"The chart compares the two municipalities for only the type '{comparison_type}' "
+            f"(category '{comparison_category_name}')"
+        )
+
+    if drill_down_category == 'ALL':
+        drilldown_scope = "The breakdown shows totals per assistance CATEGORY"
+    else:
+        drilldown_scope = (
+            f"The breakdown shows totals per assistance TYPE within the category "
+            f"'{drill_down_category_name}'"
+        )
 
     prompt = f"""
         You are a data analyst reporting for the Provincial Social Welfare and Development Office (PSWDO) of Bulacan.
         Based on the following dashboard data, write a concise 3-4 sentence narrative that describes what the data shows.
         Do not suggest any actions or recommendations. Only explain the patterns, trends, and figures presented.
+        Each section below has its own independent filters, so do not apply one section's filters to another.
 
-        -comparison between two municipalities across different assistance types, showing the total number of requests for each type in each municipality mentions the actual values of the requests THE NOTABLES ONES{comparisonData}. Now if there is a selected year and month, mention the actual values for that specific year and month. {comparisonSelectedYear} {comparisonMonth}
+        [Municipality Comparison]
+        - Municipalities compared: {municipality_1} and {municipality_2}
+        - {comparison_scope}
+        - Period: year {comparison_year}, month {comparison_month} (ALL means no filter)
+        - Data (the "name" field is the category or type, the other keys are municipality totals): {comparison_data}
+        - Mention the notable values.
 
-        -drill-down data for a specific municipality, showing the breakdown of assistance requests by type explain the actual values{drilldown_Data}. if there is a selected year and month, mention the actual values for that specific year and month. {drill_down_year} {drill_down_month}
+        [Municipality Breakdown]
+        - Municipality: {drill_down_municipality}
+        - {drilldown_scope}
+        - Period: year {drill_down_year}, month {drill_down_month} (ALL means no filter)
+        - Data: {drilldown_data}
+        - Mention the notable values.
 
-        -rankings of municipalities based on their total assistance requests and growth rates. {rankings}
+        [Municipality Rankings]
+        - Ranking by total requests with growth rates (not filtered by category): {rankings}
 
         Be specific, mention actual numbers and names. Keep it professional and concise.
-        """
+    """
+
     try:
         narrative = generate_with_fallback(prompt)
         return jsonify({"narrative": narrative})

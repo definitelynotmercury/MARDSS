@@ -188,7 +188,16 @@ function Analytics() {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ comparisonData, selectedYear,comparisonMonth ,drilldown_data, drill_down_year, drill_down_month, rankings})
+            body: JSON.stringify({
+                comparisonData, selectedYear, comparisonMonth,
+                municipality1, municipality2,
+                comparisonCategory: selectedCategory,
+                comparisonType: selectedType,
+                drilldown_data, drill_down_year, drill_down_month,
+                drill_down_municipality,
+                drill_down_category,
+                rankings
+            })
         })
         const data = await res.json()
         setNarrative(data.narrative)
