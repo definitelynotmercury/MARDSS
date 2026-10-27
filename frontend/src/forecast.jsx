@@ -298,7 +298,6 @@ function Forecast() {
                                     <th key={label} className="pb-3 pr-4">{label}</th>
                                 ))}
                                 <th className="pb-3 pr-4">Total</th>
-                                <th className="pb-3">Volume</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -314,14 +313,6 @@ function Forecast() {
                                         <td key={i} className="py-3 pr-4 text-gray-500">{p.toLocaleString()}</td>
                                     ))}
                                     <td className="py-3 pr-4 text-gray-800 font-semibold">{item.total.toLocaleString()}</td>
-                                    <td className="py-3 w-40">
-                                        <div className="h-2 bg-gray-200 rounded-full">
-                                            <div
-                                                className="h-2 bg-teal-600 rounded-full"
-                                                style={{ width: `${(item.total / maxRankTotal) * 100}%` }}
-                                            />
-                                        </div>
-                                    </td>
                                 </tr>
                             ))}
                         </tbody>
