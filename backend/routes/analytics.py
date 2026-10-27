@@ -27,6 +27,7 @@ def get_db():
 def comparison():
     municipality_1 = request.args.get('municipality_1', 'ANGAT')
     municipality_2 = request.args.get('municipality_2', 'BALAGTAS')
+    category = request.args.get('category', 'ALL')
     type_ = request.args.get('type', 'ALL')
     year = request.args.get('year', 'ALL')
     month = request.args.get('month', 'ALL')
@@ -38,6 +39,10 @@ def comparison():
         filters.append("r.year = %s")
         params.append(year)
 
+    if category != 'ALL':
+        filters.append("a.category_id = %s")
+        params.append(int(category))
+
     if type_ != 'ALL':
         filters.append("a.type_name = %s")
         params.append(type_)
@@ -48,32 +53,38 @@ def comparison():
 
     where_clause = "WHERE " + " AND ".join(filters)
 
+    # Category ALL -> group by category. Category picked -> group by type.
+    if category == 'ALL':
+        label_col = "c.category_name"
+    else:
+        label_col = "a.type_name"
+
     conn = get_db()
-    cursor = conn.cursor(dictionary=True)
-
-    cursor.execute(f"""
-        SELECT a.type_name, m.municipality_name, SUM(r.request_count) AS total
-        FROM assistance_records r
-        JOIN assistance_types a ON r.assistance_type_id = a.type_id
-        JOIN municipalities m ON r.municipality_id = m.municipality_id
-        {where_clause}
-        GROUP BY m.municipality_name, a.type_name
-        ORDER BY a.type_name
-    """, params)
-
-    data = cursor.fetchall()
-    cursor.close()
-    conn.close()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(f"""
+            SELECT {label_col} AS name, m.municipality_name, SUM(r.request_count) AS total
+            FROM assistance_records r
+            JOIN assistance_types a ON r.assistance_type_id = a.type_id
+            JOIN category c ON a.category_id = c.category_id
+            JOIN municipalities m ON r.municipality_id = m.municipality_id
+            {where_clause}
+            GROUP BY m.municipality_name, {label_col}
+            ORDER BY {label_col}
+        """, params)
+        data = cursor.fetchall()
+        cursor.close()
+    finally:
+        conn.close()
 
     result = {}
     for row in data:
-        type_name = row['type_name']
-        if type_name not in result:
-            result[type_name] = {'type_name': type_name}
-        result[type_name][row['municipality_name']] = int(row['total'])
+        name = row['name']
+        if name not in result:
+            result[name] = {'name': name}
+        result[name][row['municipality_name']] = int(row['total'])
 
-    final = list(result.values())
-    return jsonify(final)
+    return jsonify(list(result.values()))
 
 
 @analytics_bp.route('/api/analytics/drill_down')

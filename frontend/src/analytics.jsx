@@ -33,6 +33,9 @@ function Analytics() {
     const [types, setTypes] = useState([])
     const [showComparisonMonthFilter, setShowComparisonMonthFilter] = useState(false)
     const [comparisonMonth, setComparisonMonth] = useState('ALL')
+    const [selectedCategory, setSelectedCategory] = useState('ALL')
+    const [categories, setCategories] = useState([])
+    const [filteredTypes, setFilteredTypes] = useState([])
 
     useEffect(() => {
         const token = getToken()
@@ -48,11 +51,10 @@ function Analytics() {
             const muni_data = await response1.json()
             setMunicipalities(muni_data)
 
-            const response2 = await fetch(`${BASE_URL}/api/assistance_types`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const response2 = await fetch(`${BASE_URL}/api/category`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             })
+            setCategories(await response2.json())
             const type_data = await response2.json()
             setTypes(type_data)
 
@@ -60,10 +62,25 @@ function Analytics() {
         fetchdata()
     }, [])
 
+    useEffect(() => {
+        if (selectedCategory === 'ALL') {
+            setFilteredTypes([])
+            return
+        }
+        const fetchFilteredTypes = async () => {
+            const token = getToken()
+            const res = await fetch(`${BASE_URL}/api/filtered_types?category=${selectedCategory}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            setFilteredTypes(await res.json())
+        }
+        fetchFilteredTypes()
+    }, [selectedCategory])
+
     // Function to fetch comparison data based on selected filters
     const fetchComparisonData = async () => {
     const token = getToken()
-    const response = await fetch(`${BASE_URL}/api/analytics/comparison?municipality_1=${municipality1}&municipality_2=${municipality2}&type=${selectedType}&year=${selectedYear}&month=${comparisonMonth}`, {
+    const response = await fetch(`${BASE_URL}/api/analytics/comparison?municipality_1=${municipality1}&municipality_2=${municipality2}&category=${selectedCategory}&type=${encodeURIComponent(selectedType)}&year=${selectedYear}&month=${comparisonMonth}`, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -74,7 +91,7 @@ function Analytics() {
 
     useEffect(() => {
     fetchComparisonData()
-    }, [municipality1, municipality2, selectedType, selectedYear, comparisonMonth])  
+    }, [municipality1, municipality2, selectedCategory, selectedType, selectedYear, comparisonMonth])
 
     //script to generate year options from 2023 to current year
     const years = []
@@ -213,14 +230,32 @@ function Analytics() {
                             </select>
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-xs font-semibold text-gray-400 mb-1">ASSISTANCE TYPE</span>
-                            <select className="border rounded px-2 py-1 text-sm" onChange={(e) => setSelectedType(e.target.value)} value={selectedType}>
-                                <option value="ALL">ALL</option>
-                                {types.map((t) => (
-                                    <option key={t.type_id} value={t.type_name}>{t.type_name}</option>
+                            <span className="text-xs font-semibold text-gray-400 mb-1">CATEGORY</span>
+                            <select className="border rounded px-2 py-1 text-sm"
+                                value={selectedCategory}
+                                onChange={(e) => {
+                                    setSelectedCategory(e.target.value)
+                                    setSelectedType('ALL')
+                                }}>
+                                <option value="ALL">ALL CATEGORY</option>
+                                {categories.map((c) => (
+                                    <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
                                 ))}
                             </select>
                         </div>
+                        {selectedCategory !== 'ALL' && (
+                            <div className="flex flex-col">
+                                <span className="text-xs font-semibold text-gray-400 mb-1">ASSISTANCE TYPE</span>
+                                <select className="border rounded px-2 py-1 text-sm"
+                                    value={selectedType}
+                                    onChange={(e) => setSelectedType(e.target.value)}>
+                                    <option value="ALL">ALL TYPES</option>
+                                    {filteredTypes.map((t) => (
+                                        <option key={t.type_id} value={t.type_name}>{t.type_name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                         <div className="flex flex-col">
                             <span className="text-xs font-semibold text-gray-400 mb-1">YEAR</span>
                             <select className="border rounded px-2 py-1 text-sm"
@@ -257,7 +292,7 @@ function Analytics() {
                 <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={comparisonData}  tabIndex={-1} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="type_name" angle={-45} textAnchor="end" interval={0} height={200} tick={{ fontSize: 11 }} />
+                        <XAxis dataKey="name" angle={-45} textAnchor="end" interval={0} height={200} tick={{ fontSize: 11 }} />
                         <YAxis type="number" width={50} tick={{ fontSize: 11 }} />
                         <Tooltip />
                         <Legend wrapperStyle={{ fontSize: 12 }} />
