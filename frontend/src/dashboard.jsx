@@ -161,8 +161,11 @@ function Dashboard() {
                 filters: {
                     year: selectedYear, municipality: selectedMunicipality, type: selectedType,
                     month: selectedMonth,
+                    category: selectedCategory,
                     lineType: selectedLineType, lineYear: selectedYearForLine,
+                    lineCategory: selectedCategoryLine,
                     distributionYear: selectedDistributionYear, distributionMonth: selectedDistributionMonth,
+                    distributionCategory: selectedDistributionCategory,
                     barYear: selectedBarYear, barMonth: selectedBarMonth,
                 }
             })

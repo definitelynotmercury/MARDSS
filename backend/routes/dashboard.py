@@ -23,6 +23,19 @@ MODEL_FALLBACKS = [
 def get_db():
     return mysql.connector.connect(**DB_CONFIG)
 
+def lookup_name(table, id_col, name_col, value):
+    if value == "ALL":
+        return "ALL"
+    conn = get_db()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(f"SELECT {name_col} FROM {table} WHERE {id_col} = %s", (value,))
+        row = cursor.fetchone()
+        cursor.close()
+    finally:
+        conn.close()
+    return row[name_col] if row else value
+
 
 @dashboard_bp.route('/api/dashboard/kpi')
 @token_required
@@ -109,7 +122,7 @@ def get_kpi():
 
     return jsonify({
         "total_requests": sum_req["total"] or 0,
-        "top_type": highest_type or {"type_name": "N/A", "total": 0},
+        "top_type": highest_type or {"name": "N/A", "total": 0},
         "top_municipality": highest_municipality or {"municipality_name": "N/A", "total": 0}
     })
 
@@ -244,32 +257,68 @@ def generate_narrative():
     municipality = filters.get("municipality", "ALL")
     type_ = filters.get("type", "ALL")
     month = filters.get("month", "ALL")
+    category = filters.get("category", "ALL")
 
     # --- Per-chart filters ---
     line_type = filters.get("lineType", "ALL")
     line_year = filters.get("lineYear", "ALL")
+    line_category = filters.get("lineCategory", "ALL")
     distribution_year = filters.get("distributionYear", "ALL")
-    distribution_type = filters.get("distributionType", "ALL")
     distribution_month = filters.get("distributionMonth", "ALL")
+    distribution_category = filters.get("distributionCategory", "ALL")
     bar_year = filters.get("barYear", "ALL")
     bar_month = filters.get("barMonth", "ALL")
 
-    # --- Line chart: now a flat totals-only series ({year|month, total}) ---
+    # --- Turn IDs into readable names ---
+    category_name = lookup_name("category", "category_id", "category_name", category)
+    type_name = lookup_name("assistance_types", "type_id", "type_name", type_)
+    municipality_name = lookup_name("municipalities", "municipality_id", "municipality_name", municipality)
+    line_category_name = lookup_name("category", "category_id", "category_name", line_category)
+    distribution_category_name = lookup_name("category", "category_id", "category_name", distribution_category)
+
+    # --- Line chart ---
     trend_granularity = "month" if line_year != "ALL" else "year"
     trend_summary_str = ", ".join(
         f"{row.get(trend_granularity)}: {row.get('total')} total requests"
         for row in trend
     )
+    line_parts = []
+    if line_category != "ALL":
+        line_parts.append(f"category: {line_category_name}")
+    if line_type != "ALL":
+        line_parts.append(f"type: {line_type}")
     line_summary = (
-        f"Showing only: {line_type}"
-        if line_type != "ALL"
-        else "Showing total requests across all assistance types"
+        "Showing only " + ", ".join(line_parts)
+        if line_parts
+        else "Showing total requests across all assistance categories and types"
     )
 
-    # --- Other chart summaries ---
-    distribution_summary = [{"type": p["name"], "value": p["value"]} for p in distribution_data]
+    # --- Distribution chart ---
+    distribution_summary = [{"name": p["name"], "value": p["value"]} for p in distribution_data]
+    if distribution_category == "ALL":
+        distribution_scope = "Bars show total requests per assistance CATEGORY"
+    else:
+        distribution_scope = (
+            f"Bars show total requests per assistance TYPE within the category "
+            f"'{distribution_category_name}'"
+        )
+
+    # --- Bar chart ---
     bar_summary = [{"municipality": b["municipality_name"], "total": b["total"]} for b in bar_data[:5]]
 
+    # --- KPI: top item is a category only when no category/type filter is set ---
+    top_label = "Category" if category == "ALL" and type_ == "ALL" else "Type"
+    top_type = kpi.get("top_type", {})
+    top_municipality = kpi.get("top_municipality", {})
+
+    kpi_scope_parts = []
+    if category != "ALL":
+        kpi_scope_parts.append(f"category: {category_name}")
+    if type_ != "ALL":
+        kpi_scope_parts.append(f"type: {type_name}")
+    if municipality != "ALL":
+        kpi_scope_parts.append(f"municipality: {municipality_name}")
+    kpi_scope = ", ".join(kpi_scope_parts) if kpi_scope_parts else "all categories, types and municipalities"
 
     # --- KPI period label ---
     month_name = MONTH_NAMES[int(month) - 1] if month != "ALL" else None
@@ -281,38 +330,43 @@ def generate_narrative():
         kpi_period = "the entire dataset (all years)"
 
     active_filters = (
-        f"Global — Year: {year}, Month: {month_name or 'ALL'}, Municipality: {municipality}, Type: {type_} | "
-        f"Line Chart — Type: {line_type}, Year: {line_year} | "
-        f"Distribution Chart — Year: {distribution_year}, Month: {distribution_month}, Type: {distribution_type} | "
+        f"Global — Year: {year}, Month: {month_name or 'ALL'}, Municipality: {municipality_name}, "
+        f"Category: {category_name}, Type: {type_name} | "
+        f"Line Chart — Category: {line_category_name}, Type: {line_type}, Year: {line_year} | "
+        f"Distribution Chart — Category: {distribution_category_name}, Year: {distribution_year}, "
+        f"Month: {distribution_month} | "
         f"Bar Chart — Year: {bar_year}, Month: {bar_month}"
     )
 
     prompt = f"""
         You are a data analyst reporting for the Provincial Social Welfare and Development Office (PSWDO) of Bulacan.
 
-        IMPORTANT: The KPI totals and top type/municipality below are scoped specifically to {kpi_period}.
-        Your first sentence MUST explicitly name this period (e.g. "For {kpi_period}, ..."). 
-        Never describe the KPI figures as a full-year or multi-year total unless kpi_period says so — 
+        IMPORTANT: The KPI totals and top type/municipality below are scoped specifically to {kpi_period}
+        and to {kpi_scope}.
+        Your first sentence MUST explicitly name this period (e.g. "For {kpi_period}, ...").
+        Never describe the KPI figures as a full-year or multi-year total unless kpi_period says so —
         the KPI numbers below are ALREADY filtered to {kpi_period} only.
 
         Write a comprehensive but concise narrative (5-6 sentences) covering all sections of the dashboard based on the data below.
         Do not suggest actions or recommendations. Only describe what the data shows.
-        Structure your narrative: overall totals (scoped to {kpi_period}) → {trend_granularity}-over-{trend_granularity} trend (this trend panel has its own independent year filter, separate from {kpi_period}) → type distribution → geographic breakdown
-        Make sure to reflect the active filters in your narrative — if a specific type, year, or month is selected,
+        Structure your narrative: overall totals (scoped to {kpi_period}) → {trend_granularity}-over-{trend_granularity} trend (this trend panel has its own independent filters, separate from the KPI scope) → distribution → geographic breakdown
+        Make sure to reflect the active filters in your narrative — if a specific category, type, year, or month is selected,
         describe only that context (e.g. "In March 2025..." rather than implying full-year totals when a month is set).
+        Each chart has its own independent filters, so do not apply one chart's filters to another chart.
 
         - Active Filters: {active_filters}
 
-        [KPI — scoped to {kpi_period}]
+        [KPI — scoped to {kpi_period}, {kpi_scope}]
         - Total Requests: {kpi.get('total_requests')}
-        - Top Assistance Type: {kpi.get('top_type', {}).get('type_name')} ({kpi.get('top_type', {}).get('total')} requests)
-        - Top Municipality: {kpi.get('top_municipality', {}).get('municipality_name')} ({kpi.get('top_municipality', {}).get('total')} requests)
+        - Top Assistance {top_label}: {top_type.get('name')} ({top_type.get('total')} requests)
+        - Top Municipality: {top_municipality.get('municipality_name')} ({top_municipality.get('total')} requests)
 
         [{trend_granularity.capitalize()}ly Trend - Line Chart]
         - Totals per {trend_granularity}: {trend_summary_str}
         - {line_summary}
 
-        [Type Distribution - Bar Chart]
+        [Distribution - Bar Chart]
+        - {distribution_scope}
         - Breakdown: {distribution_summary}
 
         [Top Municipalities - Bar Chart]
