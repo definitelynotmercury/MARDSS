@@ -400,7 +400,7 @@ function Dashboard() {
                         tabIndex={-1}
                         margin={{ top: 5, right: 60, left: 5, bottom: 5 }}
                     >
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                         <XAxis type="number" />
                         <YAxis dataKey="name" type="category" width={150} tickFormatter={(value) => value.replace(/\//g, ' / ')} />
                         <Tooltip formatter={(value) => Number(value).toLocaleString()} />
@@ -447,7 +447,7 @@ function Dashboard() {
                 </div>
                 <ResponsiveContainer width="100%" height={800}>
                     <BarChart data={barData} layout="vertical" tabIndex={-1}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                         <XAxis type="number" />
                         <YAxis dataKey="municipality_name" type="category" width={150} />
                         <Tooltip />
