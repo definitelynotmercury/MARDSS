@@ -392,8 +392,14 @@ function Dashboard() {
                         )}
                     </div>
                 </div>
-                <ResponsiveContainer width="100%" height={Math.max(300, distributionData.length * 40)}>
-                    <BarChart data={distributionData} layout="vertical" tabIndex={-1} margin={{ top: 5, right: 60, left: 5, bottom: 5 }}>
+                <ResponsiveContainer width="100%" height={Math.max(400, distributionData.length * 80)}>
+                    <BarChart
+                        data={distributionData}
+                        layout="vertical"
+                        barCategoryGap="30%"
+                        tabIndex={-1}
+                        margin={{ top: 5, right: 60, left: 5, bottom: 5 }}
+                    >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis type="number" />
                         <YAxis dataKey="name" type="category" width={150} tickFormatter={(value) => value.replace(/\//g, ' / ')} />
